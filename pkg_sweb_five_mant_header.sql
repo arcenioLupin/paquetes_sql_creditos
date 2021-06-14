@@ -1,4 +1,4 @@
-create or replace PACKAGE  VENTA.pkg_sweb_five_mant AS
+create or replace PACKAGE VENTA.pkg_sweb_five_mant AS
   /******************************************************************************
      NAME:      PKG_SWEB_FIVE_MANT
      PURPOSE:   Contiene los procedimientos para la gestión de la ficha de venta.

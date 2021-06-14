@@ -1,4 +1,4 @@
-create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
+create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant_pedido AS
   /******************************************************************************
      NAME:    PKG_SWEB_VVE_RESE_VEHI
      PURPOSE: Contiene funciones de OPERACIONES con proforma tipo aceptar, crear, etc..
@@ -415,10 +415,10 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
   END;
   /*-----------------------------------------------------------------------------
       Nombre : sp_list_pedi_fact_fv
-      Proposito : Lista los pedidos tab facturación en la ficha de venta
+      Proposito : Lista los pedidos tab facturaciÃ³n en la ficha de venta
       Referencias :
-      Parametros :P_NUM_FICHA_VTA_VEH ---> Número de ficha de venta.
-                  P_NUM_PROF_VEH     ---> Número de Proforma.
+      Parametros :P_NUM_FICHA_VTA_VEH ---> NÃºmero de ficha de venta.
+                  P_NUM_PROF_VEH     ---> NÃºmero de Proforma.
                   p_cod_id_usuario   --->  Id. de usuario
                   p_cod_usuario      --->  Cod. usuario
                   p_ret_cabe         ---> Lista de cabecera pedido.
@@ -427,7 +427,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                   P_RET_MENS          ---> Resultado del proceso.
       Log de Cambios
       Fecha        Autor           Descripcion
-                                 Creación
+                                 CreaciÃ³n
       18/08/2018   AVILCA          Modificacion -  Req. 86370Se agrega el campo tipo_sol_fact
                                                    para mostrarlo en la cabecera de los pedidos
        01/10/2018    FGRANDEZ    REQ-86111 Se modifico el script para obtener las variables de titulos
@@ -492,11 +492,11 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                ELSE
                 'STOCK'
              END) tipo_sol_fact, -- Se agrega por Req. 86370- Soporte Legados
-             --<REQ-86111>
+              --<I-86111>
              ped.num_titulo_rpv,
              ped.fec_titulo_rpv,
              ped.fec_carg_titu
-      --<REQ-86111>
+              --<I-86111>
         FROM vve_pedido_veh             ped,
              vve_ficha_vta_pedido_veh   fvped,
              v_pedido_veh               vpv,
@@ -583,7 +583,6 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
          AND p.cod_usuario_veh = desc_usua.cod_perso(+)
          AND p.cod_propietario_veh = desc_prop.cod_perso(+)
          AND p.cod_clie = desc_fact.cod_perso(+)
-            -- AND a.estado = 'D'
          AND fvped.ind_inactivo = 'N'
          AND t.grupo_doc IN ('F', 'B')
          AND fvped.num_ficha_vta_veh = p_num_ficha_vta_veh
@@ -609,8 +608,8 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
       Nombre : SP_LIST_PEDI_FICH
       Proposito : Lista los pedidos asociados a la ficha de venta
       Referencias :
-      Parametros :P_NUM_FICHA_VTA_VEH ---> Número de ficha de venta.
-                  P_NUM_PROF_VEH     ---> Número de Proforma.
+      Parametros :P_NUM_FICHA_VTA_VEH ---> NÃºmero de ficha de venta.
+                  P_NUM_PROF_VEH     ---> NÃºmero de Proforma.
                   P_RET_CURSOR        ---> Lista de pedidos.
                   P_RET_ESTA          ---> Estado del proceso.
                   P_RET_MENS          ---> Resultado del proceso.
@@ -803,6 +802,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     v_rpta               NUMBER;
     v_rpta_msj           VARCHAR(50);
     --<f84905> Color interno
+  v_asignado_preasig_lineup NUMBER;--<89233>
   BEGIN
     --<i84905>Color interno
     SELECT a.cod_area_vta,
@@ -851,7 +851,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
          AND a.cod_prov = p_cod_prov;
 
       IF NOT (nvl(v_cod_tapiz_veh_ped, '') = nvl(v_cod_tapiz_veh_prof, '')) THEN
-        p_ret_mens := 'En color interno del vehículo no coincide con el color de la Proforma';
+        p_ret_mens := 'En color interno del vehÃ­culo no coincide con el color de la Proforma';
         RAISE ve_error;
       END IF;
 
@@ -943,13 +943,31 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
        AND cod_prov = p_cod_prov
        AND num_pedido_veh = p_num_pedido_veh;
 
+  --<I-89233>
+    SELECT COUNT(1) NUM_PEDIDO_VEH
+      INTO v_asignado_preasig_lineup
+        FROM VVE_MODI_PEDIDO_VEH AX
+       WHERE AX.nom_columna='COD_ESTADO_PEDIDO_VEH'
+         AND AX.VAL_ANT_COLUMNA = 'L'
+         AND AX.NUM_PEDIDO_VEH = p_num_pedido_veh;
+
+    IF nvl(v_asignado_preasig_lineup,0) >= 1 THEN
+       sp_mail_alert_jefeventas(p_num_ficha_vta_veh,
+                                       p_num_prof_veh,
+                                       p_num_pedido_veh,
+                                       p_cod_usuario_veh,
+                                       p_cod_id_usuario,
+                                       p_ret_esta,
+                                       p_ret_mens);
+    END IF;
+  --<F-89233>
     COMMIT;
 
     IF p_ret_esta = -1 OR p_ret_esta = 0 THEN
       RAISE ve_error;
     END IF;
 
-    p_ret_mens := 'Se grabó correctamente ' || p_fec_compro_entrega;
+    p_ret_mens := 'Se grabÃ³ correctamente ' || p_fec_compro_entrega;
     p_ret_esta := 1;
   EXCEPTION
     WHEN ve_error THEN
@@ -1124,7 +1142,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
         UPDATE vve_ficha_vta_veh_aut a
            SET fec_compromiso      = to_date(p_fec_compro_entrega,
                                              'DD/MM/YYYY'),
-               a.obs_ficha_vta_aut = 'Actualizado en Preasignación'
+               a.obs_ficha_vta_aut = 'Actualizado en PreasignaciÃ³n'
 
          WHERE cod_aut_ficha_vta = '11'
            AND cod_cia = p_cod_cia
@@ -1234,7 +1252,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
 
     COMMIT;
 
-    p_ret_mens := 'Se actualizó correctamente';
+    p_ret_mens := 'Se actualizÃ³ correctamente';
     p_ret_esta := 1;
 
   EXCEPTION
@@ -1252,7 +1270,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
 
   /*--------------------------------------------------------------------------
       Nombre : SP_OBTENER_INFO_FACT
-      Proposito : Obtiene información de facturación para un pedido
+      Proposito : Obtiene informaciÃ³n de facturaciÃ³n para un pedido
       Referencias :
       Parametros :
       Log de Cambios
@@ -1318,7 +1336,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
       pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
                                           'SP_OBTENER_INFO_FACT',
                                           NULL,
-                                          'Error al obtener información de facturación',
+                                          'Error al obtener informaciÃ³n de facturaciÃ³n',
                                           p_ret_mens,
                                           p_num_ficha_vta_veh);
   END;
@@ -1332,8 +1350,9 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
       Fecha        Autor         Descripcion
       30/05/2017   AVILCA        Creacion
       20/12/2017   PHRAMIREZ     Se agrega validaciones de estado y area de venta
-                                 para la verificación de la desasignación del
+                                 para la verificaciÃ³n de la desasignaciÃ³n del
                                  pedido.
+      04/11/2020   AVILCA        Modificación para comunicación con solicitud de crédito                            
   ----------------------------------------------------------------------------*/
   PROCEDURE sp_anul_pedido_veh
   (
@@ -1358,7 +1377,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     v_log               VARCHAR2(10);
     v_estado_pedido     VARCHAR2(1);
     v_tra               VARCHAR2(5000);
-    ---I 88820 Notificación de desasignación
+    ---I 88820 NotificaciÃ³n de desasignaciÃ³n
     v_asunto          VARCHAR2(2000);
     v_mensaje         CLOB;
     v_html_head       VARCHAR2(2000);
@@ -1371,7 +1390,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     v_desc_area_venta VARCHAR(500);
     v_desc_cia        VARCHAR(500);
     v_desc_vendedor   VARCHAR(500);
-    ---F 88820 Notificación de desasignación
+    ---F 88820 NotificaciÃ³n de desasignaciÃ³n
     CURSOR c_enviar_mail IS
       SELECT DISTINCT a.txt_correo
         FROM sistemas.sis_mae_usuario a
@@ -1382,9 +1401,18 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
           ON b.cod_id_perfil = c.cod_id_perfil
          AND c.ind_inactivo = 'N'
        WHERE c.cod_id_procesos = 124
+         --AND c.cod_id_perfil NOT IN ('1674694','1674690')
          AND txt_correo IS NOT NULL;
 
-    ---88820
+    ---88820        
+    v_cont_solcre          INTEGER;
+    v_num_prof_veh         VARCHAR(200);
+    v_cod_estado_solicred  VARCHAR(10);
+    v_cod_soli_cred        VARCHAR(25);
+    v_asunto_solcre        VARCHAR2(2000);
+    v_mensaje_solcre       CLOB;
+    v_html_head_solcre     VARCHAR2(2000);
+    l_destinatarios_solcre vve_correo_prof.destinatarios%TYPE;
 
   BEGIN
     v_tra := '
@@ -1422,7 +1450,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     IF v_des_estado_pedido IS NOT NULL THEN
       p_ret_mens := 'Error, el Pedido se encuentra : ' ||
                     v_des_estado_pedido ||
-                    ', No es Posible Eliminar/Inactivar la Asignación';
+                    ', No es Posible Eliminar/Inactivar la AsignaciÃ³n';
       RAISE ve_error;
     END IF;
 
@@ -1473,15 +1501,8 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
              fec_asig_definitiva = NULL
        WHERE num_ficha_vta_veh = p_num_ficha_vta_veh
          AND nur_ficha_vta_pedido = p_nur_ficha_vta_pedido;
-
-          PKG_CMS_LEGADO.SP_CMS_FICHAVENTA(p_num_ficha_vta_veh,
-                                        P_COD_CIA,
-                                        P_COD_PROV,
-                                        p_num_pedido_veh,
-                                        '0');
-
       --ESTADO : PREASIGNADO
-    ELSIF v_estado_pedido = 'P' THEN
+  ELSIF v_estado_pedido = 'P' THEN
 
       UPDATE venta.vve_soli_fact_vehi a
          SET ind_inactivo = 'S',
@@ -1539,7 +1560,29 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
      WHERE cod_cia = p_cod_cia
        AND cod_prov = p_cod_prov
        AND num_pedido_veh = p_num_pedido_veh;
-
+--<I-88431-2>
+For i In (SELECT p.cod_equipo_local_veh, l.des_equipo_local_veh
+          from vve_equipo_local_veh l, vve_pedido_equipo_local_veh p
+          where l.cod_equipo_local_veh=p.cod_equipo_local_veh
+      and l.cod_prov=p.cod_prov
+          and p.cod_cia=p_cod_cia
+      and p.cod_prov=p_cod_prov
+      and p.num_pedido_veh=p_num_pedido_veh
+          --and Nvl(l.ind_promocion, 'N') = 'S'
+          order by p.cod_equipo_local_veh asc) Loop
+     BEGIN
+      PKG_INTERFAZ_SAP_SID.SP_ZZM_EQUIPAMIENTO_LOCAL(p_num_pedido_veh,
+                                                     i.Cod_Equipo_Local_Veh,
+                                                     i.des_equipo_local_veh,
+                                                     'D',
+                                                     p_ret_esta,
+                                                     p_ret_mens);
+     EXCEPTION
+       WHEN OTHERS THEN
+       NULL;
+    END;
+End Loop;
+--<F-88431-2>
     BEGIN
       SELECT cod_area_vta
         INTO v_cod_area_vta
@@ -1552,7 +1595,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     END;
     BEGIN
       BEGIN
-        -- Verificar si es automóvil
+        -- Verificar si es automÃ³vil
         v_vehautom := pkg_ficha_vta.fun_tipo_vehiculo('00',
                                                       'VEHAUTOM',
                                                       v_cod_area_vta);
@@ -1561,7 +1604,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
           v_vehautom := 0;
       END;
       BEGIN
-        -- Verificar si es vehículo comercial
+        -- Verificar si es vehÃ­culo comercial
         v_vehcomercial := pkg_ficha_vta.fun_tipo_vehiculo('00',
                                                           'VEHCOMER',
                                                           v_cod_area_vta);
@@ -1571,8 +1614,8 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
       END;
 
       IF v_vehautom > 0 THEN
-        -- Si es automóvil
-        -- Actualizar fecha de compromiso en la autorización de ficha
+        -- Si es automÃ³vil
+        -- Actualizar fecha de compromiso en la autorizaciÃ³n de ficha
         UPDATE vve_ficha_vta_veh_aut
            SET fec_compromiso = NULL
          WHERE num_ficha_vta_veh = p_num_ficha_vta_veh
@@ -1582,8 +1625,8 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
            AND cod_aut_ficha_vta = '15';
       END IF;
       IF v_vehcomercial > 0 THEN
-        -- Si es automóvil
-        -- Actualizar fecha de compromiso en la autorización de ficha
+        -- Si es automÃ³vil
+        -- Actualizar fecha de compromiso en la autorizaciÃ³n de ficha
         UPDATE vve_ficha_vta_veh_aut
            SET fec_compromiso = NULL
          WHERE num_ficha_vta_veh = p_num_ficha_vta_veh
@@ -1591,13 +1634,6 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
            AND cod_prov = p_cod_prov
            AND num_pedido_veh = p_num_pedido_veh
            AND cod_aut_ficha_vta = '11';
-
-           pkg_cms_legado.sp_cms_fecha_comp_vendedor(p_num_ficha_vta_veh,
-                                                p_cod_cia,
-                                                p_cod_prov,
-                                                p_num_pedido_veh,
-                                                1,
-                                                'En desasignacion');
       END IF;
     END;
 
@@ -1616,27 +1652,85 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
 
     IF nvl(v_ind_crm, 'NO') = 'SI' AND p_num_ficha_vta_veh IS NOT NULL AND
        p_num_pedido_veh IS NOT NULL THEN
-      --<I - REQ.90500 - SOPORTE LEGADOS - 25/06/2020>
-      /*
-    v_log := pkg_crm_legado.fun_crm_sap_vehi_ficvta(p_cod_cia,
+      v_log := pkg_crm_legado.fun_crm_sap_vehi_ficvta(p_cod_cia,
                                                       p_cod_prov,
                                                       p_num_pedido_veh);
-      */
-    V_LOG := PKG_CRM_LEGADO.FUN_CRM_SAP_VEHI_FICVTA_N (P_COD_CIA,
-                                                         P_COD_PROV,
-                                                         P_NUM_PEDIDO_VEH
-                            );
-    --<F - REQ.90500 - SOPORTE LEGADOS - 25/06/2020>
-    IF v_log = 'PEN' THEN
-        p_ret_mens := 'Error al enviar el Pedido de Vehículo ' ||
+      IF v_log = 'PEN' THEN
+        p_ret_mens := 'Error al enviar el Pedido de VehÃ­culo ' ||
                       p_num_pedido_veh || ' al SAP-CRM';
         RAISE ve_error;
       END IF;
     END IF;
-
+    --<I Req. 87567 E2.1 ID## AVILCA 04/11/2020>
+    --Obteniendo el número de proforma del pedido
+     BEGIN
+       SELECT num_prof_veh   INTO v_num_prof_veh
+       FROM  vve_pedido_veh 
+       WHERE num_pedido_veh = p_num_pedido_veh
+        AND num_prof_veh is not null; 
+      EXCEPTION
+       WHEN NO_DATA_FOUND THEN
+        v_num_prof_veh:='';
+      END;
+    -- Obteniendo el código y estado de la solictud de crédito relacionada a la proforma 
+      BEGIN
+      SELECT cs.cod_soli_cred,cs.cod_estado 
+       INTO v_cod_soli_cred,v_cod_estado_solicred
+       FROM vve_cred_soli cs
+      JOIN vve_cred_soli_prof csp ON csp.cod_soli_cred = cs.cod_soli_cred
+       WHERE  csp.num_prof_veh = v_num_prof_veh;
+      EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+        v_cod_estado_solicred:='';
+        v_cod_soli_cred:= '';
+      END; 
+   
+     IF v_cod_estado_solicred = 'ES03' THEN
+     
+       -- Eliminando pedidos de las garantias
+           UPDATE vve_cred_maes_gara
+           SET num_pedido_veh = NULL,
+               cod_usua_modi_regi = p_cod_id_usuario,
+               fec_modi_regi = sysdate
+           WHERE
+               num_pedido_veh = p_num_pedido_veh 
+           AND num_proforma_veh = v_num_prof_veh;
+           
+       -- Inactivando Simulador
+           UPDATE vve_cred_simu
+            SET ind_inactivo = 'S',
+                cod_usua_modi_reg = p_cod_id_usuario,
+                fec_modi_reg = sysdate
+           WHERE cod_soli_cred= v_cod_soli_cred;
+           
+       -- Inactivar relación solicitud pedido
+           UPDATE vve_cred_soli_pedi_veh
+           SET ind_inactivo = 'S',
+               cod_usua_modi_regi = p_cod_id_usuario,
+               fec_modi_regi = sysdate
+           WHERE cod_soli_cred= v_cod_soli_cred
+            AND num_pedido_veh = p_num_pedido_veh;
+            
+       -- Eliminar proyectados de flujo de caja 
+           DELETE FROM vve_cred_soli_fact_ajust
+           WHERE cod_soli_cred= v_cod_soli_cred;
+           
+           DELETE FROM vve_cred_soli_fact_fc
+           WHERE cod_soli_cred= v_cod_soli_cred;
+           
+        -- Inactivando relación solictudes-aprobación    
+        
+           UPDATE vve_cred_soli_apro
+           SET ind_inactivo = 'S',
+               cod_usua_modi_regi = p_cod_id_usuario,
+               fec_modi_regi = sysdate
+           WHERE cod_soli_cred= v_cod_soli_cred;
+            
+      END IF; 
+  --<F Req. 87567 E2.1 ID## AVILCA 04/11/2020>
     COMMIT;
 
-    --88820 correo de desasignación----------------------------------------
+    --88820 correo de desasignaciÃ³n----------------------------------------
 
     --Obtenemos el correo origen
     BEGIN
@@ -1663,32 +1757,33 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
 
     --Contenido de mensaje
     -- ESTRUCTURA DEL CORREO
-    BEGIN
-      SELECT ax.txt_asun_pla, ax.txt_cabe_pla, ax.txt_deta_pla
-        INTO v_asunto, v_html_head, v_mensaje
-        FROM sis_maes_plan ax
-       WHERE ax.cod_plan_reg = 3
+    
+      BEGIN
+          SELECT ax.txt_asun_pla, ax.txt_cabe_pla, ax.txt_deta_pla
+          INTO v_asunto, v_html_head, v_mensaje
+         FROM sis_maes_plan ax
+         WHERE ax.cod_plan_reg = 3
          AND nvl(ax.ind_inac_pla, 'N') = 'N';
-    EXCEPTION
-      WHEN no_data_found THEN
-        v_asunto    := NULL;
-        v_html_head := NULL;
-        v_mensaje   := NULL;
-      WHEN OTHERS THEN
-        v_mensaje   := NULL;
-        v_html_head := NULL;
-        v_mensaje   := NULL;
-    END;
-
-    SELECT pkg_gen_select.func_sel_gen_filial(cod_filial),
+       EXCEPTION
+          WHEN no_data_found THEN
+            v_asunto    := NULL;
+            v_html_head := NULL;
+            v_mensaje   := NULL;
+          WHEN OTHERS THEN
+            v_mensaje   := NULL;
+            v_html_head := NULL;
+            v_mensaje   := NULL;
+      END;
+      
+          SELECT pkg_gen_select.func_sel_gen_filial(cod_filial),
            pkg_gen_select.func_sel_gen_area_vta(cod_area_vta),
            pkg_log_select.func_sel_tapcia(cod_cia),
            pkg_cxc_select.func_sel_arccve(vendedor)
 
-      INTO v_desc_filial, v_desc_area_venta, v_desc_cia, v_desc_vendedor
+          INTO v_desc_filial, v_desc_area_venta, v_desc_cia, v_desc_vendedor
 
-      FROM vve_ficha_vta_veh
-     WHERE num_ficha_vta_veh = p_num_ficha_vta_veh;
+        FROM vve_ficha_vta_veh
+        WHERE num_ficha_vta_veh = p_num_ficha_vta_veh;
 
     /*  l_cuerpo_dano_indi := replace_clob(l_cuerpo_dano_indi,
     '#descriocionDanos#',
@@ -1715,14 +1810,10 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     v_mensaje := logistica_web.pkg_correo_log.replace_clob(v_mensaje,
                                                            '#PEDIDO#',
                                                            p_num_pedido_veh);
-    BEGIN
-      SELECT MAX(cod_correo_prof) INTO v_cod_correo FROM vve_correo_prof;
-    EXCEPTION
-      WHEN OTHERS THEN
-        v_cod_correo := 0;
-    END;
-
-    v_cod_correo := v_cod_correo + 1;
+    
+    --<I - REQ.89338 - SOPORTE LEGADOS - 22/05/2020>
+    SELECT VVE_CORREO_PROF_SQ01.NEXTVAL INTO V_COD_CORREO FROM DUAL;
+    --<F - REQ.89338 - SOPORTE LEGADOS - 22/05/2020>
 
     INSERT INTO vve_correo_prof
       (cod_correo_prof,
@@ -1751,6 +1842,98 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
        SYSDATE,
        v_cod_id_usuario);
     --------------------------------------------------
+    --<I Req. 87567 E2.1 ID## avilca 04/11/2020>
+    -- Preparando correo para usuarios de solictud de crédito
+    --destinatarios SOLCRE
+    v_cont_solcre := 1;
+    --< I Req. 87567 E2.1 ID:desasignar proforma avilca 05/03/2021> 
+    FOR c_mail_solcre IN (SELECT a.txt_correo
+                            FROM sistemas.sis_mae_usuario a
+                            INNER JOIN sistemas.sis_mae_perfil_usuario b
+                              ON a.cod_id_usuario = b.cod_id_usuario
+                             AND b.ind_inactivo = 'N'
+                            INNER JOIN sistemas.sis_mae_perfil_procesos c
+                              ON b.cod_id_perfil = c.cod_id_perfil
+                             AND c.ind_inactivo = 'N'
+                           WHERE c.cod_id_procesos = 124
+                             AND c.cod_id_perfil IN ('1674690')
+                             AND txt_correo IS NOT NULL
+                        UNION
+                              SELECT  a.txt_correo
+                              FROM sistemas.sis_mae_usuario a
+                              WHERE a.txt_usuario in (select cod_resp_fina from vve_cred_soli where cod_soli_cred = v_cod_soli_cred)
+                        )
+    LOOP
+    --< F Req. 87567 E2.1 ID:desasignar proforma avilca 05/03/2021> 
+      IF (v_cont_solcre = 1) THEN
+        l_destinatarios_solcre := l_destinatarios_solcre || c_mail_solcre.txt_correo;
+      ELSE
+        l_destinatarios_solcre := l_destinatarios_solcre || ',' || c_mail_solcre.txt_correo;
+      END IF;
+      v_cont_solcre := v_cont_solcre + 1;
+
+    END LOOP;
+    
+    -- Estructura de correo para solicitud de crédito
+    
+        BEGIN
+              SELECT ax.txt_asun_pla, ax.txt_cabe_pla, ax.txt_deta_pla
+                INTO v_asunto_solcre, v_html_head_solcre, v_mensaje_solcre
+                FROM sis_maes_plan ax
+               WHERE ax.cod_plan_reg = 4
+                 AND nvl(ax.ind_inac_pla, 'N') = 'N';
+         EXCEPTION
+          WHEN no_data_found THEN
+            v_asunto_solcre    := NULL;
+            v_html_head_solcre := NULL;
+            v_mensaje_solcre   := NULL;
+          WHEN OTHERS THEN
+            v_mensaje_solcre   := NULL;
+            v_html_head_solcre := NULL;
+            v_asunto_solcre   := NULL;
+         END;
+         
+        v_asunto_solcre := REPLACE(v_asunto_solcre, '#proforma#', v_num_prof_veh);
+        v_asunto_solcre := REPLACE(v_asunto_solcre, '#codsolcre#', LTRIM(v_cod_soli_cred,'0'));
+        
+        v_mensaje_solcre := v_html_head_solcre || v_mensaje_solcre;
+        v_mensaje_solcre := logistica_web.pkg_correo_log.replace_clob(v_mensaje_solcre,
+                                                           '#PPROFORMA#',
+                                                           v_num_prof_veh);
+        v_mensaje_solcre := logistica_web.pkg_correo_log.replace_clob(v_mensaje_solcre,
+                                                           '#PEDIDOS#',
+                                                            p_num_pedido_veh);                                                           
+                                                           
+    SELECT VVE_CORREO_PROF_SQ01.NEXTVAL INTO V_COD_CORREO FROM DUAL;
+
+    INSERT INTO vve_correo_prof
+      (cod_correo_prof,
+       cod_ref_proc,
+       tipo_ref_proc,
+       destinatarios,
+       copia,
+       asunto,
+       cuerpo,
+       correoorigen,
+       ind_enviado,
+       ind_inactivo,
+       fec_crea_reg,
+       cod_id_usuario_crea)
+    VALUES
+      (v_cod_correo,
+       p_num_ficha_vta_veh || p_num_pedido_veh || 'DA', --P_COD_PLAN_ENTR_VEHI,
+       'DA',
+       l_destinatarios_solcre,
+       NULL,
+       v_asunto_solcre,
+       v_mensaje_solcre,
+       v_correoori,
+       'N',
+       'N',
+       SYSDATE,
+       v_cod_id_usuario);                                                       
+                                                           
+      --<F Req. 87567 E2.1 ID## avilca 04/11/2020>                                                      
 
     p_ret_mens := 'Se anulo correctamente.';
     p_ret_esta := 1;
@@ -1771,7 +1954,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
 
   /*-----------------------------------------------------------------------------
       Nombre : SP_ACTU_ASIG_DEFI
-      Proposito : Actualiza estado de pedido a Asignación Definitiva
+      Proposito : Actualiza estado de pedido a AsignaciÃ³n Definitiva
       Referencias :
       Parametros :
       Log de Cambios
@@ -1848,7 +2031,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                                                  p_cod_prov,
                                                  p_num_pedido_veh) = '2') THEN
       p_ret_mens := 'El pedido:' || p_num_pedido_veh ||
-                    ' Está en transito, no se puede realizar la asignación definitiva';
+                    ' EstÃ¡ en transito, no se puede realizar la asignaciÃ³n definitiva';
 
       pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_SP',
                                           'SP_ACTU_ASIG_DEFI',
@@ -1864,7 +2047,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     ----------------------------------------
 
     IF p_fechaasidef IS NULL THEN
-      p_ret_mens := 'Debe ingresar la Fecha de Asignación Definitiva.';
+      p_ret_mens := 'Debe ingresar la Fecha de AsignaciÃ³n Definitiva.';
       RAISE ve_error;
     END IF;
     ------------------------------------
@@ -1907,7 +2090,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     END IF;
 
     ------------------------------------
-    ---Validación de Warrant
+    ---ValidaciÃ³n de Warrant
     BEGIN
       SELECT COUNT(1)
         INTO v_cant
@@ -1938,7 +2121,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     END;
 
     -------------------------------------
-    ---Validación de LineUp
+    ---ValidaciÃ³n de LineUp
     BEGIN
       SELECT cod_area_vta
         INTO v_cod_area_vta
@@ -2011,7 +2194,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
 
     -------------------------------------
     ---Carga de las autorizaciones
-    ---Se condiciona la generación de autorizaciones por la facturación en tránsito
+    ---Se condiciona la generaciÃ³n de autorizaciones por la facturaciÃ³n en trÃ¡nsito
     BEGIN
       v_habil_fact_transito := pkg_pedido_veh.f_ind_fact_transito(p_num_ficha_vta_veh,
                                                                   p_cod_cia,
@@ -2124,7 +2307,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                                         p_ret_mens,
                                         p_num_ficha_vta_veh);
     -------------------------------------
-    ---Envio de correo de Asignación de Pedido
+    ---Envio de correo de AsignaciÃ³n de Pedido
     BEGIN
       BEGIN
         SELECT cod_cia, cod_prov, fec_usuario_aut
@@ -2214,29 +2397,22 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                                         p_ret_mens,
                                         p_num_ficha_vta_veh);
     -------------------------------------
-    ---Actualiza indicador de pedido con asignación definitiva y fecha
+    ---Actualiza indicador de pedido con asignaciÃ³n definitiva y fecha
     BEGIN
       UPDATE vve_ficha_vta_pedido_veh
          SET ind_asig_def        = 'S',
              fec_asig_definitiva = to_date(p_fechaasidef, 'dd-mm-yyyy')
        WHERE num_ficha_vta_veh = p_num_ficha_vta_veh
          AND nur_ficha_vta_pedido = p_nur_ficha_vta_pedido;
-
-         PKG_CMS_LEGADO.SP_CMS_FICHAVENTA(p_num_ficha_vta_veh,
-                                        P_COD_CIA,
-                                        P_COD_PROV,
-                                        p_num_pedido_veh,
-                                        '1');
-
     EXCEPTION
       WHEN OTHERS THEN
-        p_ret_mens := 'No es posible actualizar el indicador de Asignación Definitiva';
+        p_ret_mens := 'No es posible actualizar el indicador de AsignaciÃ³n Definitiva';
         RAISE ve_error;
     END;
 
-    p_ret_mens := 'Se actualizó correctamente';
+    p_ret_mens := 'Se actualizÃ³ correctamente';
     ---------------
-    --Actualiza autorización de ficha venta(trackin)-------------------
+    --Actualiza autorizaciÃ³n de ficha venta(trackin)-------------------
     pkg_sweb_five_mant_veh_aut.sp_actu_auto_fich(p_num_ficha_vta_veh,
                                                  '19',
                                                  p_num_pedido_veh,
@@ -2274,22 +2450,21 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     END;
 
     BEGIN
-      v_error_crm := 'Se actualizó correctamente pero no se pudo enviar el Pedido de Vehículo ' ||
+      v_error_crm := 'Se actualizÃ³ correctamente pero no se pudo enviar el Pedido de VehÃ­culo ' ||
                      p_num_pedido_veh || ' al SAP-CRM';
       IF nvl(v_ind_crm, 'NO') = 'SI' AND p_num_ficha_vta_veh IS NOT NULL AND
          p_num_pedido_veh IS NOT NULL THEN
-        --<I - REQ.90500 - SOPORTE LEGADOS - 25/06/2020>
-    /*
-    v_log := pkg_crm_legado.fun_crm_sap_vehi_ficvta(p_cod_cia,
+
+pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_SP',
+                                        'SP_ACTU_ASIG_DEFI',
+                                        p_cod_usua_sid,
+                                        'Segumiento 12',
+                                        p_ret_mens,
+                                        p_num_ficha_vta_veh);
+        v_log := pkg_crm_legado.fun_crm_sap_vehi_ficvta(p_cod_cia,
                                                         p_cod_prov,
                                                         p_num_pedido_veh);
-        */
-    V_LOG := PKG_CRM_LEGADO.FUN_CRM_SAP_VEHI_FICVTA_N (P_COD_CIA,
-                                                           P_COD_PROV,
-                                                           P_NUM_PEDIDO_VEH
-                              );
-        --<F - REQ.90500 - SOPORTE LEGADOS - 25/06/2020>
-    IF v_log = 'PEN' THEN
+        IF v_log = 'PEN' THEN
           p_ret_mens := v_error_crm;
         END IF;
       END IF;
@@ -2297,6 +2472,13 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
       WHEN OTHERS THEN
         p_ret_mens := v_error_crm;
     END;
+
+pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_SP',
+                                        'SP_ACTU_ASIG_DEFI',
+                                        p_cod_usua_sid,
+                                        'Segumiento 13',
+                                        p_ret_mens,
+                                        p_num_ficha_vta_veh);
 
     BEGIN
       SELECT a.cod_area_vta
@@ -2314,7 +2496,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_SP',
                                         'SP_ACTU_ASIG_DEFI',
                                         p_cod_usua_sid,
-                                        'Segumiento 12',
+                                        'Segumiento 14',
                                         p_ret_mens,
                                         p_num_ficha_vta_veh);
 
@@ -2324,20 +2506,13 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                                                to_char(v_fec_compro_entrega,
                                                        'DD/MM/YYYY')),
                                            'DD/MM/YYYY'),
-             a.obs_ficha_vta_aut = 'Actualizado en la asignación definitiva'
+             a.obs_ficha_vta_aut = 'Actualizado en la asignaciÃ³n definitiva'
 
        WHERE cod_aut_ficha_vta = '11'
          AND cod_cia = p_cod_cia
          AND cod_prov = p_cod_prov
          AND a.num_pedido_veh = p_num_pedido_veh
          AND a.num_ficha_vta_veh = p_num_ficha_vta_veh;
-
-         pkg_cms_legado.sp_cms_fecha_comp_vendedor(p_num_ficha_vta_veh,
-                                                p_cod_cia,
-                                                p_cod_prov,
-                                                p_num_pedido_veh,
-                                                0,
-                                                'Actualizado en la asignación definitiva');
     ELSE
       ----------------Actualizamos colores para los pedidos
       BEGIN
@@ -2404,7 +2579,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
       pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
                                           'SP_ACTU_ASIG_DEFI',
                                           p_cod_usua_sid,
-                                          'Actualiza estado a Asignación Definitiva',
+                                          'Actualiza estado a AsignaciÃ³n Definitiva',
                                           p_ret_mens ||
                                           '- SP_ACTU_ASIG_DEFI:' || SQLERRM,
                                           p_num_ficha_vta_veh);
@@ -2413,7 +2588,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
 
   /*--------------------------------------------------------------------------
       Nombre : SP_LIST_SOLI_FACT
-      Proposito : Obtiene información de solicitud de facturación
+      Proposito : Obtiene informaciÃ³n de solicitud de facturaciÃ³n
       Referencias :
       Parametros :
       Log de Cambios
@@ -2506,7 +2681,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
       pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
                                           'SP_LIST_SOLI_FACT_PASO_1',
                                           NULL,
-                                          'Error al obtener información de solicitud de facturación',
+                                          'Error al obtener informaciÃ³n de solicitud de facturaciÃ³n',
                                           p_ret_mens,
                                           p_num_ficha_vta_veh);
 
@@ -2552,7 +2727,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
         pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
                                             'SP_LIST_SOLI_FACT_PASO_2',
                                             NULL,
-                                            'Error al obtener información de solicitud de facturación',
+                                            'Error al obtener informaciÃ³n de solicitud de facturaciÃ³n',
                                             p_ret_mens,
                                             p_num_ficha_vta_veh);
 
@@ -2599,7 +2774,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
           pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
                                               'SP_LIST_SOLI_FACT_PASO_3',
                                               NULL,
-                                              'Error al obtener información de solicitud de facturación',
+                                              'Error al obtener informaciÃ³n de solicitud de facturaciÃ³n',
                                               p_ret_mens,
                                               p_num_ficha_vta_veh);
 
@@ -2645,9 +2820,9 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                    gen_persona              g,
                    --<I- 86491>
                    --vve_soli_fact_cont       vsfc
-                   /* Se modificó el inner join a la tabla cod_soli_fact_vehi, por el codigo líneas abajo,
-                   * dónde se crea la lógica para el armado de concatenar los nombres y/o correos de las
-                   * solicitudes que pueda tener un número de pedido.       */
+                   /* Se modificÃ³ el inner join a la tabla cod_soli_fact_vehi, por el codigo lÃ­neas abajo,
+                   * dÃ³nde se crea la lÃ³gica para el armado de concatenar los nombres y/o correos de las
+                   * solicitudes que pueda tener un nÃºmero de pedido.       */
                    (SELECT cod_soli_fact_vehi,
                            ltrim(MAX(sys_connect_by_path(txt_nombre, ', ')),
                                  ',') correo,
@@ -2672,7 +2847,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
           pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
                                               'SP_LIST_SOLI_FACT_PASO_4',
                                               NULL,
-                                              'Error al obtener información de solicitud de facturación',
+                                              'Error al obtener informaciÃ³n de solicitud de facturaciÃ³n',
                                               p_ret_mens,
                                               p_num_ficha_vta_veh);
 
@@ -2692,7 +2867,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
       pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
                                           'SP_LIST_SOLI_FACT',
                                           NULL,
-                                          'Error al obtener información de solicitud de facturación',
+                                          'Error al obtener informaciÃ³n de solicitud de facturaciÃ³n',
                                           p_ret_mens,
                                           p_num_ficha_vta_veh);
   END;
@@ -2706,7 +2881,9 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
      Fecha        Autor           Descripcion
      22/06/2017   LVALDERRAMA     Creacion
      04/12/2017   CSTI-BPALACIOS  Modificacion se agrega el inserta a la
-                  tabla VVE_SOLI_FACT_VEHI
+                                  tabla VVE_SOLI_FACT_VEHI
+     23/03/2020	  SOPORTE LEGADOS <89964>Previa validacion de existencia de solicitud
+                                  si existe inhabilitarlos y luego registrar una nueva
 
   ----------------------------------------------------------------------------*/
   PROCEDURE sp_grabar_soli_fact
@@ -2737,24 +2914,62 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
 
     ve_error EXCEPTION;
     v_cod_soli_fact_vehi NUMBER;
-
+    v_existe_sol_factu NUMBER; --89964
+	--<I-REQ-91334-ASALASM>
+		v_con_pago   vve_ficha_vta_pedido_veh.con_pago%TYPE; 
+		v_tipo_pago   vve_ficha_vta_pedido_veh.tipo_pago%TYPE;        
+    
   BEGIN
-    UPDATE venta.vve_ficha_vta_pedido_veh
-       SET cod_doc_fact         = p_cod_doc_fact,
-           ind_sol_fact         = p_ind_sol_fact,
-           obs_facturacion      = p_obs_facturacion,
-           tipo_sol_fact        = p_cod_tipo_soli,
-           co_usuario_sol_fact  = p_cod_usua_sid,
-           fec_usuario_sol_fact = SYSDATE,
-           cod_tipo_pago        = p_cod_tipo_pago,
-           cod_entidad_finan    = nvl(p_cod_entidad_finan, cod_entidad_finan)
-     WHERE num_ficha_vta_veh = p_num_ficha_vta_veh
-       AND num_prof_veh = p_num_prof_veh
-       AND num_pedido_veh = p_num_pedido_veh
-       AND ind_inactivo = 'N';
-    COMMIT;
-    --
+    v_tipo_pago := 'C';
+    v_con_pago  :=  1;
+    
+    IF pkg_gen_select.func_sel_gen_lval_det('00','LSTIPOPG', p_cod_tipo_pago) IS NOT NULL AND  pkg_gen_select.func_sel_gen_lval_det('00','LBANCRED', p_cod_entidad_finan) IS NOT NULL THEN 
+      v_tipo_pago:= 'P';
+      v_con_pago := '5';
+    END IF;
+  --<F-REQ-91334-ASALASM>
+		
+		UPDATE venta.vve_ficha_vta_pedido_veh
+			 SET cod_doc_fact         = p_cod_doc_fact,
+					 ind_sol_fact         = p_ind_sol_fact,
+					 obs_facturacion      = p_obs_facturacion,
+					 tipo_sol_fact        = p_cod_tipo_soli,
+					 co_usuario_sol_fact  = p_cod_usua_sid,
+					 fec_usuario_sol_fact = SYSDATE,
+					 --<I-REQ-91334-ASALASM>
+					 tipo_pago            = v_tipo_pago,
+					 con_pago             = v_con_pago,
+					 --<F-REQ-91334-ASALASM>
+					 cod_entidad_finan    = nvl(p_cod_entidad_finan, cod_entidad_finan)
+		 WHERE num_ficha_vta_veh = p_num_ficha_vta_veh
+			 AND num_prof_veh = p_num_prof_veh
+			 AND num_pedido_veh = p_num_pedido_veh
+			 AND ind_inactivo = 'N';
+--    COMMIT;  --<REQ-91334-ASALASM>
+    --<I>89964
+    -- Validar si existe ya una solicitud para el pedido, de haberlo actualizar como inactivo a todos.
+    SELECT COUNT(*)
+	  INTO v_existe_sol_factu
+	  FROM DUAL
+	  WHERE EXISTS (
+				  SELECT 1
+					FROM vve_soli_fact_vehi
+				   WHERE num_ficha_vta_veh = p_num_ficha_vta_veh
+					 AND num_prof_veh = p_num_prof_veh
+					 AND num_pedido_veh = p_num_pedido_veh
+					 AND ind_inactivo = 'N'
+					 );
 
+    IF (v_existe_sol_factu = 1) THEN
+      UPDATE vve_soli_fact_vehi
+         SET ind_inactivo = 'S'
+       WHERE num_ficha_vta_veh = p_num_ficha_vta_veh
+         AND num_prof_veh = p_num_prof_veh
+         AND num_pedido_veh = p_num_pedido_veh
+         AND ind_inactivo = 'N';
+    END IF;
+    -- Luego seguir con la insersiÃ³n de la solicitud nueva
+    --89964 <F>
     --SE EXTRAE EL PK DE LA TABLA    VVE_SOLI_FACT_VEHI
     SELECT seq_vve_soli_fact_vehi.nextval
       INTO v_cod_soli_fact_vehi
@@ -2834,7 +3049,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     END IF;
     COMMIT;
 
-    p_ret_mens             := 'Se guardó solicitud de facturación';
+    p_ret_mens             := 'Se guardÃ³ solicitud de facturaciÃ³n';
     p_ret_esta             := 1;
     p_ret_codigo_solicitud := v_cod_soli_fact_vehi;
   EXCEPTION
@@ -2887,7 +3102,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
           FROM vve_ped_veh_cli_con;
       EXCEPTION
         WHEN OTHERS THEN
-          p_ret_mens := 'Error no es posible crear código contacto';
+          p_ret_mens := 'Error no es posible crear cÃ³digo contacto';
           RAISE ve_error;
       END;
 
@@ -2916,7 +3131,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
       RAISE ve_error;
     END IF;
 
-    p_ret_mens := 'El contacto se grabó correctamente';
+    p_ret_mens := 'El contacto se grabÃ³ correctamente';
     p_ret_esta := 1;
   EXCEPTION
     WHEN ve_error THEN
@@ -2985,7 +3200,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
 
     COMMIT;
 
-    p_ret_mens := 'Se insertó correctamente';
+    p_ret_mens := 'Se insertÃ³ correctamente';
     p_ret_esta := 1;
   EXCEPTION
     WHEN ve_error THEN
@@ -3037,7 +3252,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
 
     COMMIT;
 
-    p_ret_mens := 'Se actualizó correctamente';
+    p_ret_mens := 'Se actualizÃ³ correctamente';
     p_ret_esta := 1;
   EXCEPTION
     WHEN ve_error THEN
@@ -3054,7 +3269,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
 
   /*-----------------------------------------------------------------------------
      Nombre : SP_GRABAR_SOLI_FACT_TRAN
-     Proposito : registra la solicitud de facturacion de un pedido en tránsito
+     Proposito : registra la solicitud de facturacion de un pedido en trÃ¡nsito
      Referencias :
      Parametros :
      Log de Cambios
@@ -3084,7 +3299,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                                                                p_num_pedido_veh);
 
     IF nvl(vhabil_fact_transito, 'N') = 'S' THEN
-      p_ret_mens := 'El pedido ya tiene habilitado la Facturación en Tránsito';
+      p_ret_mens := 'El pedido ya tiene habilitado la FacturaciÃ³n en TrÃ¡nsito';
       p_ret_esta := 0;
     ELSE
       pkg_pedido_veh.p_act_fact_transito(p_num_ficha_vta_veh,
@@ -3092,7 +3307,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                                          p_cod_prov,
                                          p_num_pedido_veh,
                                          'S');
-      p_ret_mens := 'Se guardó solicitud de facturación en tránsito';
+      p_ret_mens := 'Se guardÃ³ solicitud de facturaciÃ³n en trÃ¡nsito';
       p_ret_esta := 1;
     END IF;
 
@@ -3174,7 +3389,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     wb_result              BOOLEAN := TRUE;
   BEGIN
     --------------------------------------------------
-    -- Obtiene el código SAP de la compañía
+    -- Obtiene el cÃ³digo SAP de la compaÃ±Ã­a
     --------------------------------------------------
     BEGIN
       SELECT no_cia_sap
@@ -3202,7 +3417,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     END;
 
     ---------------------------------------------------------------------------------------------------------------
-    -- Valida que el cliente de facturación del pedido se encuentre creado en la sociedad que se le va a facturar
+    -- Valida que el cliente de facturaciÃ³n del pedido se encuentre creado en la sociedad que se le va a facturar
     ---------------------------------------------------------------------------------------------------------------
     BEGIN
       SELECT COUNT(a.cod_persona)
@@ -3405,7 +3620,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
 
   /*--------------------------------------------------------------------------
       Nombre : SP_OBTENER_INFO_FACT
-      Proposito : Obtiene información de facturación para un pedido
+      Proposito : Obtiene informaciÃ³n de facturaciÃ³n para un pedido
       Referencias :
       Parametros :
       Log de Cambios
@@ -3471,7 +3686,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
       pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
                                           'SP_OBTENER_INFO_FACT',
                                           NULL,
-                                          'Error al obtener información de facturación',
+                                          'Error al obtener informaciÃ³n de facturaciÃ³n',
                                           p_ret_mens,
                                           p_num_ficha_vta_veh);
   END;
@@ -3508,13 +3723,13 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
       pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
                                           'SP_LIST_EST_SOLI_CRED',
                                           NULL,
-                                          'Error al listar los estados de solicitud de crédito',
+                                          'Error al listar los estados de solicitud de crÃ©dito',
                                           p_ret_mens);
   END;
 
   /*-----------------------------------------------------------------------------
       Nombre : SP_LIST_DOCU_FACT
-      Proposito : Lista documentos de facturación
+      Proposito : Lista documentos de facturaciÃ³n
       Referencias :
       Parametros :
       Log de Cambios
@@ -3556,14 +3771,14 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     Parametros: P_COD_AREA_VTA      ---> codigo del area de venta
                 P_IND_NUEVO_USADO   ---> indicador si es nuevo o usado
                 P_COD_FAMILIA_VEH   ---> codigo de familia.
-                P_COD_MARCA         ---> Código marca.
+                P_COD_MARCA         ---> CÃ³digo marca.
                 P_COD_BAUMUSTER     ---> codigo baumuster.
                 P_COD_CONFIG_VEH    ---> codigo configuracion.
 
     REVISIONES:
     Version    Fecha       Autor            Descripcion
     ---------  ----------  ---------------  ------------------------------------
-    1.0        17/07/2017  LVALDERRAMA        Creación del procedure.
+    1.0        17/07/2017  LVALDERRAMA        CreaciÃ³n del procedure.
   ********************************************************************************/
   FUNCTION fun_ped_modelo
   (
@@ -3607,7 +3822,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
       Proposito : Lista de todos los pedidos de facturacion
       Referencias :
       Parametros :
-          P_NUM_FICHA_VTA_VEH ---> Número de ficha de venta.
+          P_NUM_FICHA_VTA_VEH ---> NÃºmero de ficha de venta.
                   P_RET_CURSOR        ---> Lista de pedidos.
                   P_RET_ESTA          ---> Estado del proceso.
                   P_RET_MENS          ---> Resultado del proceso.
@@ -3734,9 +3949,9 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
       Proposito : Lista de todos los pedidos de facturacion
       Referencias :
       Parametros :
-                  P_NUM_FICHA_VTA_VEH ---> Número de ficha de venta.
-                  P_NUM_PROF_VEH      ---> Número de proforma.
-                  P_NUM_PEDIDO_VEH    ---> Número de pedido.
+                  P_NUM_FICHA_VTA_VEH ---> NÃºmero de ficha de venta.
+                  P_NUM_PROF_VEH      ---> NÃºmero de proforma.
+                  P_NUM_PEDIDO_VEH    ---> NÃºmero de pedido.
                   COD_CLIE            ---> Codigo de usuario facturacion.
                   COD_PROPIETARIO_VEH ---> Codigo de usuario propietario.
                   COD_USUARIO_VEH     ---> Codigo de usuario usuario.
@@ -3836,14 +4051,14 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                   P_ASUNTO             ---> Asunto.
                   P_CUERPO             ---> Contenido del correo.
                   P_CORREOORIGEN       ---> Correo remitente.
-                  P_COD_USUA_SID       ---> Código del usuario.
+                  P_COD_USUA_SID       ---> CÃ³digo del usuario.
                   P_COD_USUA_WEB       ---> Id del usuario.
                   P_RET_ESTA           ---> Estado del proceso.
                   P_RET_MENS           ---> Resultado del proceso.
       REVISIONES:
       Version    Fecha       Autor            Descripcion
       ---------  ----------  ---------------  ------------------------------------
-      1.0        12/12/2017  BPALACIOS        Creación del procedure.
+      1.0        12/12/2017  BPALACIOS        CreaciÃ³n del procedure.
   ********************************************************************************/
 
   PROCEDURE sp_inse_correo_soli_fact(
@@ -3862,7 +4077,8 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     ve_error EXCEPTION;
     v_cod_correo vve_correo_prof.cod_correo_prof%TYPE;
   BEGIN
-
+    --<I - REQ.89338 - SOPORTE LEGADOS - 22/05/2020>
+    /*
     BEGIN
       SELECT MAX(cod_correo_prof) INTO v_cod_correo FROM vve_correo_prof;
     EXCEPTION
@@ -3871,6 +4087,9 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     END;
 
     v_cod_correo := v_cod_correo + 1;
+    */
+    SELECT VVE_CORREO_PROF_SQ01.NEXTVAL INTO V_COD_CORREO FROM DUAL;
+    --<F - REQ.89338 - SOPORTE LEGADOS - 22/05/2020>
 
     INSERT INTO vve_correo_prof
       (cod_correo_prof,
@@ -3901,7 +4120,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
 
     COMMIT;
 
-    p_ret_mens := 'Se registró correctamente';
+    p_ret_mens := 'Se registrÃ³ correctamente';
     p_ret_esta := 1;
   EXCEPTION
     WHEN ve_error THEN
@@ -4007,7 +4226,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                   'QA',
                   'Pruebas',
                   'PROD',
-                  'Producción')
+                  'ProducciÃ³n')
       INTO v_ambiente
       FROM v$instance;
 
@@ -4076,7 +4295,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
         </style>
       </head>';
 
-    --Para Solicitudes de Facturación--
+    --Para Solicitudes de FacturaciÃ³n--
     IF p_tipo_correo = '1' THEN
 
       OPEN c_usuarios FOR v_query;
@@ -4113,12 +4332,12 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
               <table class="to100" width="500" cellpadding="12" cellspacing="0" id="content" style="border-spacing: 0;">
                 <tr>
                   <td class="mailBody" style="background-color: #ffffff; padding: 32px;">
-                    <h1 style="text-align: center;color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 22px; font-weight: bold; margin: 0; padding-bottom: 20px;">Notificación ' ||
+                    <h1 style="text-align: center;color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 22px; font-weight: bold; margin: 0; padding-bottom: 20px;">NotificaciÃ³n ' ||
                      v_motivo_notificacion ||
                      ' </h1>
                     <p style="margin: 0;"><span style="font-weight: bold;">Hola ' ||
                      rtrim(ltrim(v_txt_nombres)) ||
-                     '</span>, se ha generado una notificación solicitud de facturacion de vehículos al cliente final:</p>
+                     '</span>, se ha generado una notificaciÃ³n solicitud de facturacion de vehÃ­culos al cliente final:</p>
 
                     <div style="padding: 10px 0;">
 
@@ -4159,7 +4378,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                       <tr>
                         <td>
                             <div class="to100" style="display:inline-block;width: 190px">
-                              <p style="font-weight: bold;font-family: helvetica, arial, sans-serif; font-size: 15px; line-height: 1.35; margin: 0;">Cliente de facturación</p>
+                              <p style="font-weight: bold;font-family: helvetica, arial, sans-serif; font-size: 15px; line-height: 1.35; margin: 0;">Cliente de facturaciÃ³n</p>
                               <p style="font-family: helvetica, arial, sans-serif; font-size: 15px; line-height: 1.35; margin: 0;">' ||
                      rtrim(ltrim(p_nombre_cliente)) ||
                      '</p>
@@ -4168,7 +4387,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                           </td>
                           <td>
                             <div class="to100" style="display:inline-block;width: 190px">
-                              <p style="font-weight: bold;font-family: helvetica, arial, sans-serif; font-size: 15px; line-height: 1.35; margin: 0;">Código de cliente</p>
+                              <p style="font-weight: bold;font-family: helvetica, arial, sans-serif; font-size: 15px; line-height: 1.35; margin: 0;">CÃ³digo de cliente</p>
                               <p style="font-family: helvetica, arial, sans-serif; font-size: 15px; line-height: 1.35; margin: 0;">' ||
                      rtrim(ltrim(v_cod_cliente)) ||
                      '</p>
@@ -4284,7 +4503,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
 
                     </div>
 
-                    <p style="margin: 0; padding-top: 25px;" >La información contenida en este correo electrónico es confidencial. Esta dirigida únicamente para el uso individual. Si has recibido este correo por error por favor hacer caso omiso a la solicitud.</p>
+                    <p style="margin: 0; padding-top: 25px;" >La informaciÃ³n contenida en este correo electrÃ³nico es confidencial. Esta dirigida Ãºnicamente para el uso individual. Si has recibido este correo por error por favor hacer caso omiso a la solicitud.</p>
                   </td>
                 </tr>
               </table>
@@ -4434,7 +4653,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                                         '');
 
     ------------------------------------
-    ---Obtenemos los correos de los destinatarios a notificar liberación de Warrant
+    ---Obtenemos los correos de los destinatarios a notificar liberaciÃ³n de Warrant
     FOR destinatarios IN (SELECT lower(x.di_correo) correo,
                                  initcap(rtrim(ltrim(rtrim(ltrim(x.paterno)) || ' ' ||
                                                      rtrim(ltrim(x.materno)) || ' ' ||
@@ -4470,7 +4689,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
       FROM sistemas.sis_mae_usuario
      WHERE cod_id_usuario = p_id_usuario;
     ------------------------------------
-    ---Obtenemos los correos con copia a notificar liberación de Warrant
+    ---Obtenemos los correos con copia a notificar liberaciÃ³n de Warrant
     /*
       cambiar por los que tienen recibir warrant
 
@@ -4575,8 +4794,8 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
               <table class="to100" width="500" cellpadding="12" cellspacing="0" id="content" style="border-spacing: 0;">
                 <tr>
                   <td class="mailBody" style="background-color: #ffffff; padding: 32px;">
-                    <h1 style="text-align: center;color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 22px; font-weight: bold; margin: 0; padding-bottom: 20px;">Notificación Liberar de Warrant el Pedido </h1>
-                    <p style="margin: 0;">Se ha generado una notificación dentro del módulo de Ficha de Venta:</p>
+                    <h1 style="text-align: center;color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 22px; font-weight: bold; margin: 0; padding-bottom: 20px;">NotificaciÃ³n Liberar de Warrant el Pedido </h1>
+                    <p style="margin: 0;">Se ha generado una notificaciÃ³n dentro del mÃ³dulo de Ficha de Venta:</p>
                     <div style="padding: 10px 0;">
                     </div>
                     <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #f5f5f5; border-radius: 0px 0px 5px 5px;">
@@ -4612,7 +4831,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                     <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #f5f5f5; border-radius: 0px 0px 5px 5px;">
                       <tr>
                         <td style="padding: 0;">
-                          <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Núm. Ficha de Venta</span></p>
+                          <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">NÃºm. Ficha de Venta</span></p>
                           <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;">' ||
                  rtrim(ltrim(p_num_ficha_vta_veh)) ||
                  '</p>
@@ -4632,7 +4851,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                     <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #f5f5f5; border-radius: 0px 0px 5px 5px;">
                       <tr>
                         <td style="padding: 0;">
-                          <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Usuario generación de correo</span></p>
+                          <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Usuario generaciÃ³n de correo</span></p>
                           <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;">' ||
                  rtrim(ltrim(p_cod_usua_sid)) || '</p>
                         </td>
@@ -4640,7 +4859,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                     </table>
                     <div style="padding: 10px 0;">
                     </div>
-                    <p style="margin: 0; padding-top: 25px;" >La información contenida en este correo electrónico es confidencial. Esta dirigida únicamente para el uso individual. Si has recibido este correo por error por favor hacer caso omiso a la solicitud.</p>
+                    <p style="margin: 0; padding-top: 25px;" >La informaciÃ³n contenida en este correo electrÃ³nico es confidencial. Esta dirigida Ãºnicamente para el uso individual. Si has recibido este correo por error por favor hacer caso omiso a la solicitud.</p>
                   </td>
                 </tr>
               </table>
@@ -4654,7 +4873,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     SELECT NAME INTO v_instancia FROM v$database;
 
     IF v_instancia = 'PROD' THEN
-      v_instancia := 'Producción';
+      v_instancia := 'ProducciÃ³n';
     END IF;
 
     -- Obtener datos de la ficha
@@ -4684,7 +4903,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     v_mensaje := '<!DOCTYPE html>
           <html lang="es" class="baseFontStyles" style="color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 16px; line-height: 1.35;">
               <head>
-                <title>Divemotor - Entrega de Vehículo</title>
+                <title>Divemotor - Entrega de VehÃ­culo</title>
                 <meta charset="utf-8">
 
                 <style>
@@ -4719,7 +4938,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                             <table height="40" width="100%" cellpadding="14" cellspacing="0" border="0" style="background-color: #222222; border-spacing: 0; padding-left: 25px; padding-right: 30px;">
                               <tr style="background-color: #222222;">
                                 <td style="background-color: #222222; padding: 0; color: white; font-family: helvetica, arial, sans-serif; font-size: 15px; font-weight: 800; padding: 0; text-align: right;">DIVEMOTOR</td>
-                                <td style="background-color: #222222; color: white; font-family: helvetica, arial, sans-serif; font-size: 15px; font-weight: 800; padding: 0; text-align: right;">Módulo de Ficha de Venta.</td>
+                                <td style="background-color: #222222; color: white; font-family: helvetica, arial, sans-serif; font-size: 15px; font-weight: 800; padding: 0; text-align: right;">MÃ³dulo de Ficha de Venta.</td>
                               </tr>
                             </table>
                           </td>
@@ -4730,10 +4949,10 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                         <tr>
                           <td class="mailBody" style="background-color: #ffffff; padding: 32px;">
                             <h1 style="text-align: center;color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 22px; font-weight: bold; margin: 0; ;">Historial de Ficha de Venta</h1>
-                            <h1 style="text-align: center;color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 22px; font-weight: bold; margin: 0; padding-bottom: 20px;">Notificación Liberar de Warrant el Pedido  </h1>
+                            <h1 style="text-align: center;color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 22px; font-weight: bold; margin: 0; padding-bottom: 20px;">NotificaciÃ³n Liberar de Warrant el Pedido  </h1>
                             <p style="margin: 0;"><span style="font-weight: bold;">Hola ' ||
                  rtrim(v_txt_nombres) ||
-                 '</span>, se ha generado una notificación dentro del módulo de ficha de ventas:</p>
+                 '</span>, se ha generado una notificaciÃ³n dentro del mÃ³dulo de ficha de ventas:</p>
 
                             <div style="padding: 10px 0;">
 
@@ -4780,7 +4999,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                                 </td>
 
                                  <td style="padding: 0;">
-                                  <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Compañia</span></p>
+                                  <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">CompaÃ±ia</span></p>
                                   <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
                  rtrim(v_desc_cia) ||
                  '.</p>
@@ -4828,7 +5047,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
 
                         </table>
 
-                            <p style="margin: 0; padding-top: 25px;" >La información contenida en este correo electrónico es confidencial. Esta dirigida únicamente para el uso individual. Si has recibido este correo por error por favor hacer caso omiso a la solicitud.</p>
+                            <p style="margin: 0; padding-top: 25px;" >La informaciÃ³n contenida en este correo electrÃ³nico es confidencial. Esta dirigida Ãºnicamente para el uso individual. Si has recibido este correo por error por favor hacer caso omiso a la solicitud.</p>
                           </td>
                         </tr>
                       </table>
@@ -4927,7 +5146,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     vcod_ubica       vve_pedido_veh.cod_ubica_pedido_veh%TYPE;
   BEGIN
     ----
-    wc_asunto := 'Alerta de Reposición de Line Up ';
+    wc_asunto := 'Alerta de ReposiciÃ³n de Line Up ';
     ----
     wc_verifica := '0';
     ----
@@ -4960,7 +5179,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                   '<br><br>';
     wc_mensaje := wc_mensaje || '<Table align="left" baseline: 5  cellspacing="4" style="clear:both; margin:0.5em auto; border:2px solid #FFFFFF;font: 10pt Arial;">
                     <tr>
-                      <td><b>Módelo</b></td>
+                      <td><b>MÃ³delo</b></td>
                       <td>' || ':</td><td>' || vmodelo ||
                   '</td>
                     </tr>
@@ -4975,7 +5194,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                   '</td>
                     </tr>
                     <tr>
-                      <td><b>Ubicación</b></td>
+                      <td><b>UbicaciÃ³n</b></td>
                       <td>' || ':</td><td>' || vubicacion ||
                   '</td>
                     </tr>
@@ -5003,7 +5222,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
               <td ' || wc_style_cell || '><b>SKU</b></td>
               <td ' || wc_style_cell || '><b>Modelo</b></td>
               <td ' || wc_style_cell || '><b>Color</b></td>
-              <td ' || wc_style_cell || '><b>Ubicación</b></td>
+              <td ' || wc_style_cell || '><b>UbicaciÃ³n</b></td>
            </tr>';
 
     FOR c IN c_sku_reemplazo
@@ -5068,8 +5287,8 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
   REVISIONES:
       Version    Fecha       Autor            Descripcion
       ---------  ----------  ---------------  ------------------------------------
-      1.0        28/08/2018  SOPORTELEGADOS   Se generarón 3 variables, wn_cod_clausula_compra, wn_tipo_soli, wn_clausula_compra.
-                        Se modificó la lógica para validar si la proforma tiene clausala de compra = 005.
+      1.0        28/08/2018  SOPORTELEGADOS   Se generarÃ³n 3 variables, wn_cod_clausula_compra, wn_tipo_soli, wn_clausula_compra.
+                        Se modificÃ³ la lÃ³gica para validar si la proforma tiene clausala de compra = 005.
       2.0        14/01/2020  ASALAS           REQ-89878
   *********************************************************************************/
   PROCEDURE sp_solic_desaduanaje
@@ -5091,8 +5310,8 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     wn_cont_situ22      NUMBER;
     wn_cont_situ12      NUMBER;
     wn_cont_situ06      NUMBER;
-    wn_cont_situ14      NUMBER; --<81398>Marco Geldres/30-092015/Se agrego la situación14 Númerado en Aduana.
-    wn_cont_situ66      NUMBER; --<84772>Marco Geldres/30-092015/Se agrego la situación66 Stock Contable,para los casos de compañías que no son importer.
+    wn_cont_situ14      NUMBER; --<81398>Marco Geldres/30-092015/Se agrego la situaciÃ³n14 NÃºmerado en Aduana.
+    wn_cont_situ66      NUMBER; --<84772>Marco Geldres/30-092015/Se agrego la situaciÃ³n66 Stock Contable,para los casos de compaÃ±Ã­as que no son importer.
     alert_button        NUMBER;
     wc_ind_permiso      CHAR(1) := 'N';
     wc_asunto           VARCHAR2(100);
@@ -5166,7 +5385,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
          AND u.estado = '001' --<REQ-89878 ASALAS>
 
       ;
-    vtipo_cia       VARCHAR2(2); --<84772>Marco Geldres/06-Nov-2017/Se declara variable para tipo de compañía.
+    vtipo_cia       VARCHAR2(2); --<84772>Marco Geldres/06-Nov-2017/Se declara variable para tipo de compaÃ±Ã­a.
     wc_string       VARCHAR(10);
     url_ficha_venta VARCHAR(150);
 
@@ -5234,8 +5453,8 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                                         p_num_pedido_veh);
 
     IF nvl(p_tipo_prof_veh, '1') = '1' THEN
-      --<81004>Marco Geldres/02-10-2015/Se agrega el IF de validación de tipo de proforma
-      --<I 84772>Marco Geldres/06-Nov-2017/Se captura el tipo de compañía, la cual nos indica que validaciones realizar.
+      --<81004>Marco Geldres/02-10-2015/Se agrega el IF de validaciÃ³n de tipo de proforma
+      --<I 84772>Marco Geldres/06-Nov-2017/Se captura el tipo de compaÃ±Ã­a, la cual nos indica que validaciones realizar.
       BEGIN
         SELECT c.tipo_cia
           INTO vtipo_cia
@@ -5247,7 +5466,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
       END;
       --<F 84772>
       IF vtipo_cia = '01' THEN
-        --<84772>Marco Geldres/06-Nov-2017/Se agrega la condicional por tipo de compañía.
+        --<84772>Marco Geldres/06-Nov-2017/Se agrega la condicional por tipo de compaÃ±Ã­a.
         BEGIN
           SELECT COUNT(1)
             INTO wn_cont_situ22
@@ -5256,7 +5475,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
              AND s.cod_prov = p_cod_prov
              AND s.num_pedido_veh = p_num_pedido_veh
              AND
-                --<I 83614>Marco Geldres/11-09-2017/Se agrego la nueva situación de 24 solicitud de desaduanaje adelantada
+                --<I 83614>Marco Geldres/11-09-2017/Se agrego la nueva situaciÃ³n de 24 solicitud de desaduanaje adelantada
                  nvl(s.ind_anulado, 'N') = 'N'
              AND s.cod_situ_pedido IN ('22', '24');
           --<F 83614>
@@ -5272,7 +5491,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
              AND s.cod_prov = p_cod_prov
              AND s.num_pedido_veh = p_num_pedido_veh
              AND nvl(s.ind_anulado, 'N') = 'N'
-             AND --<83614>Marco Geldres/Se agrego indicador de anulación, no debe de tomar en cuenta los anulados
+             AND --<83614>Marco Geldres/Se agrego indicador de anulaciÃ³n, no debe de tomar en cuenta los anulados
                  s.cod_situ_pedido = '06';
         EXCEPTION
           WHEN OTHERS THEN
@@ -5286,13 +5505,13 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
              AND s.cod_prov = p_cod_prov
              AND s.num_pedido_veh = p_num_pedido_veh
              AND nvl(s.ind_anulado, 'N') = 'N'
-             AND --<83614>Marco Geldres/Se agrego indicador de anulación, no debe de tomar en cuenta los anulados
+             AND --<83614>Marco Geldres/Se agrego indicador de anulaciÃ³n, no debe de tomar en cuenta los anulados
                  s.cod_situ_pedido = '12';
         EXCEPTION
           WHEN OTHERS THEN
             wn_cont_situ12 := 0;
         END;
-        --<I 81398>Marco Geldres/30-092015/Se agrego la situación 14 Númerado en Aduana.
+        --<I 81398>Marco Geldres/30-092015/Se agrego la situaciÃ³n 14 NÃºmerado en Aduana.
         BEGIN
           SELECT COUNT(1)
             INTO wn_cont_situ14
@@ -5301,7 +5520,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
              AND s.cod_prov = p_cod_prov
              AND s.num_pedido_veh = p_num_pedido_veh
              AND nvl(s.ind_anulado, 'N') = 'N'
-             AND --<83614>Marco Geldres/Se agrego indicador de anulación, no debe de tomar en cuenta los anulados
+             AND --<83614>Marco Geldres/Se agrego indicador de anulaciÃ³n, no debe de tomar en cuenta los anulados
                  s.cod_situ_pedido = '14';
         EXCEPTION
           WHEN OTHERS THEN
@@ -5309,7 +5528,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
         END;
 
         --<F 81398>
-        --<I 84772>Marco Geldres/06-Nov-2017/se agrego condición para casos de compañías no importadora. se obtiene la situación de stock contable.
+        --<I 84772>Marco Geldres/06-Nov-2017/se agrego condiciÃ³n para casos de compaÃ±Ã­as no importadora. se obtiene la situaciÃ³n de stock contable.
       ELSE
         BEGIN
           SELECT COUNT(1)
@@ -5334,7 +5553,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                                           p_num_pedido_veh);
 
       IF vtipo_cia = '01' THEN
-        --<84772>Marco Geldres/06-Nov-2017/Se agrega condicional de Tipo de Compañía
+        --<84772>Marco Geldres/06-Nov-2017/Se agrega condicional de Tipo de CompaÃ±Ã­a
         IF wn_cont_situ12 = 0 THEN
           p_ret_mens := 'El pedido al menos debe estar en Aduana';
           RAISE ve_error;
@@ -5375,7 +5594,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                                               'Error',
                                               p_ret_mens,
                                               p_num_pedido_veh);
-          --<81398>Marco Geldres/30-092015/Se agrego la situación 14 Númerado en Aduana.
+          --<81398>Marco Geldres/30-092015/Se agrego la situaciÃ³n 14 NÃºmerado en Aduana.
           BEGIN
             SELECT nvl(ind_permiso, 'N')
               INTO wc_ind_permiso
@@ -5434,7 +5653,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                AND num_pedido_veh = p_num_pedido_veh;
           EXCEPTION
             WHEN OTHERS THEN
-              p_ret_mens := 'Problemas en la actualización';
+              p_ret_mens := 'Problemas en la actualizaciÃ³n';
               RAISE ve_error;
           END;
 
@@ -5520,7 +5739,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                          wc_num_chasis || '</td>
                 </tr>
                 <tr>
-                  <td><b>Cliente Facturación</b></td>
+                  <td><b>Cliente FacturaciÃ³n</b></td>
                   <td>' || ':</td><td>' ||
                          wc_nom_clie || '</td>
                 </tr>
@@ -5535,7 +5754,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                          wn_clausula_compra || '</td>
                 </tr>
                 <tr>
-                  <td><b>Observación</b></td>
+                  <td><b>ObservaciÃ³n</b></td>
                   <td>' || ':</td><td>' ||
                          REPLACE('', chr(10), '<br>') ||
                          '</td>
@@ -5585,7 +5804,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                          '<!DOCTYPE html>
           <html lang="es" class="baseFontStyles" style="color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 16px; line-height: 1.35;">
               <head>
-                <title>Divemotor - Entrega de Vehículo</title>
+                <title>Divemotor - Entrega de VehÃ­culo</title>
                 <meta charset="utf-8">
 
                 <style>
@@ -5618,7 +5837,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                             <table height="40" width="100%" cellpadding="14" cellspacing="0" border="0" style="background-color: #222222; border-spacing: 0; padding-left: 25px; padding-right: 30px;">
                               <tr style="background-color: #222222;">
                                 <td style="background-color: #222222; padding: 0; color: white; font-family: helvetica, arial, sans-serif; font-size: 15px; font-weight: 800; padding: 0; text-align: right;">DIVEMOTOR</td>
-                                <td style="background-color: #222222; color: white; font-family: helvetica, arial, sans-serif; font-size: 15px; font-weight: 800; padding: 0; text-align: right;">Módulo de Ficha de Venta.</td>
+                                <td style="background-color: #222222; color: white; font-family: helvetica, arial, sans-serif; font-size: 15px; font-weight: 800; padding: 0; text-align: right;">MÃ³dulo de Ficha de Venta.</td>
                               </tr>
                             </table>
                           </td>
@@ -5631,7 +5850,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                             <h1 style="text-align: center;color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 22px; font-weight: bold; margin: 0; ;">Historial de Ficha de Venta</h1>
                             <h1 style="text-align: center;color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 22px; font-weight: bold; margin: 0; padding-bottom: 20px;">Desaduanaje</h1>
 
-                            <p style="margin: 0;"><span style="font-weight: bold;">Hola</span>, se ha generado una notificación dentro del módulo de ficha de ventas:</p>
+                            <p style="margin: 0;"><span style="font-weight: bold;">Hola</span>, se ha generado una notificaciÃ³n dentro del mÃ³dulo de ficha de ventas:</p>
 
                             <div style="padding: 10px 0;">
 
@@ -5657,7 +5876,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                               </tr>
                             </table>
                        ' || wc_mensaje || '
-                              <p style="margin: 0; padding-top: 25px;" >La información contenida en este correo electrónico es confidencial. Esta dirigida únicamente para el uso individual. Si has recibido este correo por error por favor hacer caso omiso a la solicitud.</p>
+                              <p style="margin: 0; padding-top: 25px;" >La informaciÃ³n contenida en este correo electrÃ³nico es confidencial. Esta dirigida Ãºnicamente para el uso individual. Si has recibido este correo por error por favor hacer caso omiso a la solicitud.</p>
                             </td>
                               </tr>
 
@@ -5692,13 +5911,13 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
            WHERE co_usuario = p_cod_usua_sid
              AND estado = '001';
           IF wc_dir_correo_from IS NULL THEN
-            p_ret_mens := 'No tiene correo eléctronico y/o usuario ' ||
+            p_ret_mens := 'No tiene correo elÃ©ctronico y/o usuario ' ||
                           p_cod_usua_sid || ' esta dado de baja';
             --RAISE ve_error;
             RAISE ve_error_mens;
           END IF;
           /*          ELSE
-            p_ret_mens := 'Usuario no está autorizado para el envío de Correo';
+            p_ret_mens := 'Usuario no estÃ¡ autorizado para el envÃ­o de Correo';
             RAISE ve_error_mens;
           END IF;*/
           pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_SP',
@@ -5732,7 +5951,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                                               '3');*/
             END LOOP;
 
-            v_dest_desaduanaje := rtrim(ltrim(v_dest_desaduanaje, ','),','); --<REQ-89878 ASALAS>
+            v_dest_desaduanaje := rtrim(ltrim(v_dest_desaduanaje, ','),',');  --<REQ-89878 ASALAS>
 
             pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_SP',
                                                 'SP_SOLIC_DESADUANAJE',
@@ -5777,7 +5996,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
         END IF;
       ELSE
         IF wn_cont_situ66 = 0 THEN
-          p_ret_mens := 'El pedido debe tener Stock Contable para que se pueda Asignar porque la compañía no es Importer';
+          p_ret_mens := 'El pedido debe tener Stock Contable para que se pueda Asignar porque la compaÃ±Ã­a no es Importer';
           RAISE ve_error;
         END IF;
       END IF;
@@ -5885,20 +6104,17 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     v_ind_reser_colorint VARCHAR(1);
     v_query_int          VARCHAR2(1000);
     --<f84905>Color interno
-    -- legados
-    l_zsku vve_config_veh.zsku%type;
-    l_cod_config_veh_2   vve_config_veh.cod_config_veh%type;
   BEGIN
     --Variables Generales
     l_cod_situ_pedido_aduana := '12';
     l_wc_sql                 := '';
     IF nvl(p_num_ficha_vta_veh, 'x') = 'x' THEN
-      p_ret_mens := 'El número de ficha de venta es obligatorio';
+      p_ret_mens := 'El nÃºmero de ficha de venta es obligatorio';
       RAISE ve_error;
     END IF;
 
     IF nvl(p_num_prof_veh, 'x') = 'x' THEN
-      p_ret_mens := 'El número de proforma es obligatorio';
+      p_ret_mens := 'El nÃºmero de proforma es obligatorio';
       RAISE ve_error;
     END IF;
     l_paso := '111';
@@ -5923,8 +6139,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
            a.vendedor,
            b.can_veh,
            b.cod_config_veh,
-           b.cod_tapiz_veh,
-           d.zsku
+           b.cod_tapiz_veh
       INTO l_sku_sap,
            l_cod_color_veh,
            l_cod_filial,
@@ -5936,8 +6151,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
            l_vendedor,
            l_can_veh,
            l_cod_config_veh,
-           l_cod_tapiz_veh, --<i84905>Color interno
-           l_zsku --<legado>
+           l_cod_tapiz_veh --<i84905>Color interno
       FROM vve_proforma_veh a
      INNER JOIN vve_proforma_veh_det b
         ON a.num_prof_veh = b.num_prof_veh
@@ -5951,16 +6165,6 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
      WHERE c.num_ficha_vta_veh = p_num_ficha_vta_veh
        AND a.num_prof_veh = p_num_prof_veh;
     l_paso := '2';
-
-    -------------------
-    begin
-    select a.cod_config_veh into l_cod_config_veh_2 from vve_config_veh a
-    where a.sku_sap=l_zsku;
-    EXCEPTION
-      WHEN no_data_found THEN
-        l_cod_config_veh_2 := l_cod_config_veh;
-    END;
-    --------------------
     ----Cantidad de vehiculos asignados
     SELECT COUNT(a.num_pedido_veh)
       INTO l_can_veh_asig
@@ -6124,7 +6328,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                        LEFT JOIN vve_estado_pedido h
                           ON h.cod_estado_pedido  = a.cod_estado_pedido_veh
                        WHERE a.cod_cia = ''' || l_cod_cia || '''
-                         AND (a.sku_sap = ' || l_sku_sap || ' or   a.sku_sap = '|| l_zsku ||'   )
+                         AND a.sku_sap = ' || l_sku_sap || '
                          AND a.cod_area_vta = ''' ||
                   l_cod_area_vta || '''
                          AND nvl(a.cod_color_veh, ''sin color'') = nvl(''' ||
@@ -6404,9 +6608,8 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                     l_cod_familia_veh || '''
                     and a.cod_baumuster=''' ||
                     l_cod_baumuster || '''
-                    and (a.cod_config_veh=''' ||
-                    l_cod_config_veh || ''' or a.cod_config_veh=''' ||
-                    l_cod_config_veh_2 || ''' )
+                    and a.cod_config_veh=''' ||
+                    l_cod_config_veh || '''
 
                    and
                  (a.cod_cia,a.cod_prov,a.num_pedido_veh) not in
@@ -6558,7 +6761,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_SQL',
                                         'SP_LIST_PEDI_ASIG',
                                         p_cod_usua_sid,
-                                        'lista de vehículos para asignacion:',
+                                        'lista de vehÃ­culos para asignacion:',
                                         l_wc_sql,
                                         NULL);
     EXECUTE IMMEDIATE 'SELECT COUNT(*) FROM (' || l_wc_sql || ')'
@@ -6610,7 +6813,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     pcod_clie VARCHAR,
     popc      VARCHAR,
     sesion    VARCHAR,
-    -- <I 82200> NCeron/16-Jun-2016/Corrección
+    -- <I 82200> NCeron/16-Jun-2016/CorrecciÃ³n
     pc_cod_area_vta gen_area_vta.cod_area_vta%TYPE DEFAULT NULL,
     -- <F 82200>
     p_usuario usuarios.co_usuario%TYPE DEFAULT NULL
@@ -6649,7 +6852,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
          AND a.cod_filial = c.cod_filial
          AND nvl(a.cod_color_veh, 'Sin Color') =
              nvl(pcolor, nvl(a.cod_color_veh, 'Sin Color'))
-            -- <I 82200> NCeron/16-Jun-2016/Corrección
+            -- <I 82200> NCeron/16-Jun-2016/CorrecciÃ³n
          AND ((wc_cod_area_vta IN ('001', '003') AND
              a.cod_situ_pedido <> '01') OR
              (wc_cod_area_vta IN ('002', '004') AND
@@ -6664,7 +6867,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                   AND x.cod_prov = a.cod_prov
                   AND x.num_pedido_veh = a.num_pedido_veh
                      -- and trunc(x.FEC_FIN_RESERVA_PEDIDO ) < trunc(sysdate) -- <I 83461>
-                  AND nvl(x.ind_exclusivo, 'N') = 'N' --<RQ.25262> HHUANILO se agrega condición
+                  AND nvl(x.ind_exclusivo, 'N') = 'N' --<RQ.25262> HHUANILO se agrega condiciÃ³n
                ))
          AND a.cod_adquisicion_pedido_veh <> '0007'
          AND EXISTS
@@ -6720,7 +6923,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
         FROM gen_area_vta_filial_fami_veh a, gen_area_vta b
        WHERE a.cod_familia_veh = pcodfam
          AND a.cod_marca = pcod_marca
-            -- <I 82200> NCeron/16-Jun-2016/Corrección
+            -- <I 82200> NCeron/16-Jun-2016/CorrecciÃ³n
          AND nvl(a.ind_inactivo, 'N') = 'N'
             -- <F 82200>
          AND b.cod_area_vta = a.cod_area_vta;
@@ -6745,7 +6948,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
          AND a.num_pedido_veh = b.num_pedido_veh
          AND a.sku_sap = psku
          AND a.cod_color_veh = pcolor
-         AND nvl(b.ind_exclusivo, 'N') = 'S' --<RQ.25262> HHUANILO se agrega condición
+         AND nvl(b.ind_exclusivo, 'N') = 'S' --<RQ.25262> HHUANILO se agrega condiciÃ³n
          AND NOT EXISTS
        (SELECT 1
                 FROM venta.vve_tmp_reserva x
@@ -6781,7 +6984,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
          AND c.num_pedido_veh = a.num_pedido_veh
          AND c.fec_fin_reserva_pedido > = trunc(SYSDATE)
          AND c.cod_estado_reserva_pedido = '001'
-         AND nvl(c.ind_exclusivo, 'N') = 'N' --<RQ.25262> HHUANILO se agrega condición
+         AND nvl(c.ind_exclusivo, 'N') = 'N' --<RQ.25262> HHUANILO se agrega condiciÃ³n
        ORDER BY nsecreser, a.fec_ing_deposito_aduana;
     wr_resercliotros c_resercli_otros%ROWTYPE;
 
@@ -6818,7 +7021,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     END;
     -- Area vta
 
-    -- <I 82200> NCeron/16-Jun-2016/Corrección
+    -- <I 82200> NCeron/16-Jun-2016/CorrecciÃ³n
     IF pc_cod_area_vta IS NOT NULL THEN
       wc_cod_area_vta := pc_cod_area_vta;
       SELECT des_area_vta
@@ -7351,12 +7554,12 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     l_cod_situ_pedido_aduana := '12';
     l_wc_sql                 := '';
     IF nvl(p_num_ficha_vta_veh, 'x') = 'x' THEN
-      p_ret_mens := 'El número de ficha de venta es obligatorio';
+      p_ret_mens := 'El nÃºmero de ficha de venta es obligatorio';
       RAISE ve_error;
     END IF;
 
     IF nvl(p_num_prof_veh, 'x') = 'x' THEN
-      p_ret_mens := 'El número de proforma es obligatorio';
+      p_ret_mens := 'El nÃºmero de proforma es obligatorio';
       RAISE ve_error;
     END IF;
 
@@ -7711,7 +7914,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     --------
     v_status_correo NUMBER(1);
 
-    --WPALACIOS. REQ 29093. 02/01/2013. Se añade nueva variable.
+    --WPALACIOS. REQ 29093. 02/01/2013. Se aÃ±ade nueva variable.
     --Ini
     vn_val_tot_equipo_local_veh vve_prof_equipo_local_veh.val_tot_equipo_local_veh%TYPE;
     vn_porce                    NUMBER;
@@ -7871,7 +8074,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     END;
 
     --DESCRIPCION AUTORIZACION APROBADA
-    ---< I-30493 31/07/2013 GMonar se lee el nombre de excepción de rol de aprobación de la ficha de la tabla maestra--->
+    ---< I-30493 31/07/2013 GMonar se lee el nombre de excepciÃ³n de rol de aprobaciÃ³n de la ficha de la tabla maestra--->
     BEGIN
       SELECT a.des_nombre_exc
         INTO wc_des_aut_ficha_vta
@@ -7916,7 +8119,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     -----
     --'||WC_DES_AUT_FICHA_VTA ||'
     IF p_num_ficha_vta_veh IS NOT NULL THEN
-      wc_asunto := 'Autorización ' || wc_des_aut_ficha_vta ||
+      wc_asunto := 'AutorizaciÃ³n ' || wc_des_aut_ficha_vta ||
                    ' a la Ficha de Venta Nro. ' || p_num_ficha_vta_veh;
 
       wc_mensaje := 'Se ha Autorizado una Ficha de Venta en la Filial ' ||
@@ -7941,7 +8144,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                     '</td>
               </tr>
               <tr>
-               <td> Autorización </td>
+               <td> AutorizaciÃ³n </td>
                <td>' || ':</td><td>' ||
                     wc_des_aut_ficha_vta || '</td>
               </tr>
@@ -8009,7 +8212,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                                nvl(pd.val_pre_equipo_local_desc, 0) +
                                nvl(pd.val_pre_equipo_esp_desc, 0)),
                                '99,999,999.99') precio,
-                       --WPALACIOS REQ. 29093. 02/01/2013. Se modifica para añadir el precio de Lista y % de Descuento.
+                       --WPALACIOS REQ. 29093. 02/01/2013. Se modifica para aÃ±adir el precio de Lista y % de Descuento.
                        --Ini
                        (nvl(pd.val_pre_oferta_veh, pd.val_pre_config_veh) +
                        nvl(pd.val_pre_equipo_local_desc, 0) +
@@ -8199,7 +8402,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
         -----------------------------------------
         ------------------------------------------
 
-        --WPALACIOS REQ. 29093. 02/01/2013. Se modifica para añadir el precio de Lista y % de Descuento.
+        --WPALACIOS REQ. 29093. 02/01/2013. Se modifica para aÃ±adir el precio de Lista y % de Descuento.
         --Ini
         --Calculamos el porcentaje.
         BEGIN
@@ -8226,7 +8429,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
           IF w_contador_cont = 1 THEN
             wc_mensaje := wc_mensaje || '<table style="FONT: 9pt arial">
                    <tr>
-                     <td colspan="2"><b>Proforma(s) (...continúa): </b></td>
+                     <td colspan="2"><b>Proforma(s) (...continÃºa): </b></td>
                      <td></td><td></td>
                    </tr>';
           ELSE
@@ -8284,7 +8487,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                    <td>' || ':</td><td>' || i.precio ||
                       '</td>
                  </tr>'
-                     --WPALACIOS REQ. 29093. 02/01/2013. Se modifica para añadir el precio de Lista y % de Descuento.
+                     --WPALACIOS REQ. 29093. 02/01/2013. Se modifica para aÃ±adir el precio de Lista y % de Descuento.
                      --Ini
                       || '<tr>
                    <td> ; ; ;</td>
@@ -8334,7 +8537,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
 
                  <tr>
                    <td> </td>
-                   <td>Autonomía Máxima</td>
+                   <td>AutonomÃ­a MÃ¡xima</td>
                    <td>' || ':</td><td>' ||
                       i.mon_prec_vehi_tran ||
                       '</td>
@@ -8350,7 +8553,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                             <th style="width:100px;">Total</th>
                         </tr>
                         <tr >
-                            <td>Precio Venta Chasis/vehículo</td>
+                            <td>Precio Venta Chasis/vehÃ­culo</td>
                             <td style="text-align: right; ">' ||
                       to_char(n_precio_veh, '999,999,990.99') ||
                       '</td>
@@ -8416,7 +8619,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                         <tr >
               <th></th>
               <th></th>
-                            <th  >Total Operación</th>
+                            <th  >Total OperaciÃ³n</th>
 
                             <th style="text-align: right; background:#cccccc " >' ||
                       i.v_moneda || ' ' ||
@@ -8866,7 +9069,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
           IF w_contador_cont = 1 THEN
             wc_mensaje := wc_mensaje || '<table style="FONT: 9pt arial">
                    <tr>
-                     <td colspan="2"><b>Pedido(s) (...continúa): </b></td>
+                     <td colspan="2"><b>Pedido(s) (...continÃºa): </b></td>
                      <td></td><td></td>
                    </tr>';
           ELSE
@@ -9046,24 +9249,24 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     wc_asunto         VARCHAR2(100);
     wc_mensaje        VARCHAR2(32500); --<RQ46055> EROZAS /26-11-2013/ Se aumenta la longitud de variable.
     v_dest_vendedores vve_correo_prof.destinatarios%TYPE;
-    --<I-86862 Corregir correo por asignación definitiva>
+    --<I-86862 Corregir correo por asignaciÃ³n definitiva>
     l_cod_familia_veh vve_proforma_veh_det.cod_familia_veh%TYPE;
     l_cod_marca       vve_proforma_veh_det.cod_marca%TYPE;
     l_cod_filial      vve_proforma_veh.cod_filial%TYPE;
-    --<F-86862 Corregir correo por asignación definitiva>
+    --<F-86862 Corregir correo por asignaciÃ³n definitiva>
   BEGIN
     wc_mail     := p_mail;
     wc_nombre   := p_nombre;
     wc_vendedor := p_vendedor;
     wc_jefe     := p_jefe;
-    --<I-86862 Corregir correo por asignación definitiva>
+    --<I-86862 Corregir correo por asignaciÃ³n definitiva>
     wc_asunto := p_asunto;
     IF p_auto_apro = '06' THEN
       wc_asunto := 'ASIGNACION PEDIDO a la Ficha de Venta Nro. ' ||
                    p_num_ficha_vta_veh || ' Pedido:' || p_num_pedido_veh;
     END IF;
 
-    --<I-86862 Corregir correo por asignación definitiva>
+    --<I-86862 Corregir correo por asignaciÃ³n definitiva>
     wc_mensaje := p_mensaje;
     ---------------
     ---------------
@@ -9092,7 +9295,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
     --BUSCAR SI VENDEDOR TIENE JEFE EN CADA AREA MAS GENERAL
     wc_mail   := NULL;
     wc_nombre := NULL;
-    --<I-86862 Corregir correo por asignación definitiva>
+    --<I-86862 Corregir correo por asignaciÃ³n definitiva>
     SELECT a.cod_familia_veh, a.cod_marca
       INTO l_cod_familia_veh, l_cod_marca
       FROM vve_pedido_veh a
@@ -9106,7 +9309,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
         ON c.num_prof_veh = a.num_prof_veh
      WHERE a.num_ficha_vta_veh = p_num_ficha_vta_veh
        AND rownum = 1;
-    --<F-86862 Corregir correo por asignación definitiva>
+    --<F-86862 Corregir correo por asignaciÃ³n definitiva>
 
     IF p_auto_env IS NULL THEN
       --CORREO A PARTIR DE VIGENCIA
@@ -9209,12 +9412,12 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                    AND nvl(r.ind_recibe_email, 'N') = 'S'
                    AND (nvl(r.ind_licit, 'N') = 'N' OR
                        (p_vendedor = '07' AND r.ind_licit = 'S'))
-                   AND -- Valida el envío a usuarios de licitaciones
+                   AND -- Valida el envÃ­o a usuarios de licitaciones
                        (nvl(r.ind_cred, 'N') = 'N' OR
                        (p_cod_tipo_pago = 'P' AND
-                       nvl(r.ind_cred, 'N') = 'S')) -- valida el envío a usuarios de créditos
+                       nvl(r.ind_cred, 'N') = 'S')) -- valida el envÃ­o a usuarios de crÃ©ditos
                 )*/
-      --<I-86862 Corregir correo por asignación definitiva>
+      --<I-86862 Corregir correo por asignaciÃ³n definitiva>
       FOR i IN (
                 --Seleccionamos a los jefes de venta
                 SELECT DISTINCT a.txt_correo di_correo
@@ -9249,7 +9452,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
                  INNER JOIN sis_mae_usuario c
                     ON b.co_usuario_crea_reg = c.txt_usuario
                  WHERE a.num_ficha_vta_veh = p_num_ficha_vta_veh)
-      --<F-86862 Corregir correo por asignación definitiva>
+      --<F-86862 Corregir correo por asignaciÃ³n definitiva>
       LOOP
         IF i.di_correo IS NOT NULL THEN
           v_dest_vendedores := i.di_correo || ',' || v_dest_vendedores;
@@ -9964,7 +10167,7 @@ create or replace PACKAGE BODY   VENTA.pkg_sweb_five_mant_pedido AS
       Log de Cambios
       Fecha        Autor         Descripcion
       20/03/2018   ARAMOS         Creacion
-    28/08/2018   SOPORTELEGADOS REQ-86366 Se modificó la lógica para una nueva validación y asignación de valor a la variable wn_ind_desaduanaje.
+    28/08/2018   SOPORTELEGADOS REQ-86366 Se modificÃ³ la lÃ³gica para una nueva validaciÃ³n y asignaciÃ³n de valor a la variable wn_ind_desaduanaje.
                   Toma el valor 2, cuando la proforma tenga como clausala de compra = 005.
   ----------------------------------------------------------------------------*/
 
@@ -10454,10 +10657,10 @@ END sp_mail_alert_jefeventas;
       wc_documentos   VARCHAR2(100);
       v_ambiente VARCHAR2(20);
       wc_documentos_det   VARCHAR2(500);
-
-
+      
+          
   BEGIN
-
+  
    SELECT decode(upper(instance_name),
                   'DESA',
                   'Desarrollo',
@@ -10467,7 +10670,7 @@ END sp_mail_alert_jefeventas;
                   'Producción')
       INTO v_ambiente
       FROM v$instance;
-
+  
   --REQ-86111--
       wc_asunto := 'Envío de Facturación ' || P_PEDIDO;
       wc_mensaje := '<!DOCTYPE html>
@@ -10491,7 +10694,7 @@ END sp_mail_alert_jefeventas;
                     .mailBody {
                         padding: 20px 18px !important
                     }
-
+        
                     .col3 {
                         width: 100% !important
                     }
@@ -10527,7 +10730,7 @@ END sp_mail_alert_jefeventas;
       WHEN OTHERS THEN
         V_CORREOORI  := 'apps@divemotor.com.pe';
     END;                    
-
+    
     --REQ-86111--
       pkg_sweb_inmatri_pedido.sp_inse_correo(P_PEDIDO,
                   'EF',
@@ -10541,19 +10744,19 @@ END sp_mail_alert_jefeventas;
                    p_ret_esta,
                    p_ret_mens);
     --REQ-86111--
-
-
+    
+    
     IF (p_ret_esta <> 1) THEN
       RAISE ve_error;
     END IF;
-
+  
   EXCEPTION
     WHEN ve_error THEN
       p_ret_esta := 0;
     WHEN OTHERS THEN
       p_ret_esta := -1;
       p_ret_mens := SQLERRM;
-
+    
       --REQ-86111--
         pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
                                           'SP_CORREO_FACTURACION',

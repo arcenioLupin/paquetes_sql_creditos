@@ -1,4 +1,4 @@
-create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_LXC AS
+create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_SOLI_LXC AS
 
   PROCEDURE sp_list_docu_rela (
     p_no_cliente          IN                arccmd.no_cliente%TYPE,
@@ -15,7 +15,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_LXC AS
     v_sum_docu_arcc NUMERIC(11,2);
     v_sum_arfa NUMERIC(11,2);
     v_cod_oper vve_cred_soli.cod_oper_rel%type := null;
-	
+  
     BEGIN
     
     SELECT TIP_SOLI_CRED, COD_OPER_REL 
@@ -164,7 +164,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_LXC AS
     p_ret_mens            OUT               VARCHAR2 
     ) AS
     ve_error EXCEPTION;
-	
+  
     BEGIN
     
     OPEN p_ret_cursor FOR
@@ -199,7 +199,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_LXC AS
     p_ret_mens            OUT               VARCHAR2 
     ) AS
     ve_error EXCEPTION;
-	
+  
     BEGIN
     
     OPEN p_ret_cursor FOR
@@ -245,7 +245,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_LXC AS
     ) AS
     ve_error EXCEPTION;
     v_cod_simu VARCHAR2(12);
-	
+  
     BEGIN
     
         BEGIN
@@ -307,7 +307,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_LXC AS
     p_ret_mens            OUT               VARCHAR2 
     ) AS
     ve_error EXCEPTION;
-	
+  
     BEGIN
     
     OPEN p_ret_cursor FOR
@@ -360,7 +360,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_LXC AS
     v_cod_oper VARCHAR2(12);
     ln_limitinf NUMBER := 0;
     ln_limitsup NUMBER := 0;
-	
+  
     BEGIN 
     
         dbms_output.put_line('Entra a sp_list_repro_oper');
@@ -463,7 +463,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_LXC AS
     v_cod_simu VARCHAR2(12);
     
     BEGIN
-    
+     DBMS_OUTPUT.PUT_LINE('0');
     select val_para_car into p_ret_tipo_credito_lxc from vve_cred_soli_para where cod_cred_soli_para = 'TIPCREDOCLXC';--06sep2019
     
         BEGIN
@@ -480,8 +480,9 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_LXC AS
                 v_cod_oper := NULL;
         END;  
         
-        
+        DBMS_OUTPUT.PUT_LINE('1');
         BEGIN
+           DBMS_OUTPUT.PUT_LINE('2');
             SELECT 
                 cod_simu INTO v_cod_simu
             FROM 
@@ -497,14 +498,15 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_LXC AS
         -- GENERANDO LAS LISTAS
         OPEN p_ret_oper_regi FOR
             SELECT 
-                (select fec_firm_cont from vve_cred_soli  WHERE cod_soli_cred = p_cod_soli_cred) AS fecha_contrato,
-                fecha_ini as fecha_entrega,
+                --(select fec_firm_cont from vve_cred_soli  WHERE cod_soli_cred = p_cod_soli_cred) AS fecha_contrato,
+                fecha_ini as fecha_contrato,
+                fecha as fecha_entrega,
                 tipodocgen AS tipo_docu
             FROM 
                 ARLCOP 
             WHERE 
                 cod_oper = v_cod_oper;
-        
+         DBMS_OUTPUT.PUT_LINE('3');
         OPEN p_ret_docu FOR
             SELECT 
                 tipo_docu as tipo_doc, 
@@ -517,7 +519,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_LXC AS
             WHERE 
                 cod_oper = v_cod_oper;
                 
-        
+         DBMS_OUTPUT.PUT_LINE('4');
         OPEN p_ret_docu_total FOR
             SELECT 
                 SUM(monto) AS TOTAL 
@@ -526,7 +528,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_LXC AS
             WHERE 
                 cod_oper = v_cod_oper; 
                 
-        
+         DBMS_OUTPUT.PUT_LINE('5');
         OPEN p_ret_gasto FOR
             SELECT 
                 cod_gasto as cod_gast, 
@@ -544,7 +546,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_LXC AS
             WHERE 
                 cod_oper = v_cod_oper;
                 
-                
+          DBMS_OUTPUT.PUT_LINE('6');       
         OPEN p_ret_gasto_total FOR
             SELECT 
                 SUM(monto) as TOTAL
@@ -553,7 +555,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_LXC AS
             WHERE 
                 cod_oper = v_cod_oper;
         
-        
+         DBMS_OUTPUT.PUT_LINE('7');
         OPEN p_ret_aval FOR        
             SELECT 
                 sec_aval, 
@@ -657,7 +659,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_LXC AS
                 FROM 
                       arlcml b, arlcop a
                 WHERE 
-                    a.no_cia       = v_cod_empr	and
+                    a.no_cia       = v_cod_empr  and
                     a.cod_oper   = nvl(v_cop_oper, a.cod_oper) and
                     a.no_cliente  = nvl(v_cod_clie, a.no_cliente) and
                     a.no_cia        = b.no_cia(+) and
@@ -682,7 +684,10 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_LXC AS
             OPEN p_ret_totales FOR 
                 Select  
                     COUNT(*) AS total_cuotas,
-                    SUM(CASE WHEN nvl(IND_PERIODO_GRACIA,'N') = 'N' THEN b.monto_inicial ELSE 0 END) AS total_financiar, 
+                    --<I Req. 87567 E2.1 ID## avilca 25/02/2021>
+                    --SUM(CASE WHEN nvl(IND_PERIODO_GRACIA,'N') = 'N' THEN b.monto_inicial ELSE 0 END) AS total_financiar, 
+                    SUM(CASE WHEN nvl(IND_PERIODO_GRACIA,'N') = 'N' THEN b.amortizacion ELSE 0 END) AS total_financiar, 
+                    --<F Req. 87567 E2.1 ID## avilca 25/02/2021>
                     SUM(CASE WHEN nvl(IND_PERIODO_GRACIA,'N') = 'N' THEN b.amortizacion ELSE 0 END) total_amortizacion,
                     SUM(CASE WHEN nvl(IND_PERIODO_GRACIA,'N') = 'N' THEN b.intereses ELSE 0 END) total_interes,  
                     SUM(CASE WHEN nvl(IND_PERIODO_GRACIA,'N') = 'N' THEN b.igv ELSE 0 END) total_igv,
@@ -692,10 +697,10 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_LXC AS
                 FROM 
                     arlcml b, arlcop a
                 WHERE 
-                    a.no_cia       = v_cod_empr	and
-                    a.cod_oper   = nvl(v_cop_oper, a.cod_oper)	and
-                    a.no_cliente  = nvl(v_cod_clie, a.no_cliente)	and
-                    a.no_cia        = b.no_cia(+)	and
+                    a.no_cia       = v_cod_empr  and
+                    a.cod_oper   = nvl(v_cop_oper, a.cod_oper)  and
+                    a.no_cliente  = nvl(v_cod_clie, a.no_cliente)  and
+                    a.no_cia        = b.no_cia(+)  and
                     a.cod_oper    = b.cod_oper(+)
                 GROUP BY b.cod_oper;
                 
@@ -739,4 +744,4 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_LXC AS
     
     
     
-END PKG_SWEB_CRED_SOLI_LXC; 
+END PKG_SWEB_CRED_SOLI_LXC;

@@ -1,4 +1,4 @@
-create or replace PACKAGE    VENTA.PKG_SWEB_CRED_SOLI_PROFORMA AS 
+create or replace PACKAGE VENTA.PKG_SWEB_CRED_SOLI_PROFORMA AS
 
   /********************************************************************************
     Nombre:     SP_LIST_CRED_SOLI_PROFORMA

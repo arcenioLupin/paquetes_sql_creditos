@@ -1,7 +1,7 @@
-create or replace PACKAGE BODY  VENTA.PKG_SWEB_GEST_CLIE AS
+create or replace PACKAGE BODY      VENTA.PKG_SWEB_GEST_CLIE AS
 /******************************************************************************
    NAME:    PKG_SWEB_CLIENTE
-   PURPOSE: Contiene procedimientos para la gestion de clientes. 
+   PURPOSE: Contiene procedimientos para la gestion de clientes.
 
    REVISIONS:
    Ver        Date        Author           Description
@@ -13,16 +13,15 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_GEST_CLIE AS
 
 /*-----------------------------------------------------------------------------
 Nombre : SP_LIST_CLIE
-Proposito : Lista de clientes para la selección en  filtros 
-Referencias : 
+Proposito : Lista de clientes para la selección en  filtros
+Referencias :
 Parametros :
-Log de Cambios 
+Log de Cambios
   Fecha        Autor         Descripcion
   05/08/2016   ACRUZ      Creacion
   12/06/2017   LVALDERRAMA      MODIFICACION
                                 -SP_LIST_CLIE  se agrego tipo persona  <v1>
-  16/10/2017   PHRAMIREZ        REQ 84289 - Registro de Oportunidad - CRM            
-  14/11/2019  PBALVIN          Afinamiento de Código  
+  16/10/2017   PHRAMIREZ        REQ 84289 - Registro de Oportunidad - CRM
 ----------------------------------------------------------------------------*/
 PROCEDURE SP_LIST_CLIE
   (
@@ -48,19 +47,31 @@ BEGIN
   v_nom_perso := TRANSLATE(TRIM(upper(P_CADENAB)), 'ÁÉÍÓÚ', 'AEIOU');
   --<I-v1>
   v_sql_base  := '
-  SELECT PER.cod_perso cod_clie, PER.NOM_PERSO nom_clie ,PER.NUM_DOCU_IDEN dni, PER.NUM_RUC ruc, 
+  SELECT PER.cod_perso cod_clie, PER.NOM_PERSO nom_clie ,PER.NUM_DOCU_IDEN dni, PER.NUM_RUC ruc,
   --<I 84289>
-  DECODE(SUBSTR(MC.COD_CLIE_SAP,4,7),NULL,SUBSTR(MP.COD_CLIE_SAP,4,7),SUBSTR(MC.COD_CLIE_SAP,4,7)) AS COD_CLIE_SAP, 
+  DECODE(SUBSTR(MC.COD_CLIE_SAP,4,7),NULL,SUBSTR(MP.COD_CLIE_SAP,4,7),SUBSTR(MC.COD_CLIE_SAP,4,7)) AS COD_CLIE_SAP,
   --<F 84289>
   row_number() over(order by PER.NOM_PERSO) rm,
-  PER.COD_TIPO_PERSO persona 
+  PER.COD_TIPO_PERSO persona,
+  --<I Req. 87567 E2.1 ID:20 AVILCA 15/05/2020>
+  PER.dir_correo,
+  PER.num_telf_movil,
+  GDP.num_telf1
+  --<F Req. 87567 E2.1 ID:20 AVILCA 15/05/2020>
   FROM GEN_PERSONA PER
   --<I 84289>
   LEFT JOIN CXC_MAE_CLIE MC
-     ON MC.COD_CLIE = PER.cod_perso  
+     ON MC.COD_CLIE = PER.cod_perso
   LEFT JOIN CXC_CLIE_PROS MP
-       ON MP.COD_CLIE_PROS = PER.cod_perso     
+       ON MP.COD_CLIE_PROS = PER.cod_perso
   --<F 84289>
+ --<I Req. 87567 E2.1 ID:20 AVILCA 15/05/2020> 
+  LEFT JOIN GEN_DIR_PERSO GDP
+       ON GDP.cod_perso = PER.cod_perso
+ --<F Req. 87567 E2.1 ID:20 AVILCA 15/05/2020>  
+ --<I Req. 87567 E2.1 ID:20 AVILCA 15/09/2020> 
+  LEFT JOIN ARLCOP ARL ON ARL.no_cliente = PER.cod_perso 
+  --<I Req. 87567 E2.1 ID:20 AVILCA 15/09/2020> 
   WHERE NVL(PER.IND_INACTIVO, ''N'') = ''N'' '; --<F-v1>
   IF P_CADENAB IS NOT NULL THEN
     v_sql_base := v_sql_base || chr(10) ||
@@ -86,7 +97,7 @@ BEGIN
 
   --<I-v1>
   --<I 84289>
-  v_sql_pagi := 'SELECT cod_clie, nom_clie, dni, ruc, COD_CLIE_SAP, rm, persona   
+  v_sql_pagi := 'SELECT cod_clie, nom_clie, dni, ruc, COD_CLIE_SAP, rm, persona,dir_correo,num_telf_movil,num_telf1
    FROM ( ' || v_sql_base || ') WHERE RM BETWEEN ' ||
                 P_LIMITINF || ' AND ' || P_LIMITSUP || '';--<F 84289>--<F-v1>
 
@@ -96,10 +107,10 @@ END SP_LIST_CLIE;
 
 /*-----------------------------------------------------------------------------
 Nombre : fu_vali_tipo_clie
-Proposito : función que valida si la persona esta registrado como cliente: 
-Referencias : 
+Proposito : función que valida si la persona esta registrado como cliente:
+Referencias :
 Parametros :
-Log de Cambios 
+Log de Cambios
   Fecha        Autor         Descripcion
   03/10/2016   ACRUZ         81303-E3 Creacion
 ----------------------------------------------------------------------------*/
@@ -108,7 +119,7 @@ FUNCTION fu_vali_tipo_clie(
   p_cod_clie VARCHAR2
   ) RETURN NUMBER IS
   v_ind VARCHAR2(1);
-BEGIN  
+BEGIN
   BEGIN
     SELECT 1 ind_clie
     INTO v_ind
@@ -129,25 +140,38 @@ END;
   /*-----------------------------------------------------------------------------
   Nombre : sp_lis_enti_fina
   Proposito : Lista las entidades para el financiamiento.
-  Referencias : 
+  Referencias :
   Parametros :
   Log de Cambios
     Fecha        Autor         Descripcion
     03/10/2016   acruz         req- 81303-E3     Creacion
+    21/02/2020   AVILCA        Requerimiento: 87567 - PRY - Gestión de Créditos
   ----------------------------------------------------------------------------*/
-  --<I-81303-E3>   
+  --<I-87567-E2.1>
   PROCEDURE sp_list_enti_fina (
      p_ret_curs           OUT SYS_REFCURSOR
     ,p_ret_esta           OUT NUMBER
-    ,p_ret_mens           OUT VARCHAR2 
+    ,p_ret_mens           OUT VARCHAR2
     ) AS
   BEGIN
-    OPEN p_ret_curs FOR 
-      SELECT p.nom_perso nombre , p.cod_perso id
-      FROM gen_persona p, cxp_prov_giros g
-      WHERE p.cod_perso = g.cod_prov 
-        AND g.cod_giro_perso = '012'
-      ORDER BY 1;
+    OPEN p_ret_curs FOR
+        SELECT  p.nom_perso nombre ,     
+                p.cod_perso id,
+                     p.num_ruc ruc,
+                     (d.cod_area_telf1|| ' ' ||d.num_telf1) telefono_banco,
+                     upper(d.dir_domicilio||' - '||di.nom_ubigeo) direccion_banco,
+                     (d.cod_area_telf_fax||' ' ||d.num_fax) fax_banco
+        
+              FROM gen_persona p
+                   JOIN cxp_prov_giros g ON p.cod_perso = g.cod_prov
+                   JOIN gen_dir_perso d ON d.cod_perso =p.cod_perso
+                   JOIN gen_ubigeo di ON ( di.cod_distrito = d.cod_distrito
+                                          and di.cod_provincia = d.cod_provincia 
+                                          and di.cod_dpto = d.cod_dpto)
+              WHERE 
+                    g.cod_giro_perso = '012'
+                    and d.ind_dir_defecto = 'S'
+              ORDER BY 1;
     p_ret_esta :=1;
     p_ret_mens := 'Consulta ejecutado de forma exitosa';
   EXCEPTION
@@ -155,23 +179,23 @@ END;
       p_ret_esta :=-1;
       p_ret_mens := SQLERRM;
       pkg_sweb_mae_gene.SP_REGI_RLOG_ERRO('AUDI_ERROR',
-                                          'sp_list_enti_fina',
+                                          'sp_list_enti_fina_cmb',
                                           null,
                                           'Error ',
                                           p_ret_mens,
                                           null);
   END;
-  --<F-81303-E3>  
+  --<F-87567-E2.1>
 /*-----------------------------------------------------------------------------
   Nombre : sp_cliente_sap
   Proposito : Obtiene el codigo del cliente sid a partir del cliente sap.
-  Referencias : 
+  Referencias :
   Parametros :
   Log de Cambios
     Fecha        Autor         Descripcion
     21/12/2016   garroyo         req- 81303-E3     Creacion
   ----------------------------------------------------------------------------*/
-  --<I-81303-E3>   
+  --<I-81303-E3>
 PROCEDURE sp_cliente_sap
 (
   p_Cod_Clie_Sap IN Cxc_Mae_Clie.Cod_Clie_Sap%TYPE,
@@ -293,7 +317,7 @@ END;
   PROCEDURE sp_lista_empleado
   (
     p_cod_empleado       IN VARCHAR2,
-    p_nom_empleado       IN VARCHAR2, 
+    p_nom_empleado       IN VARCHAR2,
     p_cod_usua_sid   IN sistemas.usuarios.co_usuario%TYPE,
     p_cod_usua_web   IN sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
     p_lim_infe       NUMBER,
@@ -311,7 +335,7 @@ END;
   BEGIN
     SQL_STMT := '
                  SELECT no_emple,nombreemple
-                 FROM v_sygnus_datos_empleados  
+                 FROM v_sygnus_datos_empleados
                  WHERE  1=1';
 
     IF nvl(p_cod_empleado, 0) != 0 THEN
@@ -356,16 +380,16 @@ END;
 
   /*-----------------------------------------------------------------------------
   Nombre : fu_vali_mail_clie
-  Proposito : función que valida si la persona tiene cuenta de correo. 
-  Referencias : 
+  Proposito : función que valida si la persona tiene cuenta de correo.
+  Referencias :
   Parametros :
-  Log de Cambios 
+  Log de Cambios
     Fecha        Autor         Descripcion
     26/12/2017   MGELDRES         84921 Creacion
   ----------------------------------------------------------------------------*/
   FUNCTION fu_vali_mail_clie(
     p_cod_clie VARCHAR2
-    ) RETURN NUMBER is   
+    ) RETURN NUMBER is
     vcorreo varchar2(200);
     v_resp  NUMBER;
   BEGIN
@@ -382,21 +406,21 @@ END;
       IF INSTR(LTRIM(RTRIM(vcorreo)),'@')>0 THEN
         v_resp := 1;
       ELSE
-        v_resp := 2;        
+        v_resp := 2;
       END IF;
     ELSE
-      v_resp := 0;  
+      v_resp := 0;
     END IF;
-    RETURN  v_resp;      
+    RETURN  v_resp;
   END;
 
 
     /*-----------------------------------------------------------------------------
   Nombre : SP_LIST_CLIE_ASIG_PEDIDOS
-  Proposito : función que valida si la persona tiene cuenta de correo. 
-  Referencias : 
+  Proposito : función que valida si la persona tiene cuenta de correo.
+  Referencias :
   Parametros :
-  Log de Cambios 
+  Log de Cambios
     Fecha        Autor         Descripcion
     26/12/2017   ARAMOS         84921 Creacion
   ----------------------------------------------------------------------------*/
@@ -424,12 +448,12 @@ BEGIN
   v_nom_perso := TRANSLATE(TRIM(upper(P_CADENAB)), 'ÁÉÍÓÚ', 'AEIOU');
   --<I-v1>
   v_sql_base  := '
-  SELECT PER.cod_perso cod_clie, PER.NOM_PERSO nom_clie ,PER.NUM_DOCU_IDEN dni, PER.NUM_RUC ruc, 
+  SELECT PER.cod_perso cod_clie, PER.NOM_PERSO nom_clie ,PER.NUM_DOCU_IDEN dni, PER.NUM_RUC ruc,
   --<I 84289>
   NULL,
   --<F 84289>
   row_number() over(order by PER.NOM_PERSO) rm,
-  PER.COD_TIPO_PERSO persona 
+  PER.COD_TIPO_PERSO persona
   FROM GEN_PERSONA PER
   WHERE NVL(PER.IND_INACTIVO, ''N'') = ''N''
         AND EXISTS (SELECT 1
@@ -474,7 +498,7 @@ BEGIN
 
   --<I-v1>
   --<I 84289>
-  v_sql_pagi := 'SELECT cod_clie, nom_clie, dni, ruc, rm, persona   
+  v_sql_pagi := 'SELECT cod_clie, nom_clie, dni, ruc, rm, persona
    FROM ( ' || v_sql_base || ') WHERE RM BETWEEN ' ||
                 P_LIMITINF || ' AND ' || P_LIMITSUP || '';--<F 84289>--<F-v1>
 
@@ -491,4 +515,4 @@ BEGIN
 END SP_LIST_CLIE_ASIG_PEDIDOS;
 
 
-END PKG_SWEB_GEST_CLIE; 
+END PKG_SWEB_GEST_CLIE;

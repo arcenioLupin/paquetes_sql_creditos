@@ -36,6 +36,7 @@ PROCEDURE SP_LIST_CLIENTES(
     p_num_ruc               IN gen_persona.num_ruc%type,
     p_cod_area_vta          IN gen_area_vta.cod_area_vta%type,
     p_cod_filial            IN gen_filial.cod_filial%type,
+    p_cod_zona              IN vve_mae_zona.cod_zona%type,
     p_cod_cia               IN gen_mae_sociedad.cod_cia%type,
     p_cod_pais              IN gen_mae_pais.cod_id_pais%type,
     p_cod_depa              IN gen_filial.cod_dpto%type,
@@ -75,14 +76,16 @@ PROCEDURE SP_LIST_OPERS(
 );
 
 PROCEDURE SP_LIST_GARAN(
-    p_cod_clie          IN vve_cred_soli.cod_clie%type,
-    p_cod_oper          IN vve_cred_soli.cod_oper_rel%type,
-    p_cod_gara          IN vve_cred_maes_gara.cod_garantia%type,
-    p_tipo_gara         IN vve_cred_maes_gara.ind_tipo_garantia%type,
-    p_cod_esta_poli     IN vve_cred_soli.cod_esta_poli%type,
-    p_ret_cursor        OUT SYS_REFCURSOR,
-    p_ret_esta          OUT NUMBER,
-    p_ret_mens          OUT VARCHAR2
+        p_cod_clie          IN vve_cred_soli.cod_clie%type,
+        p_tipo_cred         VARCHAR2,
+        p_esta_gara         VARCHAR2,
+        p_tipo_gara         IN vve_cred_maes_gara.ind_tipo_garantia%type,
+        p_marca_gara        VARCHAR2,
+        p_num_soli_cred     VARCHAR2,
+        p_anio_fab          VARCHAR2,
+        p_ret_cursor        OUT SYS_REFCURSOR,
+        p_ret_esta          OUT NUMBER,
+        p_ret_mens          OUT VARCHAR2
 );
 
 PROCEDURE SP_ACT_GARANTIA
@@ -96,4 +99,73 @@ PROCEDURE SP_ACT_GARANTIA
      p_ret_mens          OUT VARCHAR2
 );
 
-END PKG_SWEB_CRED_SOLI_MANT_CLIE; 
+ /*-----------------------------------------------------------------------------
+      Nombre : SP_LIST_TODOS_CLIENTE
+      Proposito : Lista de informacion de los clientes.
+      Referencias : 
+      Parametros : p_nom_clie, 
+                   p_cod_usua_sid,
+                   p_cod_usua_web,
+                   p_ind_paginado,
+                   p_limitinf,
+                   p_limitsup
+                   
+                   
+      Log de Cambios
+        Fecha        Autor          Descripcion
+        10/09/2020   AVILCA          Creacion
+  ----------------------------------------------------------------------------*/
+PROCEDURE SP_LIST_TODOS_CLIENTE(
+    p_nom_clie              IN cxc_mae_clie.nom_clie%type,    
+    p_cod_usua_sid          IN sistemas.usuarios.co_usuario%type,
+    p_ret_cursor            OUT SYS_REFCURSOR,
+    p_ret_cantidad          OUT NUMBER,
+    p_ret_esta              OUT NUMBER,
+    p_ret_mens              OUT VARCHAR2
+);
+
+/* -- STORE PROCEDURES LISTADO PAIS, DEPARTAMENTO, PROVINCIA, DISTRITO Req. Obs Consulta Cliente MBardales 16/10/2020 */
+
+  PROCEDURE sp_listado_paises(
+    p_cod_cia           IN VARCHAR2,
+    p_cod_usua_sid      IN sistemas.usuarios.co_usuario%TYPE,
+    p_cod_usua_web      IN sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
+    p_ret_cursor        OUT SYS_REFCURSOR,
+    p_ret_cantidad      OUT NUMBER,
+    p_ret_esta          OUT NUMBER,
+    p_ret_mens          OUT VARCHAR2
+  );
+  
+  PROCEDURE sp_listado_departamentos(
+    p_cod_pais          IN VARCHAR2,
+    p_cod_usua_sid      IN sistemas.usuarios.co_usuario%TYPE,
+    p_cod_usua_web      IN sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
+    p_ret_cursor        OUT SYS_REFCURSOR,
+    p_ret_cantidad      OUT NUMBER,
+    p_ret_esta          OUT NUMBER,
+    p_ret_mens          OUT VARCHAR2
+  );
+  
+  PROCEDURE sp_listado_provincias
+  (
+    p_cod_depa          IN gen_mae_departamento.cod_id_departamento%TYPE,
+    p_cod_usua_sid      IN sistemas.usuarios.co_usuario%TYPE,
+    p_cod_usua_web      IN sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
+    p_ret_cursor        OUT SYS_REFCURSOR,
+    p_ret_cantidad      OUT NUMBER,
+    p_ret_esta          OUT NUMBER,
+    p_ret_mens          OUT VARCHAR2
+  );
+  
+  PROCEDURE sp_listado_distritos
+  (
+    p_cod_prov          IN gen_mae_distrito.cod_id_provincia%TYPE,
+    p_cod_usua_sid      IN sistemas.usuarios.co_usuario%TYPE,
+    p_cod_usua_web      IN sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
+    p_ret_cursor        OUT SYS_REFCURSOR,
+    p_ret_cantidad      OUT NUMBER,
+    p_ret_esta          OUT NUMBER,
+    p_ret_mens          OUT VARCHAR2
+  );  
+
+END PKG_SWEB_CRED_SOLI_MANT_CLIE;

@@ -1,4 +1,4 @@
-create or replace PACKAGE    VENTA.pkg_sweb_five_mant_pedido AS
+create or replace PACKAGE VENTA.pkg_sweb_five_mant_pedido AS
 
   PROCEDURE sp_list_pedi_ficha_venta
   (
@@ -881,9 +881,9 @@ create or replace PACKAGE    VENTA.pkg_sweb_five_mant_pedido AS
     p_ret_esta         OUT NUMBER,
     p_ret_mens         OUT VARCHAR
   );
-  
-    /*-----------------------------------------------------------------------------------------------------
-    Nombre : sp_mail_alert_jefeventas
+
+  /*-----------------------------------------------------------------------------------------------------
+    Nombre : sp_mail_alert_preasig_lineup
     Proposito : Enviar alertas a los Jefes de Venta
     Referencias :
     Parametros :
@@ -891,13 +891,16 @@ create or replace PACKAGE    VENTA.pkg_sweb_five_mant_pedido AS
     Fecha        Autor              Descripcion
     24/11/2019   SOPORTELEGADOS     Creacion
   -------------------------------------------------------------------------------------------------------*/
+
   PROCEDURE sp_mail_alert_jefeventas(p_num_ficha_vta_veh IN vve_ficha_vta_veh.num_ficha_vta_veh%TYPE,
-                                       p_num_prof_veh      IN vve_proforma_veh.num_prof_veh%TYPE,
-                                       p_num_pedido_veh    IN vve_pedido_veh.num_pedido_veh%TYPE,
-                                       p_co_usuario        IN sistemas.usuarios.co_usuario%TYPE,
-                                       p_cod_id_usuario    IN sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
-                                       p_ret_esta          OUT NUMBER,
-                                       p_ret_mens          OUT VARCHAR2);
+                                         p_num_prof_veh      IN vve_proforma_veh.num_prof_veh%TYPE,
+                                         p_num_pedido_veh    IN vve_pedido_veh.num_pedido_veh%TYPE,
+                                         p_co_usuario        IN sistemas.usuarios.co_usuario%TYPE,
+                                         p_cod_id_usuario    IN sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
+                                         p_ret_esta          OUT NUMBER,
+                                         p_ret_mens          OUT VARCHAR2);
+
+
    /*--------------------------------------------------------------------------
     Nombre : sp_correo_facturacion_pedido
     Proposito : Estructura de correo de Facturacion
@@ -919,6 +922,6 @@ create or replace PACKAGE    VENTA.pkg_sweb_five_mant_pedido AS
     p_cod_usua_web       IN sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
     p_ret_esta           OUT NUMBER,
     p_ret_mens           OUT VARCHAR2
-  );
+  ) ;
 
 END pkg_sweb_five_mant_pedido;

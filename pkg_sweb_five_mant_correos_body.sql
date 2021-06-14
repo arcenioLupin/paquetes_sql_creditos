@@ -1,4 +1,4 @@
-create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
+create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant_correos IS
 
   -- Author  : LAQS
   -- Created : 31/01/2018 09:18:12 a.m.
@@ -46,31 +46,31 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
     url_ficha_venta     VARCHAR(150);
     v_contador          INTEGER;
     l_correos           vve_correo_prof.destinatarios%TYPE;
-
+  
   BEGIN
-
+  
     SELECT NAME INTO v_instancia FROM v$database;
-
+  
     IF v_instancia = 'PROD' THEN
       v_instancia := 'Producción';
     END IF;
-
+  
     -- Obtenemos los correos a Notificar
     IF p_destinatarios IS NOT NULL THEN
       v_query := 'SELECT COD_ID_USUARIO, TXT_CORREO, TXT_USUARIO, TXT_NOMBRES, TXT_APELLIDOS
                    FROM SISTEMAS.SIS_MAE_USUARIO WHERE COD_ID_USUARIO IN (' ||
                  p_destinatarios || ')                   
-
+                  
                   ';
     END IF;
-
+  
     pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
                                         'SP_GEN_PLANTILLA_CORREO_HFDV',
                                         NULL,
                                         'Error',
                                         v_query,
                                         p_num_ficha_vta_veh);
-
+  
     -- Obtener url de ambiente 
     SELECT upper(instance_name) INTO wc_string FROM v$instance;
     SELECT pkg_gen_parametros.fun_obt_parametro_modulo('0001',
@@ -79,7 +79,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                                                        wc_string)
       INTO url_ficha_venta
       FROM dual;
-
+  
     v_contador := 1;
     l_correos  := '';
     OPEN c_usuarios FOR v_query;
@@ -91,7 +91,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
              v_txt_nombres,
              v_txt_apellidos;
       EXIT WHEN c_usuarios%NOTFOUND;
-
+    
       v_contactos := v_txt_usuario || ' ' || v_txt_apellidos || '<br />' ||
                      v_contactos;
       IF (v_contador = 1) THEN
@@ -100,10 +100,10 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
         l_correos := l_correos || ', ' || v_txt_correo;
       END IF;
       v_contador := v_contador + 1;
-
+    
     END LOOP;
     CLOSE c_usuarios;
-
+  
     BEGIN
       SELECT txt_correo
         INTO v_correoori
@@ -113,9 +113,9 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
       WHEN OTHERS THEN
         v_correoori := 'apps@divemotor.com.pe';
     END;
-
+  
     v_asunto := p_asunto_input;
-
+  
     -- Obtener datos de la ficha
     SELECT cod_clie,
            pkg_gen_select.func_sel_gen_filial(cod_filial),
@@ -131,32 +131,32 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
            v_fec_ficha_vta_veh
       FROM vve_ficha_vta_veh
      WHERE num_ficha_vta_veh = p_num_ficha_vta_veh;
-
+  
     SELECT nvl(num_docu_iden, num_ruc)
       INTO v_documento
       FROM gen_persona g
      WHERE cod_perso = v_cod_cli; --COD_CLIE
-
+  
     SELECT nom_perso
       INTO v_cliente
       FROM gen_persona g
      WHERE cod_perso = v_cod_cli; --COD_CLIE
-
+  
     -- Obtener datos de usuario quien realizo la accion
     SELECT (txt_apellidos || ', ' || txt_nombres)
       INTO v_dato_usuario
       FROM sistemas.sis_mae_usuario
      WHERE cod_id_usuario = p_id_usuario;
-
+  
     v_mensaje := '<!DOCTYPE html>
           <html lang="es" class="baseFontStyles" style="color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 16px; line-height: 1.35;">
               <head>
                 <title>Divemotor - Entrega de Vehículo</title>
                 <meta charset="utf-8">
-
+                
                 <style>
                   div, p, a, li, td { -webkit-text-size-adjust:none; }
-
+                  
                   @media screen and (max-width: 500px) {
                     .mainTable,.mailBody,.to100{
                       width:100% !important;
@@ -179,7 +179,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                 <table width="500" class="to100" border="0" align="center" cellpadding="0" cellspacing="0" class="mainTable" style="border-spacing: 0;">
                   <tr>
                     <td style="padding: 0;">
-
+                      
                       <table class="to100" height="40" width="100%" cellpadding="14" cellspacing="0" border="0" style="border-spacing: 0;">
                         <tr>
                           <td style="padding: 0;">
@@ -198,11 +198,11 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                           <td class="mailBody" style="background-color: #ffffff; padding: 32px;">
                             <h1 style="text-align: center;color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 22px; font-weight: bold; margin: 0; ;">Historial de Ficha de Venta</h1>
                             <p style="margin: 0;"><span style="font-weight: bold;">Hola 
-
+                 
                    </span>, se ha generado una notificación dentro del módulo de ficha de ventas:</p>
 
                             <div style="padding: 10px 0;">
-
+                        
                             </div>
 
                             <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #e1efff; border-radius: 5px 5px 0px 0px;">
@@ -213,7 +213,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                  rtrim(v_cliente) ||
                  '</span></p>
                                   </div>
-
+                                    
                                   <div class="to100" style="display:inline-block;width: 110px">
                                     <p style="font-weight: bold;font-family: helvetica, arial, sans-serif; font-size: 15px; line-height: 1.35; margin: 0;"> Nº de Ficha Venta</p>
                                     <p style="font-family: helvetica, arial, sans-serif; font-size: 15px; line-height: 1.35; margin: 0;"><a href="' ||
@@ -226,7 +226,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                                 </td>
                               </tr>
                             </table>
-
+                   
                     <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #eeeeee; border-radius: 0px 0px 5px 5px;">
                               <tr>
                                 <td style="padding: 0;">
@@ -235,25 +235,25 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                  rtrim(v_desc_filial) ||
                  '.</p>
                                 </td>
-
+                                
                                 <td style="padding: 0;">
                                   <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Area de Venta</span></p>
                                   <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
                  rtrim(v_desc_area_venta) ||
                  '.</p>
                                 </td> 
-
+                                
                                  <td style="padding: 0;">
                                   <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Compañia</span></p>
                                   <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
                  rtrim(v_desc_cia) ||
                  '.</p>
                                 </td>  
-
+                                                               
                               </tr>                     
-
+                              
                             </table>
-
+                            
                           <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #eeeeee; border-radius: 0px 0px 5px 5px;">
                               <tr>
                                 <td style="padding: 0;">
@@ -263,10 +263,10 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                  '.</p>
                                 </td>                                                            
                               </tr>   
-
-
+                                                        
+                              
                            </table>
-
+                          
                             <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #f5f5f5; border-radius: 0px 0px 5px 5px;">
                               <tr>
                                 <td style="padding: 0;">
@@ -285,10 +285,10 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                  rtrim(v_dato_usuario) ||
                  '</p>
                                 </td>
-
+                                
                               </tr>
                             </table>
-
+                            
                         <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #f5f5f5; border-radius: 0px 0px 5px 5px;">
                               <tr>
                                 <td style="padding: 0;">
@@ -298,9 +298,9 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                  '.</p>
                                 </td>                                                            
                               </tr>                             
-
+                              
                         </table>
-
+                       
                             <p style="margin: 0; padding-top: 25px;" >La información contenida en este correo electrónico es confidencial. Esta dirigida únicamente para el uso individual. Si has recibido este correo por error por favor hacer caso omiso a la solicitud.</p>
                           </td>
                         </tr>
@@ -316,7 +316,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
           </html>';
     sp_inse_correo(p_num_ficha_vta_veh,
                    l_correos,
-                   'Jorge prueba',
+                   '',
                    v_asunto,
                    v_mensaje,
                    '',
@@ -325,7 +325,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    'HF',
                    p_ret_esta,
                    p_ret_mens);
-
+  
     p_ret_esta := 1;
     p_ret_mens := 'Se ejecuto correctamente';
   EXCEPTION
@@ -340,7 +340,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                                           'Error',
                                           p_ret_mens,
                                           p_num_ficha_vta_veh);
-
+    
   END;
 
   PROCEDURE sp_gen_plantilla_correo_adjunt
@@ -386,20 +386,20 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
     v_contador          INTEGER;
     l_correos           vve_correo_prof.destinatarios%TYPE;
   BEGIN
-
+  
     SELECT NAME INTO v_instancia FROM v$database;
-
+  
     IF v_instancia = 'PROD' THEN
       v_instancia := 'Producción';
     END IF;
-
+  
     -- Obtenemos los correos a Notificar
     IF p_destinatarios IS NOT NULL THEN
       v_query := 'SELECT COD_ID_USUARIO, TXT_CORREO, TXT_USUARIO, TXT_NOMBRES, TXT_APELLIDOS
                    FROM SISTEMAS.SIS_MAE_USUARIO WHERE COD_ID_USUARIO IN (' ||
                  p_destinatarios || ')   ';
     END IF;
-
+  
     -- Obtener url de ambiente 
     SELECT upper(instance_name) INTO wc_string FROM v$instance;
     SELECT pkg_gen_parametros.fun_obt_parametro_modulo('0001',
@@ -408,10 +408,10 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                                                        wc_string)
       INTO url_ficha_venta
       FROM dual;
-
+  
     v_contador := 1;
     l_correos  := '';
-
+  
     OPEN c_usuarios FOR v_query;
     LOOP
       FETCH c_usuarios
@@ -421,20 +421,20 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
              v_txt_nombres,
              v_txt_apellidos;
       EXIT WHEN c_usuarios%NOTFOUND;
-
+    
       v_contactos := v_txt_usuario || ' ' || v_txt_apellidos || '<br />' ||
                      v_contactos;
-
+    
       IF (v_contador = 1) THEN
         l_correos := l_correos || v_txt_correo;
       ELSE
         l_correos := l_correos || ',' || v_txt_correo;
       END IF;
       v_contador := v_contador + 1;
-
+    
     END LOOP;
     CLOSE c_usuarios;
-
+  
     --Obtenemos el correo origen
     BEGIN
       SELECT txt_correo
@@ -445,7 +445,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
       WHEN OTHERS THEN
         v_correoori := 'apps@divemotor.com.pe';
     END;
-
+  
     -- Obtener datos de la ficha
     SELECT cod_clie,
            pkg_gen_select.func_sel_gen_filial(cod_filial),
@@ -461,37 +461,37 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
            v_fec_ficha_vta_veh
       FROM vve_ficha_vta_veh
      WHERE num_ficha_vta_veh = p_num_ficha_vta_veh;
-
+  
     SELECT nvl(num_docu_iden, num_ruc)
       INTO v_documento
       FROM gen_persona g
      WHERE cod_perso = v_cod_cli; --COD_CLIE
-
+  
     SELECT nom_perso
       INTO v_cliente
       FROM gen_persona g
      WHERE cod_perso = v_cod_cli; --COD_CLIE
-
+  
     -- Obtener datos de usuario quien realizo la accion
     SELECT (txt_apellidos || ', ' || txt_nombres)
       INTO v_dato_usuario
       FROM sistemas.sis_mae_usuario
      WHERE cod_id_usuario = p_id_usuario;
-
+  
     --Asunto del mensaje Historial de ficha de venta Agregar comentario
-
+  
     v_asunto := 'Archivos adjuntos .: ' ||
                 rtrim(ltrim(to_char(p_num_ficha_vta_veh)));
-
+  
     v_mensaje := '<!DOCTYPE html>
           <html lang="es" class="baseFontStyles" style="color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 16px; line-height: 1.35;">
               <head>
                 <title>Divemotor - Entrega de Vehículo</title>
                 <meta charset="utf-8">
-
+                
                 <style>
                   div, p, a, li, td { -webkit-text-size-adjust:none; }
-
+                  
                   @media screen and (max-width: 500px) {
                     .mainTable,.mailBody,.to100{
                       width:100% !important;
@@ -514,7 +514,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                 <table width="500" class="to100" border="0" align="center" cellpadding="0" cellspacing="0" class="mainTable" style="border-spacing: 0;">
                   <tr>
                     <td style="padding: 0;">
-
+                      
                       <table class="to100" height="40" width="100%" cellpadding="14" cellspacing="0" border="0" style="border-spacing: 0;">
                         <tr>
                           <td style="padding: 0;">
@@ -535,7 +535,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                             <h1 style="text-align: center;color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 22px; font-weight: bold; margin: 0; padding-bottom: 20px;">Adjuntos</h1>                            <p style="margin: 0;"><span style="font-weight: bold;"> </span>, se ha generado una notificación dentro del módulo de ficha de ventas:</p>
 
                             <div style="padding: 10px 0;">
-
+                        
                             </div>
 
                             <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #e1efff; border-radius: 5px 5px 0px 0px;">
@@ -546,7 +546,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                  rtrim(v_cliente) ||
                  '</span></p>
                                   </div>
-
+                                    
                                   <div class="to100" style="display:inline-block;width: 110px">
                                     <p style="font-weight: bold;font-family: helvetica, arial, sans-serif; font-size: 15px; line-height: 1.35; margin: 0;"> Nº de Ficha Venta</p>
                                       <p style="font-family: helvetica, arial, sans-serif; font-size: 15px; line-height: 1.35; margin: 0;">
@@ -558,12 +558,12 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                  lpad(p_num_ficha_vta_veh, 12, '0') || '
                                         </a>
                                       </p>
-
+                                  
                                   </div>
                                 </td>
                               </tr>
                             </table>
-
+                            
                              <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #eeeeee; border-radius: 0px 0px 5px 5px;">
                               <tr>
                                 <td style="padding: 0;">
@@ -572,25 +572,25 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                  rtrim(v_desc_filial) ||
                  '.</p>
                                 </td>
-
+                                
                                 <td style="padding: 0;">
                                   <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Area de Venta</span></p>
                                   <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
                  rtrim(v_desc_area_venta) ||
                  '.</p>
                                 </td> 
-
+                                
                                  <td style="padding: 0;">
                                   <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Compañia</span></p>
                                   <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
                  rtrim(v_desc_cia) ||
                  '.</p>
                                 </td>  
-
+                                                               
                               </tr>                     
-
+                              
                             </table>
-
+                            
                           <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #eeeeee; border-radius: 0px 0px 5px 5px;">
                               <tr>
                                 <td style="padding: 0;">
@@ -600,11 +600,11 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                  '.</p>
                                 </td>                                                            
                               </tr>   
-
-
+                                                        
+                              
                            </table>
-
-
+                   
+                          
                             <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #f5f5f5; border-radius: 0px 0px 5px 5px;">
                               <tr>
                                 <td style="padding: 0;">
@@ -623,10 +623,10 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                  rtrim(v_dato_usuario) ||
                  '</p>
                                 </td>
-
+                                
                               </tr>
                             </table>
-
+                            
                         <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #f5f5f5; border-radius: 0px 0px 5px 5px;">
                               <tr>
                                 <td style="padding: 0;">
@@ -636,9 +636,9 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                  '.</p>
                                 </td>                                                            
                               </tr>                             
-
+                              
                         </table>
-
+                       
                             <p style="margin: 0; padding-top: 25px;" >La información contenida en este correo electrónico es confidencial. Esta dirigida únicamente para el uso individual. Si has recibido este correo por error por favor hacer caso omiso a la solicitud.</p>
                           </td>
                         </tr>
@@ -652,7 +652,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                 </table>
               </body>
           </html>';
-
+  
     sp_inse_correo(p_num_ficha_vta_veh,
                    l_correos,
                    '',
@@ -664,7 +664,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    'AJ',
                    p_ret_esta,
                    p_ret_mens);
-
+  
     p_ret_esta := 1;
     p_ret_mens := 'Se ejecuto correctamente';
   EXCEPTION
@@ -679,7 +679,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                                           'Error',
                                           p_ret_mens,
                                           p_num_ficha_vta_veh);
-
+    
   END;
 
   PROCEDURE sp_gen_plantilla_correo_aequip
@@ -723,7 +723,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
     wc_string           VARCHAR(10);
     url_ficha_venta     VARCHAR(150);
   BEGIN
-
+  
     SELECT NAME INTO v_instancia FROM v$database;
     IF v_instancia = 'PROD' THEN
       v_instancia := 'Producción';
@@ -734,7 +734,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    FROM SISTEMAS.SIS_MAE_USUARIO WHERE COD_ID_USUARIO IN (' ||
                  p_destinatarios || ')';
     END IF;
-
+  
     -- Obtener url de ambiente 
     SELECT upper(instance_name) INTO wc_string FROM v$instance;
     SELECT pkg_gen_parametros.fun_obt_parametro_modulo('0001',
@@ -743,7 +743,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                                                        wc_string)
       INTO url_ficha_venta
       FROM dual;
-
+  
     OPEN c_usuarios FOR v_query;
     LOOP
       FETCH c_usuarios
@@ -753,13 +753,13 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
              v_txt_nombres,
              v_txt_apellidos;
       EXIT WHEN c_usuarios%NOTFOUND;
-
+    
       v_contactos := v_txt_usuario || ' ' || v_txt_apellidos || '<br />' ||
                      v_contactos;
-
+    
     END LOOP;
     CLOSE c_usuarios;
-
+  
     --Obtenemos el correo origen
     BEGIN
       SELECT txt_correo
@@ -770,7 +770,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
       WHEN OTHERS THEN
         v_correoori := 'apps@divemotor.com.pe';
     END;
-
+  
     -- Obtener datos de la ficha
     SELECT cod_clie,
            pkg_gen_select.func_sel_gen_filial(cod_filial),
@@ -786,28 +786,28 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
            v_fec_ficha_vta_veh
       FROM vve_ficha_vta_veh
      WHERE num_ficha_vta_veh = p_num_ficha_vta_veh;
-
+  
     SELECT nvl(num_docu_iden, num_ruc)
       INTO v_documento
       FROM gen_persona g
      WHERE cod_perso = v_cod_cli; --COD_CLIE
-
+  
     SELECT nom_perso
       INTO v_cliente
       FROM gen_persona g
      WHERE cod_perso = v_cod_cli; --COD_CLIE
-
+  
     -- Obtener datos de usuario quien realizo la accion
     SELECT (txt_apellidos || ', ' || txt_nombres)
       INTO v_dato_usuario
       FROM sistemas.sis_mae_usuario
      WHERE cod_id_usuario = p_id_usuario;
-
+  
     --Asunto del mensaje Historial de ficha de venta Agregar comentario
-
+  
     v_asunto := 'Equipo adicionales.: ' ||
                 rtrim(ltrim(to_char(p_num_ficha_vta_veh)));
-
+  
     OPEN c_usuarios FOR v_query;
     LOOP
       FETCH c_usuarios
@@ -817,16 +817,16 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
              v_txt_nombres,
              v_txt_apellidos;
       EXIT WHEN c_usuarios%NOTFOUND;
-
+    
       v_mensaje := '<!DOCTYPE html>
           <html lang="es" class="baseFontStyles" style="color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 16px; line-height: 1.35;">
               <head>
                 <title>Divemotor - Entrega de Vehículo</title>
                 <meta charset="utf-8">
-
+                
                 <style>
                   div, p, a, li, td { -webkit-text-size-adjust:none; }
-
+                  
                   @media screen and (max-width: 500px) {
                     .mainTable,.mailBody,.to100{
                       width:100% !important;
@@ -849,7 +849,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                 <table width="500" class="to100" border="0" align="center" cellpadding="0" cellspacing="0" class="mainTable" style="border-spacing: 0;">
                   <tr>
                     <td style="padding: 0;">
-
+                      
                       <table class="to100" height="40" width="100%" cellpadding="14" cellspacing="0" border="0" style="border-spacing: 0;">
                         <tr>
                           <td style="padding: 0;">
@@ -872,7 +872,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    '</span>, se ha generado una notificación dentro del módulo de ficha de ventas:</p>
 
                             <div style="padding: 10px 0;">
-
+                        
                             </div>
 
                             <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #e1efff; border-radius: 5px 5px 0px 0px;">
@@ -883,7 +883,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    rtrim(v_cliente) ||
                    '</span></p>
                                   </div>
-
+                                    
                                   <div class="to100" style="display:inline-block;width: 110px">
                                     <p style="font-weight: bold;font-family: helvetica, arial, sans-serif; font-size: 15px; line-height: 1.35; margin: 0;"> Nº de Ficha Venta</p>
                                     <p style="font-family: helvetica, arial, sans-serif; font-size: 15px; line-height: 1.35; margin: 0;">
@@ -899,7 +899,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                                 </td>
                               </tr>
                             </table>
-
+                            
                              <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #eeeeee; border-radius: 0px 0px 5px 5px;">
                               <tr>
                                 <td style="padding: 0;">
@@ -908,25 +908,25 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    rtrim(v_desc_filial) ||
                    '.</p>
                                 </td>
-
+                                
                                 <td style="padding: 0;">
                                   <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Area de Venta</span></p>
                                   <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
                    rtrim(v_desc_area_venta) ||
                    '.</p>
                                 </td> 
-
+                                
                                  <td style="padding: 0;">
                                   <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Compañia</span></p>
                                   <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
                    rtrim(v_desc_cia) ||
                    '.</p>
                                 </td>  
-
+                                                               
                               </tr>                     
-
+                              
                             </table>
-
+                            
                           <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #eeeeee; border-radius: 0px 0px 5px 5px;">
                               <tr>
                                 <td style="padding: 0;">
@@ -936,11 +936,11 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    '.</p>
                                 </td>                                                            
                               </tr>   
-
-
+                                                        
+                              
                            </table>
-
-
+                   
+                          
                             <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #f5f5f5; border-radius: 0px 0px 5px 5px;">
                               <tr>
                                 <td style="padding: 0;">
@@ -959,10 +959,10 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    rtrim(v_dato_usuario) ||
                    '</p>
                                 </td>
-
+                                
                               </tr>
                             </table>
-
+                            
                           <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #f5f5f5; border-radius: 0px 0px 5px 5px;">
                               <tr>
                                 <td style="padding: 0;">
@@ -972,9 +972,9 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    '.</p>
                                 </td>                                                            
                               </tr>                             
-
+                              
                           </table>
-
+                       
                             <p style="margin: 0; padding-top: 25px;" >La información contenida en este correo electrónico es confidencial. Esta dirigida únicamente para el uso individual. Si has recibido este correo por error por favor hacer caso omiso a la solicitud.</p>
                           </td>
                         </tr>
@@ -988,7 +988,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                 </table>
               </body>
           </html>';
-
+    
       sp_inse_correo(p_num_ficha_vta_veh,
                      v_txt_correo,
                      '',
@@ -1000,10 +1000,10 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                      'EA',
                      p_ret_esta,
                      p_ret_mens);
-
+    
     END LOOP;
     CLOSE c_usuarios;
-
+  
     p_ret_esta := 1;
     p_ret_mens := 'Se ejecuto correctamente';
   EXCEPTION
@@ -1018,7 +1018,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                                           'Error',
                                           p_ret_mens,
                                           p_num_ficha_vta_veh);
-
+    
   END;
 
   /*--------------------------------------------------------------------------
@@ -1032,7 +1032,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    añardir el bloque de Cliente Facturacion, Cliente Propietario y Cliente Usuario.
                    Se creó la variable de entrada p_nombre_entidad. La modificación empieza en la línea
                    1518 hasta 1543.
-
+  
   ----------------------------------------------------------------------------*/
 
   PROCEDURE sp_gen_plantilla_correo_sfactu
@@ -1095,21 +1095,21 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
     IF v_instancia = 'PROD' THEN
       v_instancia := 'Producci'||L_TXT_VALO||'n';      
     END IF;
-
+  
     -- Obtenemos los correos a Notificar
     IF p_destinatarios IS NOT NULL THEN
       v_query := 'SELECT COD_ID_USUARIO, TXT_CORREO, TXT_USUARIO, TXT_NOMBRES, TXT_APELLIDOS
                    FROM SISTEMAS.SIS_MAE_USUARIO WHERE COD_ID_USUARIO IN (' ||
                  p_destinatarios || ') AND TXT_CORREO IS NOT NULL';
     END IF;
-
+  
     pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
                                         'SP_QUERY_CORREO',
                                         '',
                                         'OK',
                                         v_query,
                                         p_num_ficha_vta_veh);
-
+  
     -- Obtener url de ambiente
     SELECT upper(instance_name) INTO wc_string FROM v$instance;
     SELECT pkg_gen_parametros.fun_obt_parametro_modulo('0001',
@@ -1118,7 +1118,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                                                        wc_string)
       INTO url_ficha_venta
       FROM dual;
-
+  
     OPEN c_usuarios FOR v_query;
     LOOP
       FETCH c_usuarios
@@ -1128,13 +1128,13 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
              v_txt_nombres,
              v_txt_apellidos;
       EXIT WHEN c_usuarios%NOTFOUND;
-
+    
       v_contactos := v_txt_usuario || ' ' || v_txt_apellidos || '<br />' ||
                      v_contactos;
-
+    
     END LOOP;
     CLOSE c_usuarios;
-
+  
     --Obtenemos el correo origen
     BEGIN
       SELECT txt_correo
@@ -1145,7 +1145,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
       WHEN OTHERS THEN
         v_correoori := 'apps@divemotor.com.pe';
     END;
-
+  
     -- Obtener datos de la ficha
     SELECT cod_clie,
            pkg_gen_select.func_sel_gen_filial(cod_filial),
@@ -1161,7 +1161,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
            v_fec_ficha_vta_veh
       FROM vve_ficha_vta_veh
      WHERE num_ficha_vta_veh = p_num_ficha_vta_veh;
-
+  
     --<REQ-86434>
     /*
      v_cod_clie_ped      VARCHAR(20);
@@ -1183,7 +1183,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
         v_cod_propietario := NULL;
         v_cod_usuario     := NULL;
     END;
-
+  
     BEGIN
       SELECT nom_perso
         INTO v_nom_propietario
@@ -1193,7 +1193,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
       WHEN no_data_found THEN
         v_nom_propietario := NULL;
     END;
-
+  
     BEGIN
       SELECT nom_perso
         INTO v_nom_usuario
@@ -1203,7 +1203,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
       WHEN no_data_found THEN
         v_nom_usuario := NULL;
     END;
-
+  
     BEGIN
       SELECT nom_perso
         INTO v_nom_clie_ped
@@ -1214,28 +1214,28 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
         v_nom_clie_ped := NULL;
     END;
     --<REQ-86434>
-
+  
     SELECT nvl(num_docu_iden, num_ruc)
       INTO v_documento
       FROM gen_persona g
      WHERE cod_perso = v_cod_cli; --COD_CLIE
-
+  
     SELECT nom_perso
       INTO v_cliente
       FROM gen_persona g
      WHERE cod_perso = v_cod_cli; --COD_CLIE
-
+  
     -- Obtener datos de usuario quien realizo la accion
     SELECT (txt_apellidos || ', ' || txt_nombres)
       INTO v_dato_usuario
       FROM sistemas.sis_mae_usuario
      WHERE cod_id_usuario = p_id_usuario;
-
+  
     --Asunto del mensaje Historial de ficha de venta Agregar comentario
     v_asunto := 'SOLICITUD DE FACTURACIÓN. FV N°' ||
                 lpad(p_num_ficha_vta_veh, 12, '0') || ' N° Pedido ' ||
                 rtrim(p_num_pedido_veh);
-
+  
     v_contador := 1;
     l_correos  := '';
     OPEN c_usuarios FOR v_query;
@@ -1247,7 +1247,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
              v_txt_nombres,
              v_txt_apellidos;
       EXIT WHEN c_usuarios%NOTFOUND;
-
+    
       v_contactos := v_txt_usuario || ' ' || v_txt_apellidos || '<br />' ||
                      v_contactos;
       IF (v_contador = 1) THEN
@@ -1256,10 +1256,10 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
         l_correos := l_correos || ', ' || v_txt_correo;
       END IF;
       v_contador := v_contador + 1;
-
+    
     END LOOP;
     CLOSE c_usuarios;
-
+  
     v_mensaje := '<!DOCTYPE html>
           <html lang="es" class="baseFontStyles" style="color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 16px; line-height: 1.35;">
               <head>
@@ -1461,14 +1461,14 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                 </table>
               </body>
           </html>';
-
+  
     pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_LOG',
                                         'SP_GEN_PLANTILLA_CORREO_SFACTU',
                                         NULL,
                                         'Log',
                                         p_ret_mens,
                                         p_num_ficha_vta_veh);
-
+  
     sp_inse_correo(p_num_ficha_vta_veh,
                    l_correos,
                    '',
@@ -1480,7 +1480,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    'SF',
                    p_ret_esta,
                    p_ret_mens);
-
+  
     p_ret_esta := 1;
     p_ret_mens := 'Se ejecuto correctamente';
   EXCEPTION
@@ -1495,7 +1495,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                                           'Error',
                                           p_ret_mens,
                                           p_num_ficha_vta_veh);
-
+    
   END;
 
   PROCEDURE sp_gen_plantilla_correo_nlafit
@@ -1541,11 +1541,11 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
     v_destinatarios     vve_correo_prof.destinatarios%TYPE;
   BEGIN
     SELECT NAME INTO v_instancia FROM v$database;
-
+  
     IF v_instancia = 'PROD' THEN
       v_instancia := 'Producción';
     END IF;
-
+  
     -- Obtenemos los correos a Notificar
     v_query := '  SELECT DISTINCT 
                  a.cod_id_usuario,
@@ -1571,7 +1571,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                  x.txt_apellidos
         FROM sistemas.sis_mae_usuario x
         where x.cod_id_usuario=' || p_id_usuario;
-
+  
     -- Obtener url de ambiente 
     SELECT upper(instance_name) INTO wc_string FROM v$instance;
     SELECT pkg_gen_parametros.fun_obt_parametro_modulo('0001',
@@ -1590,7 +1590,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
              v_txt_nombres,
              v_txt_apellidos;
       EXIT WHEN c_usuarios%NOTFOUND;
-
+    
       v_contactos     := v_txt_usuario || ' ' || v_txt_apellidos ||
                          '<br />' || v_contactos;
       v_destinatarios := v_destinatarios || v_txt_correo || ',';
@@ -1611,7 +1611,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
       WHEN OTHERS THEN
         v_correoori := 'apps@divemotor.com.pe';
     END;
-
+  
     -- Obtener datos de la ficha
     SELECT cod_clie,
            pkg_gen_select.func_sel_gen_filial(cod_filial),
@@ -1627,37 +1627,37 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
            v_fec_ficha_vta_veh
       FROM vve_ficha_vta_veh
      WHERE num_ficha_vta_veh = p_num_ficha_vta_veh;
-
+  
     SELECT nvl(num_docu_iden, num_ruc)
       INTO v_documento
       FROM gen_persona g
      WHERE cod_perso = v_cod_cli; --COD_CLIE
-
+  
     SELECT nom_perso
       INTO v_cliente
       FROM gen_persona g
      WHERE cod_perso = v_cod_cli; --COD_CLIE
-
+  
     -- Obtener datos de usuario quien realizo la accion
     SELECT (txt_apellidos || ', ' || txt_nombres)
       INTO v_dato_usuario
       FROM sistemas.sis_mae_usuario
      WHERE cod_id_usuario = p_id_usuario;
-
+  
     --Asunto del mensaje Historial de ficha de venta Agregar comentario
-
+  
     v_asunto := 'Pedido de Informe Lavado de Activo  : Ficha ' ||
                 lpad(p_num_ficha_vta_veh, 12, '0');
-
+  
     v_mensaje := '<!DOCTYPE html>
           <html lang="es" class="baseFontStyles" style="color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 16px; line-height: 1.35;">
               <head>
                 <title>Divemotor - Entrega de Vehículo</title>
                 <meta charset="utf-8">
-
+                
                 <style>
                   div, p, a, li, td { -webkit-text-size-adjust:none; }
-
+                  
                   @media screen and (max-width: 500px) {
                     .mainTable,.mailBody,.to100{
                       width:100% !important;
@@ -1680,7 +1680,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                 <table width="500" class="to100" border="0" align="center" cellpadding="0" cellspacing="0" class="mainTable" style="border-spacing: 0;">
                   <tr>
                     <td style="padding: 0;">
-
+                      
                       <table class="to100" height="40" width="100%" cellpadding="14" cellspacing="0" border="0" style="border-spacing: 0;">
                         <tr>
                           <td style="padding: 0;">
@@ -1702,7 +1702,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                             <p style="margin: 0;"><span style="font-weight: bold;">Hola </span>, se ha generado una notificación dentro del módulo de ficha de ventas:</p>
 
                             <div style="padding: 10px 0;">
-
+                        
                             </div>
 
                             <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #e1efff; border-radius: 5px 5px 0px 0px;">
@@ -1713,7 +1713,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                  rtrim(v_cliente) ||
                  '</span></p>
                                   </div>
-
+                                    
                                   <div class="to100" style="display:inline-block;width: 110px">
                                     <p style="font-weight: bold;font-family: helvetica, arial, sans-serif; font-size: 15px; line-height: 1.35; margin: 0;"> Nº de Ficha Venta</p>
                                        <p style="font-family: helvetica, arial, sans-serif; font-size: 15px; line-height: 1.35; margin: 0;">
@@ -1729,8 +1729,8 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                                 </td>
                               </tr>
                             </table>
-
-
+                            
+                                    
                           <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #eeeeee; border-radius: 0px 0px 5px 5px;">
                               <tr>
                                 <td style="padding: 0;">
@@ -1739,25 +1739,25 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                  rtrim(v_desc_filial) ||
                  '.</p>
                                 </td>
-
+                                
                                 <td style="padding: 0;">
                                   <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Area de Venta</span></p>
                                   <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
                  rtrim(v_desc_area_venta) ||
                  '.</p>
                                 </td> 
-
+                                
                                  <td style="padding: 0;">
                                   <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Compañia</span></p>
                                   <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
                  rtrim(v_desc_cia) ||
                  '.</p>
                                 </td>  
-
+                                                               
                               </tr>                     
-
+                              
                             </table>
-
+                            
                           <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #eeeeee; border-radius: 0px 0px 5px 5px;">
                               <tr>
                                 <td style="padding: 0;">
@@ -1767,11 +1767,11 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                  '.</p>
                                 </td>                                                            
                               </tr>   
-
-
+                                                        
+                              
                            </table>
-
-
+                   
+                          
                             <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #f5f5f5; border-radius: 0px 0px 5px 5px;">
                               <tr>
                                 <td style="padding: 0;">
@@ -1790,10 +1790,10 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                  rtrim(v_dato_usuario) ||
                  '</p>
                                 </td>
-
+                                
                               </tr>
                             </table>
-
+                            
                           <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #f5f5f5; border-radius: 0px 0px 5px 5px;">
                               <tr>
                                 <td style="padding: 0;">
@@ -1803,9 +1803,9 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                  '.</p>
                                 </td>                                                            
                               </tr>                             
-
+                              
                         </table>
-
+                       
                             <p style="margin: 0; padding-top: 25px;" >La información contenida en este correo electrónico es confidencial. Esta dirigida únicamente para el uso individual. Si has recibido este correo por error por favor hacer caso omiso a la solicitud.</p>
                           </td>
                         </tr>
@@ -1819,7 +1819,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                 </table>
               </body>
           </html>';
-
+  
     sp_inse_correo(p_num_ficha_vta_veh,
                    v_destinatarios,
                    '',
@@ -1831,7 +1831,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    'NL',
                    p_ret_esta,
                    p_ret_mens);
-
+  
     p_ret_esta := 1;
     p_ret_mens := 'Se ejecuto correctamente';
   EXCEPTION
@@ -1846,7 +1846,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                                           'Error',
                                           p_ret_mens,
                                           p_num_ficha_vta_veh);
-
+    
   END;
 
   PROCEDURE sp_gen_plantilla_correo_cestad
@@ -1875,14 +1875,14 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
     v_cod_cli        VARCHAR(20);
     v_usuario_ap_nom VARCHAR(50);
     v_dato_usuario   VARCHAR(50);
-
+  
     v_desc_filial       VARCHAR(500);
     v_desc_area_venta   VARCHAR(500);
     v_desc_cia          VARCHAR(500);
     v_desc_vendedor     VARCHAR(500);
     v_fec_ficha_vta_veh VARCHAR(500);
     v_contactos         VARCHAR(2000);
-
+  
     v_cod_id_usuario sistemas.sis_mae_usuario.cod_id_usuario%TYPE;
     v_txt_correo     sistemas.sis_mae_usuario.txt_correo%TYPE;
     v_txt_usuario    sistemas.sis_mae_usuario.txt_usuario%TYPE;
@@ -1891,303 +1891,324 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
     wc_string        VARCHAR(10);
     url_ficha_venta  VARCHAR(150);
     v_instancia      VARCHAR(20);
+    v_cod_estado_ficha_vta_veh VARCHAR(2);
   BEGIN
-
+  
     SELECT NAME INTO v_instancia FROM v$database;
-
+  
     IF v_instancia = 'PROD' THEN
       v_instancia := 'Producción';
     END IF;
-
-    -- Obtenemos los correos a Notificar
-    IF p_destinatarios IS NOT NULL THEN
-      v_query := 'SELECT COD_ID_USUARIO, TXT_CORREO, TXT_USUARIO, TXT_NOMBRES, TXT_APELLIDOS
-                   FROM SISTEMAS.SIS_MAE_USUARIO WHERE COD_ID_USUARIO IN (' ||
-                 p_destinatarios || ') 
-
-                ';
-    END IF;
-    pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
-                                        'SP_GEN_PLANTILLA_CORREO_CESTAD',
-                                        NULL,
-                                        'Error',
-                                        v_query,
-                                        p_num_ficha_vta_veh);
-
-    -- Obtener url de ambiente 
-    SELECT upper(instance_name) INTO wc_string FROM v$instance;
-    SELECT pkg_gen_parametros.fun_obt_parametro_modulo('0001',
-                                                       '000000064',
-                                                       'SERV_WEB_LINK_' ||
-                                                       wc_string)
-      INTO url_ficha_venta
-      FROM dual;
-
-    --Obtenemos el correo origen
+    
+    --Obteniendo el estado de la ficha de venta
     BEGIN
-      SELECT txt_correo
-        INTO v_correoori
-        FROM sistemas.sis_mae_usuario
-       WHERE cod_id_usuario = p_id_usuario;
+        SELECT cod_estado_ficha_vta_veh 
+         INTO v_cod_estado_ficha_vta_veh
+        FROM vve_ficha_vta_veh  
+        WHERE num_ficha_vta_veh = p_num_ficha_vta_veh;
     EXCEPTION
-      WHEN OTHERS THEN
-        v_correoori := 'apps@divemotor.com.pe';
+    WHEN NO_DATA_FOUND THEN
+      v_cod_estado_ficha_vta_veh:=NULL;
     END;
-
-    -- Obtener datos de la ficha
-    SELECT cod_clie,
-           pkg_gen_select.func_sel_gen_filial(cod_filial),
-           pkg_gen_select.func_sel_gen_area_vta(cod_area_vta),
-           pkg_log_select.func_sel_tapcia(cod_cia),
-           pkg_cxc_select.func_sel_arccve(vendedor),
-           to_date(fec_ficha_vta_veh, 'DD/MM/YY')
-      INTO v_cod_cli,
-           v_desc_filial,
-           v_desc_area_venta,
-           v_desc_cia,
-           v_desc_vendedor,
-           v_fec_ficha_vta_veh
-      FROM vve_ficha_vta_veh
-     WHERE num_ficha_vta_veh = p_num_ficha_vta_veh;
-
-    SELECT nvl(num_docu_iden, num_ruc)
-      INTO v_documento
-      FROM gen_persona g
-     WHERE cod_perso = v_cod_cli; --COD_CLIE
-
-    SELECT nom_perso
-      INTO v_cliente
-      FROM gen_persona g
-     WHERE cod_perso = v_cod_cli; --COD_CLIE
-
-    -- Obtener datos de usuario quien realizo la accion
-    SELECT (txt_apellidos || ', ' || txt_nombres)
-      INTO v_dato_usuario
-      FROM sistemas.sis_mae_usuario
-     WHERE cod_id_usuario = p_id_usuario;
-
-    --Asunto del mensaje Historial de ficha de venta Agregar comentario
-
-    v_asunto := 'Cambio de estado .: ' ||
-                rtrim(ltrim(to_char(p_num_ficha_vta_veh)));
-
-    --Contactos
-
-    OPEN c_usuarios FOR v_query;
-    LOOP
-      FETCH c_usuarios
-        INTO v_cod_id_usuario,
-             v_txt_correo,
-             v_txt_usuario,
-             v_txt_nombres,
-             v_txt_apellidos;
-      EXIT WHEN c_usuarios%NOTFOUND;
-
-      v_contactos := v_txt_usuario || ' ' || v_txt_apellidos || '<br />' ||
-                     v_contactos;
-
-    END LOOP;
-    CLOSE c_usuarios;
-
-    --Envio de correo
-    OPEN c_usuarios FOR v_query;
-    LOOP
-      FETCH c_usuarios
-        INTO v_cod_id_usuario,
-             v_txt_correo,
-             v_txt_usuario,
-             v_txt_nombres,
-             v_txt_apellidos;
-      EXIT WHEN c_usuarios%NOTFOUND;
-
-      v_mensaje := '<!DOCTYPE html>
-          <html lang="es" class="baseFontStyles" style="color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 16px; line-height: 1.35;">
-              <head>
-                <title>Divemotor - Entrega de Vehículo</title>
-                <meta charset="utf-8">
-
-                <style>
-                  div, p, a, li, td { -webkit-text-size-adjust:none; }
-
-                  @media screen and (max-width: 500px) {
-                    .mainTable,.mailBody,.to100{
-                      width:100% !important;
-                    }
-
-                  }
-                </style>
-                <style>
-                  @media screen and (max-width: 500px) {
-                    .mailBody{
-                      padding: 20px 18px !important
-                    }
-                    .col3{
-                      width: 100%!important
-                    }
-                  }
-                </style>
-              </head>
-              <body style="background-color: #eeeeee; margin: 0;">
-                <table width="500" class="to100" border="0" align="center" cellpadding="0" cellspacing="0" class="mainTable" style="border-spacing: 0;">
-                  <tr>
-                    <td style="padding: 0;">
-
-                      <table class="to100" height="40" width="100%" cellpadding="14" cellspacing="0" border="0" style="border-spacing: 0;">
-                        <tr>
-                          <td style="padding: 0;">
-                            <table height="40" width="100%" cellpadding="14" cellspacing="0" border="0" style="background-color: #222222; border-spacing: 0; padding-left: 25px; padding-right: 30px;">
-                              <tr style="background-color: #222222;">
-                                <td style="background-color: #222222; padding: 0; color: white; font-family: helvetica, arial, sans-serif; font-size: 15px; font-weight: 800; padding: 0; text-align: right;">DIVEMOTOR</td>
-                                <td style="background-color: #222222; color: white; font-family: helvetica, arial, sans-serif; font-size: 15px; font-weight: 800; padding: 0; text-align: right;">Módulo de Ficha de Venta.</td>
-                              </tr>
-                            </table>
-                          </td>
-                        </tr>
-                      </table>
-
-                      <table class="to100" width="500" cellpadding="12" cellspacing="0" id="content" style="border-spacing: 0;">
-                        <tr>
-                          <td class="mailBody" style="background-color: #ffffff; padding: 32px;">
-                            <h1 style="text-align: center;color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 22px; font-weight: bold; margin: 0; ;">Historial de Ficha de Venta</h1>
-                            <h1 style="text-align: center;color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 22px; font-weight: bold; margin: 0; padding-bottom: 20px;">Cambio de Estado</h1>
-                            <p style="margin: 0;"><span style="font-weight: bold;">Hola ' ||
-                   rtrim(v_txt_nombres) ||
-                   '</span>, se ha generado una notificación dentro del módulo de ficha de ventas:</p>
-
-                            <div style="padding: 10px 0;">
-
-                            </div>
-
-                            <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #e1efff; border-radius: 5px 5px 0px 0px;">
-                              <tr>
-                                <td>
-                                  <div class="to100" style="display:inline-block;width: 265px">
-                                    <p style="font-family: helvetica, arial, sans-serif; font-size: 18px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">' ||
-                   rtrim(v_cliente) ||
-                   '</span></p>
-                                  </div>
-
-                                  <div class="to100" style="display:inline-block;width: 110px">
-                                    <p style="font-weight: bold;font-family: helvetica, arial, sans-serif; font-size: 15px; line-height: 1.35; margin: 0;"> Nº de Ficha Venta</p>
-                                       <p style="font-family: helvetica, arial, sans-serif; font-size: 15px; line-height: 1.35; margin: 0;">
-                                        <a href="' ||
-                   url_ficha_venta || 'fichas-venta/' ||
-                   lpad(p_num_ficha_vta_veh, 12, '0') ||
-                   '" style="color:#0076ff">
-                                          ' ||
-                   lpad(p_num_ficha_vta_veh, 12, '0') || '
-                                        </a>
-                                      </p>
-                                  </div>
-                                </td>
-                              </tr>
-                            </table>
-
-                          <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #eeeeee; border-radius: 0px 0px 5px 5px;">
-                              <tr>
-                                <td style="padding: 0;">
-                                  <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Filial</span></p>
-                                  <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
-                   rtrim(v_desc_filial) ||
-                   '.</p>
-                                </td>
-
-                                <td style="padding: 0;">
-                                  <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Area de Venta</span></p>
-                                  <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
-                   rtrim(v_desc_area_venta) ||
-                   '.</p>
-                                </td> 
-
-                                 <td style="padding: 0;">
-                                  <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Compañia</span></p>
-                                  <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
-                   rtrim(v_desc_cia) ||
-                   '.</p>
-                                </td>  
-
-                              </tr>                     
-
-                            </table>
-
-                          <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #eeeeee; border-radius: 0px 0px 5px 5px;">
-                              <tr>
-                                <td style="padding: 0;">
-                                  <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Vendedor</span></p>
-                                  <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
-                   rtrim(v_desc_vendedor) ||
-                   '.</p>
-                                </td>                                                            
-                              </tr>   
-
-
-                           </table>
-
-                            <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #f5f5f5; border-radius: 0px 0px 5px 5px;">
-                              <tr>
-                                <td style="padding: 0;">
-                                  <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Observaciones</span></p>
-                                  <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
-                   rtrim(p_cuerpo_input) ||
-                   '.</p>
-                                </td>
-                              </tr>
-                            </table>
-                            <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #f5f5f5; border-radius: 0px 0px 5px 5px;">
-                              <tr>
-                                <td style="padding: 0;">
-                                  <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Solicitante</span></p>
-                                  <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;">' ||
-                   rtrim(v_dato_usuario) ||
-                   '</p>
-                                </td>
-
-                              </tr>
-                            </table>
-
-                       <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #f5f5f5; border-radius: 0px 0px 5px 5px;">
-                              <tr>
-                                <td style="padding: 0;">
-                                  <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Notificaciones Adicionales</span></p>
-                                  <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
-                   rtrim(v_contactos) ||
-                   '.</p>
-                                </td>                                                            
-                              </tr>                             
-
-                        </table>
-
-                            <p style="margin: 0; padding-top: 25px;" >La información contenida en este correo electrónico es confidencial. Esta dirigida únicamente para el uso individual. Si has recibido este correo por error por favor hacer caso omiso a la solicitud.</p>
-                          </td>
-                        </tr>
-                      </table>
-                      <div style="-webkit-text-size-adjust: none; padding-bottom: 50px; padding-top: 20px; text-align: left;">
-                        <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; margin: 0; text-align: center;">Este mensaje ha sido generado por el Sistema SID Web - ' ||
-                   v_instancia || '</p>
-                      </div>
-                    </td>
-                  </tr>
-                </table>
-              </body>
-          </html>';
-
-      sp_inse_correo(p_num_ficha_vta_veh,
-                     v_txt_correo,
-                     '',
-                     v_asunto,
-                     v_mensaje,
-                     '',
-                     p_id_usuario,
-                     p_id_usuario,
-                     'SE',
-                     p_ret_esta,
-                     p_ret_mens);
-
-    END LOOP;
-    CLOSE c_usuarios;
-
-    p_ret_esta := 1;
-    p_ret_mens := 'Se ejecuto correctamente';
+  
+    -- Obtenemos los correos a Notificar
+    IF p_destinatarios IS NOT NULL AND p_destinatarios <> '' THEN --<I Req. 87567 E2.1 ID## avilca 19/01/2021>
+          
+              v_query := 'SELECT COD_ID_USUARIO, TXT_CORREO, TXT_USUARIO, TXT_NOMBRES, TXT_APELLIDOS
+                           FROM SISTEMAS.SIS_MAE_USUARIO WHERE COD_ID_USUARIO IN (' ||
+                         p_destinatarios || ') ';
+                         
+                         
+                     pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
+                                                            'SP_GEN_PLANTILLA_CORREO_CESTAD',
+                                                            NULL,
+                                                            'Error',
+                                                            v_query,
+                                                            p_num_ficha_vta_veh);
+                      
+                        -- Obtener url de ambiente 
+                        SELECT upper(instance_name) INTO wc_string FROM v$instance;
+                        SELECT pkg_gen_parametros.fun_obt_parametro_modulo('0001',
+                                                                           '000000064',
+                                                                           'SERV_WEB_LINK_' ||
+                                                                           wc_string)
+                          INTO url_ficha_venta
+                          FROM dual;
+                      
+                        --Obtenemos el correo origen
+                        BEGIN
+                          SELECT txt_correo
+                            INTO v_correoori
+                            FROM sistemas.sis_mae_usuario
+                           WHERE cod_id_usuario = p_id_usuario;
+                        EXCEPTION
+                          WHEN OTHERS THEN
+                            v_correoori := 'apps@divemotor.com.pe';
+                        END;
+                      
+                        -- Obtener datos de la ficha
+                        SELECT cod_clie,
+                               pkg_gen_select.func_sel_gen_filial(cod_filial),
+                               pkg_gen_select.func_sel_gen_area_vta(cod_area_vta),
+                               pkg_log_select.func_sel_tapcia(cod_cia),
+                               pkg_cxc_select.func_sel_arccve(vendedor),
+                               to_date(fec_ficha_vta_veh, 'DD/MM/YY')
+                          INTO v_cod_cli,
+                               v_desc_filial,
+                               v_desc_area_venta,
+                               v_desc_cia,
+                               v_desc_vendedor,
+                               v_fec_ficha_vta_veh
+                          FROM vve_ficha_vta_veh
+                         WHERE num_ficha_vta_veh = p_num_ficha_vta_veh;
+                      
+                        SELECT nvl(num_docu_iden, num_ruc)
+                          INTO v_documento
+                          FROM gen_persona g
+                         WHERE cod_perso = v_cod_cli; --COD_CLIE
+                      
+                        SELECT nom_perso
+                          INTO v_cliente
+                          FROM gen_persona g
+                         WHERE cod_perso = v_cod_cli; --COD_CLIE
+                      
+                        -- Obtener datos de usuario quien realizo la accion
+                        SELECT (txt_apellidos || ', ' || txt_nombres)
+                          INTO v_dato_usuario
+                          FROM sistemas.sis_mae_usuario
+                         WHERE cod_id_usuario = p_id_usuario;
+                      
+                        --Asunto del mensaje Historial de ficha de venta Agregar comentario
+                      
+                        v_asunto := 'Cambio de estado .: ' ||
+                                    rtrim(ltrim(to_char(p_num_ficha_vta_veh)));
+                      
+                        --Contactos
+                      
+                        OPEN c_usuarios FOR v_query;
+                        LOOP
+                          FETCH c_usuarios
+                            INTO v_cod_id_usuario,
+                                 v_txt_correo,
+                                 v_txt_usuario,
+                                 v_txt_nombres,
+                                 v_txt_apellidos;
+                          EXIT WHEN c_usuarios%NOTFOUND;
+                        
+                          v_contactos := v_txt_usuario || ' ' || v_txt_apellidos || '<br />' ||
+                                         v_contactos;
+                        
+                        END LOOP;
+                        CLOSE c_usuarios;
+                      
+                        --Envio de correo
+                        OPEN c_usuarios FOR v_query;
+                        LOOP
+                          FETCH c_usuarios
+                            INTO v_cod_id_usuario,
+                                 v_txt_correo,
+                                 v_txt_usuario,
+                                 v_txt_nombres,
+                                 v_txt_apellidos;
+                          EXIT WHEN c_usuarios%NOTFOUND;
+                        
+                          v_mensaje := '<!DOCTYPE html>
+                              <html lang="es" class="baseFontStyles" style="color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 16px; line-height: 1.35;">
+                                  <head>
+                                    <title>Divemotor - Entrega de Vehículo</title>
+                                    <meta charset="utf-8">
+                                    
+                                    <style>
+                                      div, p, a, li, td { -webkit-text-size-adjust:none; }
+                                      
+                                      @media screen and (max-width: 500px) {
+                                        .mainTable,.mailBody,.to100{
+                                          width:100% !important;
+                                        }
+                    
+                                      }
+                                    </style>
+                                    <style>
+                                      @media screen and (max-width: 500px) {
+                                        .mailBody{
+                                          padding: 20px 18px !important
+                                        }
+                                        .col3{
+                                          width: 100%!important
+                                        }
+                                      }
+                                    </style>
+                                  </head>
+                                  <body style="background-color: #eeeeee; margin: 0;">
+                                    <table width="500" class="to100" border="0" align="center" cellpadding="0" cellspacing="0" class="mainTable" style="border-spacing: 0;">
+                                      <tr>
+                                        <td style="padding: 0;">
+                                          
+                                          <table class="to100" height="40" width="100%" cellpadding="14" cellspacing="0" border="0" style="border-spacing: 0;">
+                                            <tr>
+                                              <td style="padding: 0;">
+                                                <table height="40" width="100%" cellpadding="14" cellspacing="0" border="0" style="background-color: #222222; border-spacing: 0; padding-left: 25px; padding-right: 30px;">
+                                                  <tr style="background-color: #222222;">
+                                                    <td style="background-color: #222222; padding: 0; color: white; font-family: helvetica, arial, sans-serif; font-size: 15px; font-weight: 800; padding: 0; text-align: right;">DIVEMOTOR</td>
+                                                    <td style="background-color: #222222; color: white; font-family: helvetica, arial, sans-serif; font-size: 15px; font-weight: 800; padding: 0; text-align: right;">Módulo de Ficha de Venta.</td>
+                                                  </tr>
+                                                </table>
+                                              </td>
+                                            </tr>
+                                          </table>
+                    
+                                          <table class="to100" width="500" cellpadding="12" cellspacing="0" id="content" style="border-spacing: 0;">
+                                            <tr>
+                                              <td class="mailBody" style="background-color: #ffffff; padding: 32px;">
+                                                <h1 style="text-align: center;color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 22px; font-weight: bold; margin: 0; ;">Historial de Ficha de Venta</h1>
+                                                <h1 style="text-align: center;color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 22px; font-weight: bold; margin: 0; padding-bottom: 20px;">Cambio de Estado</h1>
+                                                <p style="margin: 0;"><span style="font-weight: bold;">Hola ' ||
+                                       rtrim(v_txt_nombres) ||
+                                       '</span>, se ha generado una notificación dentro del módulo de ficha de ventas:</p>
+                    
+                                                <div style="padding: 10px 0;">
+                                            
+                                                </div>
+                    
+                                                <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #e1efff; border-radius: 5px 5px 0px 0px;">
+                                                  <tr>
+                                                    <td>
+                                                      <div class="to100" style="display:inline-block;width: 265px">
+                                                        <p style="font-family: helvetica, arial, sans-serif; font-size: 18px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">' ||
+                                       rtrim(v_cliente) ||
+                                       '</span></p>
+                                                      </div>
+                                                        
+                                                      <div class="to100" style="display:inline-block;width: 110px">
+                                                        <p style="font-weight: bold;font-family: helvetica, arial, sans-serif; font-size: 15px; line-height: 1.35; margin: 0;"> Nº de Ficha Venta</p>
+                                                           <p style="font-family: helvetica, arial, sans-serif; font-size: 15px; line-height: 1.35; margin: 0;">
+                                                            <a href="' ||
+                                       url_ficha_venta || 'fichas-venta/' ||
+                                       lpad(p_num_ficha_vta_veh, 12, '0') ||
+                                       '" style="color:#0076ff">
+                                                              ' ||
+                                       lpad(p_num_ficha_vta_veh, 12, '0') || '
+                                                            </a>
+                                                          </p>
+                                                      </div>
+                                                    </td>
+                                                  </tr>
+                                                </table>
+                                                
+                                              <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #eeeeee; border-radius: 0px 0px 5px 5px;">
+                                                  <tr>
+                                                    <td style="padding: 0;">
+                                                      <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Filial</span></p>
+                                                      <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
+                                       rtrim(v_desc_filial) ||
+                                       '.</p>
+                                                    </td>
+                                                    
+                                                    <td style="padding: 0;">
+                                                      <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Area de Venta</span></p>
+                                                      <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
+                                       rtrim(v_desc_area_venta) ||
+                                       '.</p>
+                                                    </td> 
+                                                    
+                                                     <td style="padding: 0;">
+                                                      <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Compañia</span></p>
+                                                      <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
+                                       rtrim(v_desc_cia) ||
+                                       '.</p>
+                                                    </td>  
+                                                                                   
+                                                  </tr>                     
+                                                  
+                                                </table>
+                                                
+                                              <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #eeeeee; border-radius: 0px 0px 5px 5px;">
+                                                  <tr>
+                                                    <td style="padding: 0;">
+                                                      <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Vendedor</span></p>
+                                                      <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
+                                       rtrim(v_desc_vendedor) ||
+                                       '.</p>
+                                                    </td>                                                            
+                                                  </tr>   
+                                                                            
+                                                  
+                                               </table>
+                    
+                                                <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #f5f5f5; border-radius: 0px 0px 5px 5px;">
+                                                  <tr>
+                                                    <td style="padding: 0;">
+                                                      <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Observaciones</span></p>
+                                                      <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
+                                       rtrim(p_cuerpo_input) ||
+                                       '.</p>
+                                                    </td>
+                                                  </tr>
+                                                </table>
+                                                <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #f5f5f5; border-radius: 0px 0px 5px 5px;">
+                                                  <tr>
+                                                    <td style="padding: 0;">
+                                                      <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Solicitante</span></p>
+                                                      <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;">' ||
+                                       rtrim(v_dato_usuario) ||
+                                       '</p>
+                                                    </td>
+                                                    
+                                                  </tr>
+                                                </table>
+                                                
+                                           <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #f5f5f5; border-radius: 0px 0px 5px 5px;">
+                                                  <tr>
+                                                    <td style="padding: 0;">
+                                                      <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Notificaciones Adicionales</span></p>
+                                                      <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
+                                       rtrim(v_contactos) ||
+                                       '.</p>
+                                                    </td>                                                            
+                                                  </tr>                             
+                                                  
+                                            </table>
+                                           
+                                                <p style="margin: 0; padding-top: 25px;" >La información contenida en este correo electrónico es confidencial. Esta dirigida únicamente para el uso individual. Si has recibido este correo por error por favor hacer caso omiso a la solicitud.</p>
+                                              </td>
+                                            </tr>
+                                          </table>
+                                          <div style="-webkit-text-size-adjust: none; padding-bottom: 50px; padding-top: 20px; text-align: left;">
+                                            <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; margin: 0; text-align: center;">Este mensaje ha sido generado por el Sistema SID Web - ' ||
+                                       v_instancia || '</p>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    </table>
+                                  </body>
+                              </html>';
+                        
+                          sp_inse_correo(p_num_ficha_vta_veh,
+                                         v_txt_correo,
+                                         '',
+                                         v_asunto,
+                                         v_mensaje,
+                                         '',
+                                         p_id_usuario,
+                                         p_id_usuario,
+                                         'SE',
+                                         p_ret_esta,
+                                         p_ret_mens);
+                        
+                        END LOOP;
+                        CLOSE c_usuarios;
+                        
+                        
+                      
+                        p_ret_esta := 1;
+                        p_ret_mens := 'Se ejecuto correctamente';
+    
+     ELSE
+           p_ret_esta := 1;
+          p_ret_mens := 'Se ejecuto correctamente';
+                               
+    END IF;
+   
   EXCEPTION
     WHEN ve_error THEN
       p_ret_esta := 0;
@@ -2200,7 +2221,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                                           'Error',
                                           p_ret_mens,
                                           p_num_ficha_vta_veh);
-
+    
   END;
 
   PROCEDURE sp_gen_plantilla_correo_bonos
@@ -2229,14 +2250,14 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
     v_cod_cli        VARCHAR(20);
     v_usuario_ap_nom VARCHAR(50);
     v_dato_usuario   VARCHAR(50);
-
+  
     v_desc_filial       VARCHAR(500);
     v_desc_area_venta   VARCHAR(500);
     v_desc_cia          VARCHAR(500);
     v_desc_vendedor     VARCHAR(500);
     v_fec_ficha_vta_veh VARCHAR(500);
     v_contactos         VARCHAR(2000);
-
+  
     v_cod_id_usuario sistemas.sis_mae_usuario.cod_id_usuario%TYPE;
     v_txt_correo     sistemas.sis_mae_usuario.txt_correo%TYPE;
     v_txt_usuario    sistemas.sis_mae_usuario.txt_usuario%TYPE;
@@ -2246,13 +2267,13 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
     url_ficha_venta  VARCHAR(150);
     v_instancia      VARCHAR(20);
   BEGIN
-
+  
     SELECT NAME INTO v_instancia FROM v$database;
-
+  
     IF v_instancia = 'PROD' THEN
       v_instancia := 'Producción';
     END IF;
-
+  
     -- Obtenemos los correos a Notificar
     IF p_destinatarios IS NOT NULL THEN
       v_query := 'SELECT COD_ID_USUARIO, TXT_CORREO, TXT_USUARIO, TXT_NOMBRES, TXT_APELLIDOS
@@ -2266,7 +2287,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                                         'Error',
                                         v_query,
                                         p_num_ficha_vta_veh);
-
+  
     -- Obtener url de ambiente 
     SELECT upper(instance_name) INTO wc_string FROM v$instance;
     SELECT pkg_gen_parametros.fun_obt_parametro_modulo('0001',
@@ -2275,7 +2296,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                                                        wc_string)
       INTO url_ficha_venta
       FROM dual;
-
+  
     --Obtenemos el correo origen
     BEGIN
       SELECT txt_correo
@@ -2286,7 +2307,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
       WHEN OTHERS THEN
         v_correoori := 'apps@divemotor.com.pe';
     END;
-
+  
     -- Obtener datos de la ficha
     SELECT cod_clie,
            pkg_gen_select.func_sel_gen_filial(cod_filial),
@@ -2302,29 +2323,29 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
            v_fec_ficha_vta_veh
       FROM vve_ficha_vta_veh
      WHERE num_ficha_vta_veh = p_num_ficha_vta_veh;
-
+  
     SELECT nvl(num_docu_iden, num_ruc)
       INTO v_documento
       FROM gen_persona g
      WHERE cod_perso = v_cod_cli; --COD_CLIE
-
+  
     SELECT nom_perso
       INTO v_cliente
       FROM gen_persona g
      WHERE cod_perso = v_cod_cli; --COD_CLIE
-
+  
     -- Obtener datos de usuario quien realizo la accion
     SELECT (txt_apellidos || ', ' || txt_nombres)
       INTO v_dato_usuario
       FROM sistemas.sis_mae_usuario
      WHERE cod_id_usuario = p_id_usuario;
-
+  
     --Asunto del mensaje Historial de ficha de venta Agregar comentario
-
+  
     v_asunto := 'Bonos .: ' || rtrim(ltrim(to_char(p_num_ficha_vta_veh)));
-
+  
     --Contactos
-
+  
     OPEN c_usuarios FOR v_query;
     LOOP
       FETCH c_usuarios
@@ -2334,13 +2355,13 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
              v_txt_nombres,
              v_txt_apellidos;
       EXIT WHEN c_usuarios%NOTFOUND;
-
+    
       v_contactos := v_txt_usuario || ' ' || v_txt_apellidos || '<br />' ||
                      v_contactos;
-
+    
     END LOOP;
     CLOSE c_usuarios;
-
+  
     --Envio de correo
     OPEN c_usuarios FOR v_query;
     LOOP
@@ -2351,16 +2372,16 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
              v_txt_nombres,
              v_txt_apellidos;
       EXIT WHEN c_usuarios%NOTFOUND;
-
+    
       v_mensaje := '<!DOCTYPE html>
           <html lang="es" class="baseFontStyles" style="color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 16px; line-height: 1.35;">
               <head>
                 <title>Divemotor - Entrega de Vehículo</title>
                 <meta charset="utf-8">
-
+                
                 <style>
                   div, p, a, li, td { -webkit-text-size-adjust:none; }
-
+                  
                   @media screen and (max-width: 500px) {
                     .mainTable,.mailBody,.to100{
                       width:100% !important;
@@ -2383,7 +2404,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                 <table width="500" class="to100" border="0" align="center" cellpadding="0" cellspacing="0" class="mainTable" style="border-spacing: 0;">
                   <tr>
                     <td style="padding: 0;">
-
+                      
                       <table class="to100" height="40" width="100%" cellpadding="14" cellspacing="0" border="0" style="border-spacing: 0;">
                         <tr>
                           <td style="padding: 0;">
@@ -2407,7 +2428,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    '</span>, se ha generado una notificación dentro del módulo de ficha de ventas:</p>
 
                             <div style="padding: 10px 0;">
-
+                        
                             </div>
 
                             <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #e1efff; border-radius: 5px 5px 0px 0px;">
@@ -2418,7 +2439,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    rtrim(v_cliente) ||
                    '</span></p>
                                   </div>
-
+                                    
                                   <div class="to100" style="display:inline-block;width: 110px">
                                     <p style="font-weight: bold;font-family: helvetica, arial, sans-serif; font-size: 15px; line-height: 1.35; margin: 0;"> Nº de Ficha Venta</p>
                                     <p style="font-family: helvetica, arial, sans-serif; font-size: 15px; line-height: 1.35; margin: 0;">
@@ -2434,7 +2455,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                                 </td>
                               </tr>
                             </table>
-
+                            
                           <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #eeeeee; border-radius: 0px 0px 5px 5px;">
                               <tr>
                                 <td style="padding: 0;">
@@ -2443,25 +2464,25 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    rtrim(v_desc_filial) ||
                    '.</p>
                                 </td>
-
+                                
                                 <td style="padding: 0;">
                                   <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Area de Venta</span></p>
                                   <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
                    rtrim(v_desc_area_venta) ||
                    '.</p>
                                 </td> 
-
+                                
                                  <td style="padding: 0;">
                                   <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Compañia</span></p>
                                   <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
                    rtrim(v_desc_cia) ||
                    '.</p>
                                 </td>  
-
+                                                               
                               </tr>                     
-
+                              
                             </table>
-
+                            
                           <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #eeeeee; border-radius: 0px 0px 5px 5px;">
                               <tr>
                                 <td style="padding: 0;">
@@ -2471,8 +2492,8 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    '.</p>
                                 </td>                                                            
                               </tr>   
-
-
+                                                        
+                              
                            </table>
 
                             <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #f5f5f5; border-radius: 0px 0px 5px 5px;">
@@ -2493,10 +2514,10 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    rtrim(v_dato_usuario) ||
                    '</p>
                                 </td>
-
+                                
                               </tr>
                             </table>
-
+                            
                        <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #f5f5f5; border-radius: 0px 0px 5px 5px;">
                               <tr>
                                 <td style="padding: 0;">
@@ -2506,9 +2527,9 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    '.</p>
                                 </td>                                                            
                               </tr>                             
-
+                              
                         </table>
-
+                       
                             <p style="margin: 0; padding-top: 25px;" >La información contenida en este correo electrónico es confidencial. Esta dirigida únicamente para el uso individual. Si has recibido este correo por error por favor hacer caso omiso a la solicitud.</p>
                           </td>
                         </tr>
@@ -2522,7 +2543,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                 </table>
               </body>
           </html>';
-
+    
       sp_inse_correo(p_num_ficha_vta_veh,
                      v_txt_correo,
                      '',
@@ -2534,10 +2555,10 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                      'BO',
                      p_ret_esta,
                      p_ret_mens);
-
+    
     END LOOP;
     CLOSE c_usuarios;
-
+  
     p_ret_esta := 1;
     p_ret_mens := 'Se ejecuto correctamente';
   EXCEPTION
@@ -2552,7 +2573,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                                           'Error',
                                           p_ret_mens,
                                           p_num_ficha_vta_veh);
-
+    
   END;
 
   PROCEDURE sp_gen_plantilla_correo_cfich
@@ -2596,13 +2617,13 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
     url_ficha_venta     VARCHAR(150);
     v_instancia         VARCHAR(20);
   BEGIN
-
+  
     SELECT NAME INTO v_instancia FROM v$database;
-
+  
     IF v_instancia = 'PROD' THEN
       v_instancia := 'Producción';
     END IF;
-
+  
     -- Actualizar Correos
     sp_actualizar_envio('',
                         'FP',
@@ -2610,16 +2631,16 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                         p_id_usuario,
                         p_ret_esta,
                         p_ret_mens);
-
+  
     -- Obtenemos los correos a Notificar
     IF p_destinatarios IS NOT NULL THEN
       v_query := 'SELECT COD_ID_USUARIO, TXT_CORREO, TXT_USUARIO, TXT_NOMBRES, TXT_APELLIDOS
                    FROM SISTEMAS.SIS_MAE_USUARIO WHERE COD_ID_USUARIO IN (' ||
                  p_destinatarios || ') 
-
+               
                   ';
     END IF;
-
+  
     pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
                                         'sp_gen_plantilla_correo_cfich',
                                         NULL,
@@ -2634,7 +2655,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                                                        wc_string)
       INTO url_ficha_venta
       FROM dual;
-
+  
     OPEN c_usuarios FOR v_query;
     LOOP
       FETCH c_usuarios
@@ -2644,13 +2665,13 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
              v_txt_nombres,
              v_txt_apellidos;
       EXIT WHEN c_usuarios%NOTFOUND;
-
+    
       v_contactos := v_txt_usuario || ' ' || v_txt_apellidos || '<br />' ||
                      v_contactos;
-
+    
     END LOOP;
     CLOSE c_usuarios;
-
+  
     --Obtenemos el correo origen
     BEGIN
       SELECT txt_correo
@@ -2661,7 +2682,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
       WHEN OTHERS THEN
         v_correoori := 'apps@divemotor.com.pe';
     END;
-
+  
     -- Obtener datos de la ficha
     SELECT cod_clie,
            pkg_gen_select.func_sel_gen_filial(cod_filial),
@@ -2677,28 +2698,28 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
            v_fec_ficha_vta_veh
       FROM vve_ficha_vta_veh
      WHERE num_ficha_vta_veh = p_num_ficha_vta_veh;
-
+  
     SELECT nvl(num_docu_iden, num_ruc)
       INTO v_documento
       FROM gen_persona g
      WHERE cod_perso = v_cod_cli; --COD_CLIE
-
+  
     SELECT nom_perso
       INTO v_cliente
       FROM gen_persona g
      WHERE cod_perso = v_cod_cli; --COD_CLIE
-
+  
     -- Obtener datos de usuario quien realizo la accion
     SELECT (txt_apellidos || ', ' || txt_nombres)
       INTO v_dato_usuario
       FROM sistemas.sis_mae_usuario
      WHERE cod_id_usuario = p_id_usuario;
-
+  
     --Asunto del mensaje Historial de ficha de venta Agregar comentario
-
+  
     v_asunto := 'Asignación de profroma.: ' ||
                 rtrim(ltrim(to_char(p_num_ficha_vta_veh)));
-
+  
     OPEN c_usuarios FOR v_query;
     LOOP
       FETCH c_usuarios
@@ -2708,16 +2729,16 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
              v_txt_nombres,
              v_txt_apellidos;
       EXIT WHEN c_usuarios%NOTFOUND;
-
+    
       v_mensaje := '<!DOCTYPE html>
           <html lang="es" class="baseFontStyles" style="color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 16px; line-height: 1.35;">
               <head>
                 <title>Divemotor - Entrega de Vehículo</title>
                 <meta charset="utf-8">
-
+                
                 <style>
                   div, p, a, li, td { -webkit-text-size-adjust:none; }
-
+                  
                   @media screen and (max-width: 500px) {
                     .mainTable,.mailBody,.to100{
                       width:100% !important;
@@ -2740,7 +2761,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                 <table width="500" class="to100" border="0" align="center" cellpadding="0" cellspacing="0" class="mainTable" style="border-spacing: 0;">
                   <tr>
                     <td style="padding: 0;">
-
+                      
                       <table class="to100" height="40" width="100%" cellpadding="14" cellspacing="0" border="0" style="border-spacing: 0;">
                         <tr>
                           <td style="padding: 0;">
@@ -2763,7 +2784,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    '</span>, se ha generado una notificación dentro del módulo de ficha de ventas:</p>
 
                             <div style="padding: 10px 0;">
-
+                        
                             </div>
 
                             <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #e1efff; border-radius: 5px 5px 0px 0px;">
@@ -2774,7 +2795,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    rtrim(v_cliente) ||
                    '</span></p>
                                   </div>
-
+                                    
                                   <div class="to100" style="display:inline-block;width: 110px">
                                     <p style="font-weight: bold;font-family: helvetica, arial, sans-serif; font-size: 15px; line-height: 1.35; margin: 0;"> Nº de Ficha Venta</p>
                                     <p style="font-family: helvetica, arial, sans-serif; font-size: 15px; line-height: 1.35; margin: 0;">
@@ -2790,7 +2811,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                                 </td>
                               </tr>
                             </table>
-
+                            
                              <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #eeeeee; border-radius: 0px 0px 5px 5px;">
                               <tr>
                                 <td style="padding: 0;">
@@ -2799,25 +2820,25 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    rtrim(v_desc_filial) ||
                    '.</p>
                                 </td>
-
+                                
                                 <td style="padding: 0;">
                                   <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Area de Venta</span></p>
                                   <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
                    rtrim(v_desc_area_venta) ||
                    '.</p>
                                 </td> 
-
+                                
                                  <td style="padding: 0;">
                                   <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Compañia</span></p>
                                   <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
                    rtrim(v_desc_cia) ||
                    '.</p>
                                 </td>  
-
+                                                               
                               </tr>                     
-
+                              
                             </table>
-
+                            
                           <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #eeeeee; border-radius: 0px 0px 5px 5px;">
                               <tr>
                                 <td style="padding: 0;">
@@ -2827,20 +2848,20 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    '.</p>
                                 </td>                                                            
                               </tr>   
-
+                              
                                       <tr>
                                 <td style="padding: 0;">
                                   <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">N° proforma</span></p>
                                   <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
-
+                  
                    p_categoria_input ||
                    '.</p>
                                 </td>                                                            
                               </tr>                  
-
+                              
                            </table>
-
-
+                   
+                          
                             <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #f5f5f5; border-radius: 0px 0px 5px 5px;">
                               <tr>
                                 <td style="padding: 0;">
@@ -2859,10 +2880,10 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    rtrim(v_dato_usuario) ||
                    '</p>
                                 </td>
-
+                                
                               </tr>
                             </table>
-
+                            
                           <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #f5f5f5; border-radius: 0px 0px 5px 5px;">
                               <tr>
                                 <td style="padding: 0;">
@@ -2872,9 +2893,9 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    '.</p>
                                 </td>                                                            
                               </tr>                             
-
+                              
                           </table>
-
+                       
                             <p style="margin: 0; padding-top: 25px;" >La información contenida en este correo electrónico es confidencial. Esta dirigida únicamente para el uso individual. Si has recibido este correo por error por favor hacer caso omiso a la solicitud.</p>
                           </td>
                         </tr>
@@ -2888,7 +2909,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                 </table>
               </body>
           </html>';
-
+    
       sp_inse_correo(p_num_ficha_vta_veh,
                      v_txt_correo,
                      '',
@@ -2900,10 +2921,10 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                      'FP',
                      p_ret_esta,
                      p_ret_mens);
-
+    
     END LOOP;
     CLOSE c_usuarios;
-
+  
     p_ret_esta := 1;
     p_ret_mens := 'Se ejecuto correctamente';
   EXCEPTION
@@ -2918,7 +2939,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                                           'Error',
                                           p_ret_mens,
                                           p_num_ficha_vta_veh);
-
+    
   END;
   /*
     PROCEDURE sp_obtener_plantilla
@@ -2932,7 +2953,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
     ) AS
       ve_error EXCEPTION;
     BEGIN
-
+    
       OPEN p_ret_correos FOR
         SELECT a.destinatarios, a.copia, a.asunto, a.cuerpo, a.correoorigen
           FROM vve_correo_prof a
@@ -2947,14 +2968,14 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                                     FROM dual)
            AND a.tipo_ref_proc = p_tipo_ref_proc -- SOLICITUD DE FACTURACION
            AND a.ind_enviado = 'N';
-
+    
       pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
                                           'SP_OBTENER_PLANTILLA',
                                           NULL, --P_COD_USUA_SID,
                                           p_tipo_ref_proc,
                                           p_ret_mens,
                                           p_cod_ref_proc);
-
+    
       p_ret_esta := 1;
       p_ret_mens := 'Se ejecuto correctamente';
     EXCEPTION
@@ -2997,14 +3018,14 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
     v_cod_cli        VARCHAR(20);
     v_usuario_ap_nom VARCHAR(50);
     v_dato_usuario   VARCHAR(50);
-
+  
     v_desc_filial       VARCHAR(500);
     v_desc_area_venta   VARCHAR(500);
     v_desc_cia          VARCHAR(500);
     v_desc_vendedor     VARCHAR(500);
     v_fec_ficha_vta_veh VARCHAR(500);
     v_contactos         VARCHAR(2000);
-
+  
     v_cod_id_usuario sistemas.sis_mae_usuario.cod_id_usuario%TYPE;
     v_txt_correo     sistemas.sis_mae_usuario.txt_correo%TYPE;
     v_txt_usuario    sistemas.sis_mae_usuario.txt_usuario%TYPE;
@@ -3014,13 +3035,13 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
     url_ficha_venta  VARCHAR(150);
     v_instancia      VARCHAR(20);
   BEGIN
-
+  
     SELECT NAME INTO v_instancia FROM v$database;
-
+  
     IF v_instancia = 'PROD' THEN
       v_instancia := 'Producción';
     END IF;
-
+  
     -- Obtenemos los correos a Notificar
     IF p_destinatarios IS NOT NULL THEN
       v_query := 'SELECT COD_ID_USUARIO, TXT_CORREO, TXT_USUARIO, TXT_NOMBRES, TXT_APELLIDOS
@@ -3028,7 +3049,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                  p_destinatarios || ')                  
                 ';
     END IF;
-
+  
     -- Obtener url de ambiente 
     SELECT upper(instance_name) INTO wc_string FROM v$instance;
     SELECT pkg_gen_parametros.fun_obt_parametro_modulo('0001',
@@ -3037,7 +3058,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                                                        wc_string)
       INTO url_ficha_venta
       FROM dual;
-
+  
     --Obtenemos el correo origen
     BEGIN
       SELECT txt_correo
@@ -3048,7 +3069,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
       WHEN OTHERS THEN
         v_correoori := 'apps@divemotor.com.pe';
     END;
-
+  
     -- Obtener datos de la ficha
     SELECT cod_clie,
            pkg_gen_select.func_sel_gen_filial(cod_filial),
@@ -3064,32 +3085,32 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
            v_fec_ficha_vta_veh
       FROM vve_ficha_vta_veh
      WHERE num_ficha_vta_veh = p_num_ficha_vta_veh;
-
+  
     SELECT nvl(num_docu_iden, num_ruc)
       INTO v_documento
       FROM gen_persona g
      WHERE cod_perso = v_cod_cli; --COD_CLIE
-
+  
     SELECT nom_perso
       INTO v_cliente
       FROM gen_persona g
      WHERE cod_perso = v_cod_cli; --COD_CLIE
-
+  
     -- Obtener datos de usuario quien realizo la accion
-
+  
     v_asunto := 'Bonos .: ' || rtrim(ltrim(to_char(p_num_ficha_vta_veh)));
-
+  
     SELECT (txt_apellidos || ', ' || txt_nombres)
       INTO v_dato_usuario
       FROM sistemas.sis_mae_usuario
      WHERE cod_id_usuario = p_id_usuario;
-
+  
     --Asunto del mensaje Historial de ficha de venta Agregar comentario
-
+  
     v_asunto := 'Bonos .: ' || rtrim(ltrim(to_char(p_num_ficha_vta_veh)));
-
+  
     --Contactos
-
+  
     OPEN c_usuarios FOR v_query;
     LOOP
       FETCH c_usuarios
@@ -3099,20 +3120,20 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
              v_txt_nombres,
              v_txt_apellidos;
       EXIT WHEN c_usuarios%NOTFOUND;
-
+    
       v_contactos := v_txt_usuario || ' ' || v_txt_apellidos || '<br />' ||
                      v_contactos;
-
+    
     END LOOP;
     CLOSE c_usuarios;
-
+  
     pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
                                         'SP_GEN_PLANTILLA_CORREO_CESTAD',
                                         NULL,
                                         'ok1',
                                         v_query,
                                         p_num_ficha_vta_veh);
-
+  
     --Envio de correo
     OPEN c_usuarios FOR v_query;
     LOOP
@@ -3123,16 +3144,16 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
              v_txt_nombres,
              v_txt_apellidos;
       EXIT WHEN c_usuarios%NOTFOUND;
-
+    
       v_mensaje := '<!DOCTYPE html>
           <html lang="es" class="baseFontStyles" style="color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 16px; line-height: 1.35;">
               <head>
                 <title>Divemotor - Entrega de Vehículo</title>
                 <meta charset="utf-8">
-
+                
                 <style>
                   div, p, a, li, td { -webkit-text-size-adjust:none; }
-
+                  
                   @media screen and (max-width: 500px) {
                     .mainTable,.mailBody,.to100{
                       width:100% !important;
@@ -3155,7 +3176,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                 <table width="500" class="to100" border="0" align="center" cellpadding="0" cellspacing="0" class="mainTable" style="border-spacing: 0;">
                   <tr>
                     <td style="padding: 0;">
-
+                      
                       <table class="to100" height="40" width="100%" cellpadding="14" cellspacing="0" border="0" style="border-spacing: 0;">
                         <tr>
                           <td style="padding: 0;">
@@ -3179,7 +3200,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    '</span>, se ha generado una notificación dentro del módulo de ficha de ventas:</p>
 
                             <div style="padding: 10px 0;">
-
+                        
                             </div>
 
                             <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #e1efff; border-radius: 5px 5px 0px 0px;">
@@ -3190,7 +3211,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    rtrim(v_cliente) ||
                    '</span></p>
                                   </div>
-
+                                    
                                   <div class="to100" style="display:inline-block;width: 110px">
                                     <p style="font-weight: bold;font-family: helvetica, arial, sans-serif; font-size: 15px; line-height: 1.35; margin: 0;"> Nº de Ficha Venta</p>
                                     <p style="font-family: helvetica, arial, sans-serif; font-size: 15px; line-height: 1.35; margin: 0;">
@@ -3206,7 +3227,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                                 </td>
                               </tr>
                             </table>
-
+                            
                           <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #eeeeee; border-radius: 0px 0px 5px 5px;">
                               <tr>
                                 <td style="padding: 0;">
@@ -3215,25 +3236,25 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    rtrim(v_desc_filial) ||
                    '.</p>
                                 </td>
-
+                                
                                 <td style="padding: 0;">
                                   <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Area de Venta</span></p>
                                   <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
                    rtrim(v_desc_area_venta) ||
                    '.</p>
                                 </td> 
-
+                                
                                  <td style="padding: 0;">
                                   <p style="font-family: helvetica, arial, sans-serif; font-size: 12px; line-height: 1.35; margin: 0;"><span style="font-weight: bold;">Compañia</span></p>
                                   <p style=" font-family: helvetica, arial, sans-serif; line-height: 1.35; margin: 0;"> ' ||
                    rtrim(v_desc_cia) ||
                    '.</p>
                                 </td>  
-
+                                                               
                               </tr>                     
-
+                              
                             </table>
-
+                            
                           <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #eeeeee; border-radius: 0px 0px 5px 5px;">
                               <tr>
                                 <td style="padding: 0;">
@@ -3243,8 +3264,8 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    '.</p>
                                 </td>                                                            
                               </tr>   
-
-
+                                                        
+                              
                            </table>
 
                             <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #f5f5f5; border-radius: 0px 0px 5px 5px;">
@@ -3265,10 +3286,10 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    rtrim(v_dato_usuario) ||
                    '</p>
                                 </td>
-
+                                
                               </tr>
                             </table>
-
+                            
                        <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" style="border-spacing: 0;padding: 15px 18px;background-color: #f5f5f5; border-radius: 0px 0px 5px 5px;">
                               <tr>
                                 <td style="padding: 0;">
@@ -3278,9 +3299,9 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    '.</p>
                                 </td>                                                            
                               </tr>                             
-
+                              
                         </table>
-
+                       
                             <p style="margin: 0; padding-top: 25px;" >La información contenida en este correo electrónico es confidencial. Esta dirigida únicamente para el uso individual. Si has recibido este correo por error por favor hacer caso omiso a la solicitud.</p>
                           </td>
                         </tr>
@@ -3294,7 +3315,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                 </table>
               </body>
           </html>';
-
+    
       sp_inse_correo(p_num_ficha_vta_veh,
                      v_txt_correo,
                      '',
@@ -3306,10 +3327,10 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                      'AV',
                      p_ret_esta,
                      p_ret_mens);
-
+    
     END LOOP;
     CLOSE c_usuarios;
-
+  
     p_ret_esta := 1;
     p_ret_mens := 'Se ejecuto correctamente';
   EXCEPTION
@@ -3324,7 +3345,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                                           'Error',
                                           p_ret_mens,
                                           p_num_ficha_vta_veh);
-
+    
   END;
 
   PROCEDURE sp_obtener_plantilla
@@ -3339,7 +3360,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
     ve_error EXCEPTION;
     ve_query VARCHAR2(20000);
   BEGIN
-
+  
     ve_query := 'SELECT a.cod_correo_prof,
              a.destinatarios,
              a.copia,
@@ -3349,9 +3370,12 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
         FROM vve_correo_prof a
        WHERE a.cod_ref_proc IN (SELECT CASE ''' ||
                 p_tipo_ref_proc || '''
-                                         WHEN ''AD'' THEN
+                                         WHEN ''DA'' THEN
                                           ''' ||
                 p_cod_ref_proc || '''
+                                         WHEN ''SE'' THEN
+                                           ltrim(''' ||
+                p_cod_ref_proc || ''', ''0'')
                                          ELSE
                                           ltrim(''' ||
                 p_cod_ref_proc || ''', ''0'')
@@ -3360,7 +3384,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
          AND a.tipo_ref_proc = ''' || p_tipo_ref_proc ||
                 ''' -- SOLICITUD DE FACTURACION
          AND a.ind_enviado = ''N''';
-
+  
     pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_OK',
                                         'SP_OBTENER_PLANTILLA_OK',
                                         NULL, --P_COD_USUA_SID,
@@ -3383,6 +3407,65 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                                           p_ret_mens,
                                           p_cod_ref_proc);
   END;
+ 
+ --<I Req. 87567 E2.1 ID## avilca 15/01/2021> 
+ PROCEDURE sp_obtener_plant_prof
+  (
+    p_cod_ref_proc  IN VARCHAR2,
+    p_tipo_ref_proc IN VARCHAR2,
+    p_id_usuario    IN sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
+    p_ret_correos   OUT SYS_REFCURSOR,
+    p_ret_esta      OUT NUMBER,
+    p_ret_mens      OUT VARCHAR2
+  ) AS
+    ve_error EXCEPTION;
+    ve_query VARCHAR2(20000);
+  BEGIN
+  
+    ve_query := 'SELECT a.cod_correo_prof,
+             a.destinatarios,
+             a.copia,
+             a.asunto,
+             a.cuerpo,
+             a.correoorigen
+        FROM vve_correo_prof a
+       WHERE a.cod_ref_proc IN (SELECT CASE ''' ||
+                p_tipo_ref_proc || '''
+                                         WHEN ''PS'' THEN
+                                          ''' ||
+                p_cod_ref_proc || '''
+                                         ELSE
+                                          ltrim(''' ||
+                p_cod_ref_proc || ''', ''0'')
+                                       END AS fdv
+                                  FROM dual)
+         AND a.tipo_ref_proc = ''' || p_tipo_ref_proc ||
+                ''' -- SOLICITUD DE FACTURACION
+         AND a.ind_enviado = ''N''';
+  
+    pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_OK',
+                                        'SP_OBTENER_PLANTILLA_OK',
+                                        NULL, --P_COD_USUA_SID,
+                                        p_tipo_ref_proc,
+                                        ve_query,
+                                        p_cod_ref_proc);
+    OPEN p_ret_correos FOR ve_query;
+    p_ret_esta := 1;
+    p_ret_mens := 'Se ejecuto correctamente';
+  EXCEPTION
+    WHEN ve_error THEN
+      p_ret_esta := 0;
+    WHEN OTHERS THEN
+      p_ret_esta := -1;
+      p_ret_mens := 'SP_OBTENER_PLANTILLA:' || SQLERRM;
+      pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
+                                          'SP_OBTENER_PLANTILLA',
+                                          NULL, --P_COD_USUA_SID,
+                                          'Error',
+                                          p_ret_mens,
+                                          p_cod_ref_proc);
+  END;
+--<F Req. 87567 E2.1 ID## avilca 15/01/2021>
 
   PROCEDURE sp_actualizar_envio
   (
@@ -3395,9 +3478,9 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
   ) AS
     ve_error EXCEPTION;
   BEGIN
-
-    IF p_tipo_ref_proc = 'AD' THEN
-
+  
+    IF p_tipo_ref_proc = 'DA' OR p_tipo_ref_proc = 'PS' THEN--<Req. 87567 E2.1 ID## AVILCA 15/01/2021>
+    
       UPDATE vve_correo_prof a
          SET a.ind_enviado         = 'S',
              a.cod_id_usuario_modi = p_id_usuario,
@@ -3406,7 +3489,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
          AND a.tipo_ref_proc = p_tipo_ref_proc
             --AND A.COD_CORREO_PROF = P_COD_CORREO_PROF
          AND a.ind_enviado = 'N';
-    ELSE
+    ELSE 
       UPDATE vve_correo_prof a
          SET a.ind_enviado         = 'S',
              a.cod_id_usuario_modi = p_id_usuario,
@@ -3416,7 +3499,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
          AND a.tipo_ref_proc = p_tipo_ref_proc
             --AND A.COD_CORREO_PROF = P_COD_CORREO_PROF
          AND a.ind_enviado = 'N';
-
+    
     END IF;
     /*
             UPDATE vve_correo_prof a
@@ -3430,10 +3513,10 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
            AND a.ind_enviado = 'N';
            */
     COMMIT;
-
+  
     p_ret_esta := 1;
     p_ret_mens := 'Se ejecuto correctamente';
-
+  
   EXCEPTION
     WHEN ve_error THEN
       p_ret_esta := 0;
@@ -3475,14 +3558,19 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
     v_cod_correo vve_correo_prof.cod_correo_prof%TYPE;
   BEGIN
 
+    --<I - REQ.89338 - SOPORTE LEGADOS - 05/05/2020>
+    /*
     BEGIN
       SELECT MAX(cod_correo_prof) INTO v_cod_correo FROM vve_correo_prof;
     EXCEPTION
       WHEN OTHERS THEN
         v_cod_correo := 0;
     END;
-
+  
     v_cod_correo := v_cod_correo + 1;
+    */
+    SELECT VVE_CORREO_PROF_SQ01.NEXTVAL INTO V_COD_CORREO FROM DUAL;
+    --<F - REQ.89338 - SOPORTE LEGADOS - 05/05/2020>
 
     INSERT INTO vve_correo_prof
       (cod_correo_prof,
@@ -3510,12 +3598,12 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
        'N',
        SYSDATE,
        p_cod_usua_web);
-
+  
     COMMIT;
-
+  
     p_ret_mens := 'Se registró correctamente';
     p_ret_esta := 1;
-
+  
     pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
                                         'SP_INSE_CORREO',
                                         p_cod_usua_sid,
@@ -3558,11 +3646,11 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
         FROM usuarios_rol_usuario a, usuarios b
        WHERE cod_rol_usuario = '015'
          AND b.co_usuario = a.co_usuario;
-
+  
     /*  UNION
-
+    
     SELECT 'phyluis@gmail.com' di_correo, 'LUIS' des_usuario FROM DUAL;*/
-
+  
     p_ret_mens := 'Se registró correctamente';
     p_ret_esta := 1;
   EXCEPTION
@@ -3592,15 +3680,15 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
     p_num_ficha_vta_veh IN VARCHAR2,
     x_auto_env          VARCHAR2,
     x_auto_apro         VARCHAR2,
-
+    
     x_fec_usuario_aut DATE,
     p_cod_usua_sid    IN sistemas.usuarios.co_usuario%TYPE,
     p_cod_usua_web    IN sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
-
+    
     p_ret_esta OUT NUMBER,
     p_ret_mens OUT VARCHAR2
   ) AS
-
+  
     wc_des_area_vta             gen_area_vta.des_area_vta%TYPE;
     wc_des_filial               gen_filiales.nom_filial%TYPE;
     wc_des_aut_ficha_vta        VARCHAR2(60);
@@ -3618,7 +3706,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
     l_destinatarios             vve_correo_prof.destinatarios%TYPE;
     v_cod_correo                vve_correo_prof.cod_correo_prof%TYPE;
     l_cod_id_procesos           sistemas.sis_mae_procesos.cod_id_procesos%TYPE;
-
+  
     --Equipos Locales
     CURSOR equipo_local(cnum_prof_veh VARCHAR2) IS
       SELECT el.des_equipo_local_veh,
@@ -3682,16 +3770,16 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
     nprecio_esp vve_proforma_equipo_esp_veh.precio%TYPE := 0;
     ntot_esp    vve_proforma_equipo_esp_veh.precio%TYPE := 0;
     nprecio     vve_proforma_veh_det.precio%TYPE := 0;
-
+  
     nporcentaje NUMBER := 0;
-
+  
     ntotal vve_proforma_veh_det.precio%TYPE := 0;
     --
     nexiste_local    NUMBER := 0;
     nexiste_especial NUMBER := 0;
-
+  
     --v_num_prof_veh vve_ficha_vta_pedido_veh.num_prof_veh%TYPE;
-
+  
     uno_cod_filial        vve_ficha_vta_veh.cod_filial%TYPE;
     uno_cod_area_vta      vve_ficha_vta_veh.cod_area_vta%TYPE;
     uno_cod_clie          vve_ficha_vta_veh.cod_clie%TYPE;
@@ -3710,7 +3798,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                                         'Paso 1',
                                         p_ret_mens,
                                         p_num_ficha_vta_veh);
-
+  
     SELECT a.cod_filial,
            a.cod_area_vta,
            a.cod_clie,
@@ -3723,7 +3811,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
            uno_vendedor
       FROM vve_ficha_vta_veh a
      WHERE a.num_ficha_vta_veh = p_num_ficha_vta_veh;
-
+  
     SELECT nom_perso,
            cod_tipo_perso,
            num_ruc,
@@ -3736,9 +3824,9 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
            uno_num_telf_movil
       FROM gen_persona
      WHERE cod_perso = uno_cod_clie;
-
+  
     -- Nombre de la Filial
-
+  
     ---corregir
     BEGIN
       SELECT nom_filial
@@ -3749,7 +3837,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
       WHEN no_data_found THEN
         wc_des_filial := NULL;
     END;
-
+  
     -- Nombre del Area de Venta
     --corrrgir
     BEGIN
@@ -3761,9 +3849,9 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
       WHEN no_data_found THEN
         wc_des_area_vta := 'Area de venta no existe';
     END;
-
+  
     --DESCRIPCION AUTORIZACION APROBADA 
-
+  
     BEGIN
       SELECT des_aut_ficha_vta
         INTO wc_des_aut_ficha_vta
@@ -3773,10 +3861,10 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
       WHEN OTHERS THEN
         wc_des_aut_ficha_vta := NULL;
     END;
-
+  
     -- Datos del usuario conectado
     BEGIN
-
+    
       SELECT lower(a.txt_correo),
              initcap(a.txt_nombres || ' ' || a.txt_nombres)
         INTO wc_mail, wc_nombre
@@ -3786,9 +3874,9 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
       WHEN no_data_found THEN
         wc_mail   := 'codisa-naf@divemotor.com.pe';
         wc_nombre := 'Sistema SIDWEB';
-
+      
     END;
-
+  
     pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_LOG',
                                         'sp_corro_auto',
                                         p_cod_usua_sid,
@@ -3798,7 +3886,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
     IF p_num_ficha_vta_veh IS NOT NULL THEN
       wc_asunto := 'Autorización ' || wc_des_aut_ficha_vta ||
                    ' a la Ficha de Venta Nro. ' || p_num_ficha_vta_veh;
-
+    
       wc_mensaje := 'Se ha Autorizado una Ficha de Venta en la Filial ' ||
                     wc_des_filial || ' (' || uno_cod_filial ||
                     '): <br><br>' || '<table style="FONT: 9pt Arial"> 
@@ -3841,7 +3929,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                     '</td>
                 </tr>
                </table>';
-
+    
       w_contador      := 0;
       w_contador_cont := 0;
       --w_flag_pend     := 0;
@@ -3872,7 +3960,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                        pd.val_vta_veh,
                        pd.val_pre_veh,
                        pd.can_veh * pd.val_pre_veh total,
-
+                       
                        decode(decode(fvv.cod_tipo_pago,
                                      'C',
                                      fvv.cod_moneda_ficha_vta_veh,
@@ -3934,16 +4022,16 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    AND pc.cod_tipo_importacion = ti.cod_tipo_importacion(+)
                    AND pd.cod_familia_veh = fv.cod_familia_veh(+)
                    AND pd.cod_marca = gm.cod_marca(+)
-
+                      
                    AND pd.cod_familia_veh = bm.cod_familia_veh(+)
                    AND pd.cod_marca = bm.cod_marca(+)
                    AND pd.cod_baumuster = bm.cod_baumuster(+)
-
+                      
                    AND pd.cod_familia_veh = cv.cod_familia_veh(+)
                    AND pd.cod_marca = cv.cod_marca(+)
                    AND pd.cod_baumuster = cv.cod_baumuster(+)
                    AND pd.cod_config_veh = cv.cod_config_veh(+)
-
+                      
                    AND pd.cod_tipo_veh = vt.cod_tipo_veh(+)
                    AND nvl(ti.ind_inactivo, 'N') = 'N'
                    AND nvl(fv.ind_inactivo, 'N') = 'N'
@@ -3974,13 +4062,13 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                           2);
         npre_veh := i.npre_veh;
         ntot_veh := i.ntot_veh;
-
+      
         wc_mensaje := wc_mensaje || '<table style="FONT: 9pt arial">
                                     <tr>
                                       <td colspan="2"><b>Proforma(s) :</b></td>
                                     <td></td><td></td>
                               </tr>';
-
+      
         wc_mensaje := wc_mensaje || '
                    <tr>
                      <td>;;;</td>
@@ -4032,7 +4120,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                       '%</td>
                        </tr>';
         wc_mensaje := wc_mensaje || '</table>';
-
+      
         IF x_auto_env = '02' THEN
           --Existe Equipo Local
           BEGIN
@@ -4371,9 +4459,9 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
           nporcentaje := 0;
           ntotal      := 0;
         END IF;
-
+      
       END LOOP;
-
+    
       ---------------------------
       --Destinatarios
       -------------------------------
@@ -4403,7 +4491,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
           wc_vendedor := NULL;
       END;
       v_contador := 1;
-
+    
       ---
       IF x_auto_apro = '01' THEN
         l_cod_id_procesos := 61;
@@ -4421,7 +4509,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                    AND b.ind_inactivo = 'N'
                  INNER JOIN sistemas.sis_mae_perfil_procesos c
                     ON b.cod_id_perfil = c.cod_id_perfil
-
+                      
                    AND c.ind_inactivo = 'N'
                    AND c.ind_recibe_correo = 'S'
                  INNER JOIN sis_view_usua_marca um
@@ -4433,7 +4521,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
                  WHERE c.cod_id_procesos = l_cod_id_procesos
                    AND txt_correo IS NOT NULL)
       LOOP
-
+      
         IF (v_contador = 1) THEN
           l_destinatarios := l_destinatarios || i.txt_correo;
         ELSE
@@ -4441,16 +4529,21 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
         END IF;
         v_contador := v_contador + 1;
       END LOOP;
-
+    
+      --<I - REQ.89338 - SOPORTE LEGADOS - 22/05/2020>
+      /*
       BEGIN
         SELECT MAX(cod_correo_prof) INTO v_cod_correo FROM vve_correo_prof;
       EXCEPTION
         WHEN OTHERS THEN
           v_cod_correo := 0;
       END;
-
+    
       v_cod_correo := v_cod_correo + 1;
-
+      */
+      SELECT VVE_CORREO_PROF_SQ01.NEXTVAL INTO V_COD_CORREO FROM DUAL;
+      --<F - REQ.89338 - SOPORTE LEGADOS - 22/05/2020>
+    
       INSERT INTO vve_correo_prof
         (cod_correo_prof,
          cod_ref_proc,
@@ -4477,7 +4570,7 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
          'N',
          SYSDATE,
          p_cod_usua_web);
-
+    
     END IF;
     pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_LOG',
                                         'sp_corro_auto',
@@ -4518,15 +4611,15 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
         INTO v_valor
         FROM sis_maes_plan a
        WHERE a.cod_plan_reg = p_cod_plan_reg;
-
+    
     EXCEPTION
       WHEN OTHERS THEN
         v_valor := NULL;
-
+      
     END;
-
+  
     RETURN v_valor;
-
+  
   END fun_obt_plant_correo;
 
   /*-----------------------------------------------------------------------------
@@ -4563,4 +4656,4 @@ create or replace PACKAGE BODY  VENTA.pkg_sweb_five_mant_correos IS
     RETURN L_TXT_VALO;
   END;  
 
-END pkg_sweb_five_mant_correos; 
+END pkg_sweb_five_mant_correos;

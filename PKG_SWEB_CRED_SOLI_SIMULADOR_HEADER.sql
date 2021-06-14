@@ -1,4 +1,4 @@
-create or replace PACKAGE   VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
+create or replace PACKAGE       VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
 
   /********************************************************************************
     Nombre:     SP_LIST_COMP_SEGU
@@ -304,6 +304,7 @@ create or replace PACKAGE   VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
     Version    Fecha       Autor            Descripcion
     ---------  ----------  ---------------  ------------------------------------
     1.0        26/12/2018  PHRAMIREZ        Creación del procedure.
+    2.0        13/03/2020  AVILCA           Check sin/con interes
   ********************************************************************************/  
   PROCEDURE sp_inse_para_simulador
   (
@@ -339,6 +340,7 @@ create or replace PACKAGE   VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
     p_tip_soli_cred          IN vve_cred_soli.tip_soli_cred%TYPE,
     p_txt_otr_cond           IN vve_cred_simu.txt_otr_cond%TYPE,
     p_val_tc                 IN vve_cred_simu.val_tc%TYPE,
+    p_val_ind_sin_int        IN vve_cred_simu.ind_pgra_sint%TYPE,--Req. 87567 E2.1 ID## AVILCA
     p_cod_usua_sid           IN sistemas.usuarios.co_usuario%TYPE,
     p_cod_usua_web           IN sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
     p_ret_cod_simu           OUT vve_cred_simu.cod_simu%TYPE,
@@ -574,5 +576,5 @@ create or replace PACKAGE   VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
     p_ret_esta      OUT NUMBER,
     p_ret_mens      OUT VARCHAR2 
   );
-
-END PKG_SWEB_CRED_SOLI_SIMULADOR; 
+  
+END PKG_SWEB_CRED_SOLI_SIMULADOR;

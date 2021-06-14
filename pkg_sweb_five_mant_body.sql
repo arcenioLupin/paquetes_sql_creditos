@@ -1,4 +1,4 @@
-create or replace PACKAGE BODY    VENTA.pkg_sweb_five_mant AS
+create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant AS
   /******************************************************************************
      NAME:      PKG_SWEB_FIVE_MANT
      PURPOSE:   Contiene los procedimientos para la gestión de la ficha de venta.
@@ -738,6 +738,41 @@ create or replace PACKAGE BODY    VENTA.pkg_sweb_five_mant AS
     v_acepta                   NUMBER;
     v_ret_cursor               SYS_REFCURSOR;
     v_can_pedi                 NUMBER;
+    
+    c_proformas_fv             SYS_REFCURSOR;
+    v_query                    VARCHAR2(4000);
+    v_num_prof                 VARCHAR2(20);  
+    c_cod_solcre                SYS_REFCURSOR;
+    v_query_cod_solcre          VARCHAR2(4000);
+    v_cod_solcre                VARCHAR2(20);    
+    v_correoori       usuarios.di_correo%TYPE;
+    v_cont_solcre          INTEGER;
+    v_cont_prof_fv         INTEGER; 
+    v_cont_cod_solcre      INTEGER; 
+    v_num_prof_veh         VARCHAR(200);
+    v_cod_estado_solicred  VARCHAR(10);
+    v_cod_soli_cred        VARCHAR(25);
+    v_asunto_solcre        VARCHAR2(2000);
+    v_mensaje_solcre       CLOB;
+    v_html_head_solcre     VARCHAR2(2000);
+    l_destinatarios_solcre vve_correo_prof.destinatarios%TYPE;
+    l_proformas_fv         VARCHAR2(1000); 
+    l_cod_solcre_fv        VARCHAR2(2000);
+    v_cod_id_usuario  sistemas.sis_mae_usuario.cod_id_usuario%TYPE;
+    v_cod_correo      vve_correo_prof.cod_correo_prof%TYPE;
+    
+  CURSOR c_enviar_mail_solcre IS
+    SELECT DISTINCT a.txt_correo
+        FROM sistemas.sis_mae_usuario a
+       INNER JOIN sistemas.sis_mae_perfil_usuario b
+          ON a.cod_id_usuario = b.cod_id_usuario
+         AND b.ind_inactivo = 'N'
+       INNER JOIN sistemas.sis_mae_perfil_procesos c
+          ON b.cod_id_perfil = c.cod_id_perfil
+         AND c.ind_inactivo = 'N'
+       WHERE c.cod_id_procesos = 124
+         AND c.cod_id_perfil IN ('1674694','1674690')
+         AND txt_correo IS NOT NULL; 
 
   BEGIN
     IF p_cod_estado_ficha_vta IS NULL THEN
@@ -791,6 +826,160 @@ create or replace PACKAGE BODY    VENTA.pkg_sweb_five_mant AS
       RAISE ve_error;
     ELSE
       IF upper(p_cod_estado_ficha_vta) = 'I' THEN
+      
+       --<I Req. 87567 E2.1 ID## avilca 19/01/2021>
+    -- Preparando correo para usuarios de solictud de crédito
+    --destinatarios SOLCRE
+    
+    -- Obteniendo la proformas de la ficha de venta
+        v_cont_prof_fv := 1;
+        v_query := 'SELECT num_prof_veh FROM vve_ficha_vta_proforma_veh WHERE num_ficha_vta_veh = '''||p_num_ficha_vta_veh||'''
+                    AND ind_inactivo = ''N''';
+                    
+           OPEN c_proformas_fv FOR v_query;        
+            LOOP
+              FETCH c_proformas_fv
+                INTO v_num_prof;
+              EXIT WHEN c_proformas_fv%NOTFOUND;
+            
+                  IF (v_cont_prof_fv = 1) THEN
+                    l_proformas_fv := l_proformas_fv || v_num_prof;
+                  ELSE
+                    l_proformas_fv := l_proformas_fv || ',' || v_num_prof;
+                  END IF;
+                  v_cont_prof_fv := v_cont_prof_fv + 1;
+            END LOOP;
+           CLOSE c_proformas_fv;
+           
+          /* SELECT num_prof_veh
+           INTO   l_proformas_fv
+           FROM vve_ficha_vta_proforma_veh 
+           WHERE num_ficha_vta_veh = p_num_ficha_vta_veh
+           AND ind_inactivo = 'N';*/
+            
+   -- Obteniendo las solicitudes de las proformas
+     
+        v_cont_cod_solcre := 1;
+        v_query_cod_solcre := 'SELECT cod_soli_cred FROM vve_cred_soli_prof WHERE num_prof_veh IN 
+                                      (
+                                       SELECT num_prof_veh FROM vve_ficha_vta_proforma_veh WHERE num_ficha_vta_veh = '''||p_num_ficha_vta_veh||'''
+                                        AND ind_inactivo = ''N''
+                                   )';
+                    
+           OPEN c_cod_solcre FOR v_query_cod_solcre;
+            LOOP
+              FETCH c_cod_solcre
+                INTO v_cod_solcre;
+              EXIT WHEN c_cod_solcre%NOTFOUND;
+            
+                  IF (v_cont_cod_solcre = 1) THEN
+                    l_cod_solcre_fv := l_cod_solcre_fv || LTRIM(v_cod_solcre,'0');
+                  ELSE
+                    l_cod_solcre_fv := l_cod_solcre_fv || ',' || LTRIM(v_cod_solcre,'0');
+                  END IF;
+                  v_cont_cod_solcre := v_cont_cod_solcre + 1;
+            END LOOP;
+            CLOSE c_cod_solcre;  
+   /*
+      SELECT cod_soli_cred 
+      INTO l_cod_solcre_fv
+      FROM vve_cred_soli_prof WHERE num_prof_veh IN 
+                                      (
+                                       SELECT num_prof_veh FROM vve_ficha_vta_proforma_veh WHERE num_ficha_vta_veh = p_num_ficha_vta_veh
+                                        AND ind_inactivo = 'N'
+                                   );*/
+   
+      --Obtenemos el correo origen
+    BEGIN
+      SELECT txt_correo, a.cod_id_usuario
+        INTO v_correoori, v_cod_id_usuario
+        FROM sistemas.sis_mae_usuario a
+       WHERE a.txt_usuario = p_cod_usua_sid;
+    EXCEPTION
+      WHEN OTHERS THEN
+        v_correoori := 'apps@divemotor.com.pe';
+    END;
+    
+    -- Destinatarios             
+    v_cont_solcre := 1;
+    FOR c_mail_solcre IN c_enviar_mail_solcre
+    LOOP
+      IF (v_cont_solcre = 1) THEN
+        l_destinatarios_solcre := l_destinatarios_solcre || c_mail_solcre.txt_correo;
+      ELSE
+        l_destinatarios_solcre := l_destinatarios_solcre || ',' || c_mail_solcre.txt_correo;
+      END IF;
+      v_cont_solcre := v_cont_solcre + 1;
+
+    END LOOP;
+    
+    -- Estructura de correo para solicitud de crédito
+    
+        BEGIN
+              SELECT ax.txt_asun_pla, ax.txt_cabe_pla, ax.txt_deta_pla
+                INTO v_asunto_solcre, v_html_head_solcre, v_mensaje_solcre
+                FROM sis_maes_plan ax
+               WHERE ax.cod_plan_reg = 7
+                 AND nvl(ax.ind_inac_pla, 'N') = 'N';
+         EXCEPTION
+          WHEN no_data_found THEN
+            v_asunto_solcre    := NULL;
+            v_html_head_solcre := NULL;
+            v_mensaje_solcre   := NULL;
+          WHEN OTHERS THEN
+            v_mensaje_solcre   := NULL;
+            v_html_head_solcre := NULL;
+            v_asunto_solcre   := NULL;
+         END;
+         
+        v_asunto_solcre := REPLACE(v_asunto_solcre, '#ficha_vta#', p_num_ficha_vta_veh);
+          
+        v_mensaje_solcre := v_html_head_solcre || v_mensaje_solcre;
+        
+        v_mensaje_solcre := logistica_web.pkg_correo_log.replace_clob(v_mensaje_solcre,
+                                                           '#ficha_vta#',
+                                                           p_num_ficha_vta_veh);
+                                                           
+        v_mensaje_solcre := logistica_web.pkg_correo_log.replace_clob(v_mensaje_solcre,
+                                                           '#proformas_fv#',
+                                                           l_proformas_fv);  
+                                                           
+        v_mensaje_solcre := logistica_web.pkg_correo_log.replace_clob(v_mensaje_solcre,
+                                                           '#codsolcre#',
+                                                           l_cod_solcre_fv);                                                             
+                                                           
+    SELECT VVE_CORREO_PROF_SQ01.NEXTVAL INTO V_COD_CORREO FROM DUAL;
+
+    INSERT INTO vve_correo_prof
+      (cod_correo_prof,
+       cod_ref_proc,
+       tipo_ref_proc,
+       destinatarios,
+       copia,
+       asunto,
+       cuerpo,
+       correoorigen,
+       ind_enviado,
+       ind_inactivo,
+       fec_crea_reg,
+       cod_id_usuario_crea)
+    VALUES
+      (v_cod_correo,
+       LTRIM(p_num_ficha_vta_veh,'0'), --P_COD_PLAN_ENTR_VEHI,
+       'SE',
+       l_destinatarios_solcre,
+       NULL,
+       v_asunto_solcre,
+       v_mensaje_solcre,
+       v_correoori,
+       'N',
+       'N',
+       SYSDATE,
+       v_cod_id_usuario);                                                       
+                                                           
+      --<F Req. 87567 E2.1 ID## avilca 04/11/2020>
+      
+ 
         SELECT COUNT(1)
           INTO v_can_pedi
           FROM vve_ficha_vta_pedido_veh p
@@ -839,6 +1028,8 @@ create or replace PACKAGE BODY    VENTA.pkg_sweb_five_mant AS
     END IF;
 
     p_ret_esta := 1;
+    
+  
 
   EXCEPTION
     WHEN ve_error THEN
@@ -2839,9 +3030,14 @@ create or replace PACKAGE BODY    VENTA.pkg_sweb_five_mant AS
     ve_error EXCEPTION;
     v_cod_correo vve_correo_prof.cod_correo_prof%TYPE;
   BEGIN
+    --<I - REQ.89338 - SOPORTE LEGADOS - 22/05/2020>
+    /*
     SELECT MAX(a.cod_correo_prof) INTO v_cod_correo FROM vve_correo_prof a;
 
     v_cod_correo := v_cod_correo + 1;
+    */
+    SELECT VVE_CORREO_PROF_SQ01.NEXTVAL INTO V_COD_CORREO FROM DUAL;
+    --<F - REQ.89338 - SOPORTE LEGADOS - 22/05/2020>
 
     INSERT INTO vve_correo_prof
       (cod_correo_prof,
@@ -4217,6 +4413,9 @@ create or replace PACKAGE BODY    VENTA.pkg_sweb_five_mant AS
                                         'Error al listar los pedidos',
                                         p_copia,
                                         'Error al listar los pedidos');
+    
+    --<I - REQ.89338 - SOPORTE LEGADOS - 22/05/2020>
+    /*
     BEGIN
       SELECT MAX(cod_correo_prof) INTO v_cod_correo FROM vve_correo_prof;
     EXCEPTION
@@ -4225,6 +4424,9 @@ create or replace PACKAGE BODY    VENTA.pkg_sweb_five_mant AS
     END;
 
     v_cod_correo := v_cod_correo + 1;
+    */
+    SELECT VVE_CORREO_PROF_SQ01.NEXTVAL INTO V_COD_CORREO FROM DUAL;
+    --<F - REQ.89338 - SOPORTE LEGADOS - 22/05/2020>
 
     pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
                                         'SP_LIST_PEDI_USOCOLR_FV-ALEX-6.2',
@@ -4927,12 +5129,6 @@ create or replace PACKAGE BODY    VENTA.pkg_sweb_five_mant AS
       SELECT 'ind_accdir_inmatriculacion' permiso,
              l_ind_accdir_inmatriculacion valor,
              l_men_accdir_inmatriculacion mensaje
-       FROM dual
-       UNION
-       SELECT (select x.url
-              from crm_locacion_legado x where x.cod_modulo='992')  permiso,
-             'V' valor,
-             'URL_C_F' mensaje
         FROM dual;
     -------------FIN - Permisos Ficha de Venta---------------------------------
 

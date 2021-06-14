@@ -1,4 +1,4 @@
-create or replace PACKAGE   VENTA.PKG_SWEB_CRED_SOLI_LEGAL IS
+create or replace PACKAGE VENTA.PKG_SWEB_CRED_SOLI_LEGAL IS
 
    /*-----------------------------------------------------------------------------
 Nombre : sp_listar_sol_legal
@@ -8,6 +8,7 @@ Parametros :
 Log de Cambios 
   Fecha        Autor         Descripcion
  12/03/2019   MGRASSO  
+ 17/01/2020   AVILCA         Req. 87567 E2.1 ID:119 
 ----------------------------------------------------------------------------*/
   PROCEDURE SP_LISTAR_SOL_LEGAL
   (
@@ -103,9 +104,11 @@ Log de Cambios
 ----------------------------------------------------------------------------*/
   PROCEDURE SP_ACTUALIZAR_CHK_DOC_LEGALES
   (
-    p_cod_solcre        IN  gen_solicitud_credito.cod_solcre%TYPE,
-    p_cod_docleg     IN  gen_documento_legal.COD_DOCLEG%TYPE,
-    p_ind_oblig         IN  vve_cred_fina_docu.ind_oblig%TYPE,
+    p_cod_solcre   IN  gen_solicitud_credito.cod_solcre%TYPE,
+    p_cod_docleg   IN  gen_documento_legal.COD_DOCLEG%TYPE,
+    p_ind_oblig    IN  vve_cred_fina_docu.ind_oblig%TYPE,
+    p_cod_usua_sid IN sistemas.usuarios.co_usuario%TYPE,
+    p_cod_usua_web IN sistemas.sis_mae_usuario.cod_id_usuario%TYPE,        
     p_ret_esta OUT NUMBER,
     p_ret_mens OUT VARCHAR2
   );
@@ -121,9 +124,11 @@ Log de Cambios
 ----------------------------------------------------------------------------*/
   PROCEDURE SP_ACTUALIZAR_CHK_DOC_GARA
   (
-    p_cod_solcre        IN  gen_solicitud_credito.cod_solcre%TYPE,
-    p_cod_docleg     IN  gen_documento_legal.COD_DOCLEG%TYPE,
-    p_ind_oblig         IN  vve_cred_soli_gara_docu.ind_oblig%TYPE,
+    p_cod_solcre   IN  gen_solicitud_credito.cod_solcre%TYPE,
+    p_cod_docleg   IN  gen_documento_legal.COD_DOCLEG%TYPE,
+    p_ind_oblig    IN  vve_cred_soli_gara_docu.ind_oblig%TYPE,
+    p_cod_usua_sid IN sistemas.usuarios.co_usuario%TYPE,
+    p_cod_usua_web IN sistemas.sis_mae_usuario.cod_id_usuario%TYPE,        
     p_ret_esta OUT NUMBER,
     p_ret_mens OUT VARCHAR2
   );
@@ -139,9 +144,11 @@ Log de Cambios
 ----------------------------------------------------------------------------*/
   PROCEDURE SP_ACTUALIZAR_CHK_DOC_AVAL
   (
-    p_cod_solcre        IN  gen_solicitud_credito.cod_solcre%TYPE,
+    p_cod_solcre     IN  gen_solicitud_credito.cod_solcre%TYPE,
     p_cod_docleg     IN  gen_documento_legal.COD_DOCLEG%TYPE,
-    p_ind_oblig         IN  vve_cred_mae_aval_docu.ind_oblig%TYPE,
+    p_ind_oblig      IN  vve_cred_mae_aval_docu.ind_oblig%TYPE,
+    p_cod_usua_sid   IN sistemas.usuarios.co_usuario%TYPE,
+    p_cod_usua_web   IN sistemas.sis_mae_usuario.cod_id_usuario%TYPE,    
     p_ret_esta OUT NUMBER,
     p_ret_mens OUT VARCHAR2
   );
@@ -440,14 +447,15 @@ Log de Cambios
     p_ret_mens OUT VARCHAR2
   );
   
-             /*-----------------------------------------------------------------------------
-Nombre : SP_REGISTRAR_LEGAL
-Proposito : Registrar Solicitud Legal.
-Referencias : 
-Parametros :
-Log de Cambios 
-  Fecha        Autor         Descripcion
- 15/04/2019   MGRASSO  
+/*-----------------------------------------------------------------------------
+    Nombre : SP_REGISTRAR_LEGAL
+    Proposito : Registrar Solicitud Legal.
+    Referencias : 
+    Parametros :
+    Log de Cambios 
+      Fecha        Autor         Descripcion
+     15/04/2019   MGRASSO  
+     17/01/2020   AVILCA         Req. 87567 E2.1, ID:123: Se modifica para que inserte y actualize
 ----------------------------------------------------------------------------*/
   PROCEDURE SP_REGISTRAR_LEGAL
   (
@@ -511,6 +519,7 @@ Log de Cambios
 ----------------------------------------------------------------------------*/
   PROCEDURE SP_LISTAR_DOCUMENTO_SOLICITADO
   (
+    p_cod_solcre  IN  gen_solicitud_credito.cod_solcre%TYPE,
     p_ret_cursor  OUT SYS_REFCURSOR,
     p_ret_esta    OUT NUMBER,
     p_ret_mens    OUT VARCHAR2
@@ -665,7 +674,8 @@ Log de Cambios
     Parametros :
     Log de Cambios 
       Fecha        Autor         Descripcion
-     09/05/2019   AVILCA  
+     09/05/2019   AVILCA
+      21/01/2020   AVILCA         Req. 87567 E2.1 ID:127
 ----------------------------------------------------------------------------*/
   PROCEDURE SP_LISTAR_FIANZAS_SOLIDARIAS
   (
@@ -674,7 +684,23 @@ Log de Cambios
     p_ret_esta OUT NUMBER,
     p_ret_mens OUT VARCHAR2
   ) ;
-  
+   /*-----------------------------------------------------------------------------
+    Nombre : SP_LISTAR_PROP_AVAL_FSPN
+    Proposito : Listar propietarios o avales para fianzas solidarias PN
+    Referencias : 
+    Parametros :
+    Log de Cambios 
+      Fecha        Autor         Descripcion
+     21/01/2020   AVILCA         Req. 87567 E2.1 ID:127
+----------------------------------------------------------------------------*/
+  PROCEDURE SP_LISTAR_PROP_AVAL_FSPN
+  (
+    p_cod_solcre        IN  gen_solicitud_credito.cod_solcre%TYPE,
+    p_cod_per_aval      IN  vve_cred_mae_aval.cod_per_aval%TYPE,
+    p_ret_cursor        OUT SYS_REFCURSOR,
+    p_ret_esta OUT NUMBER,
+    p_ret_mens OUT VARCHAR2
+  );
   /*-----------------------------------------------------------------------------
     Nombre : SP_LISTAR_DOCS_FSN
     Proposito : Listar documentos de fianza solidaria PN
@@ -752,8 +778,9 @@ Log de Cambios
 ----------------------------------------------------------------------------*/
   PROCEDURE SP_LISTAR_DOCLEGAL_HIP_REG
   (
-    p_cod_canleg        IN  gen_danexo_legal.cod_canleg%TYPE,
-    p_ret_cursor        OUT SYS_REFCURSOR,
+    p_cod_solcre   IN  gen_solicitud_credito.cod_solcre%TYPE,
+    p_cod_canleg   IN  gen_danexo_legal.cod_canleg%TYPE,
+    p_ret_cursor   OUT SYS_REFCURSOR,
     p_ret_esta OUT NUMBER,
     p_ret_mens OUT VARCHAR2
   ); 
@@ -804,9 +831,8 @@ Log de Cambios
   (
 
     p_cod_soli_cred      IN  vve_cred_soli.cod_soli_cred%TYPE,
-    p_txt_ruta_anex      IN  vve_cred_soli.txt_ruta_anex %TYPE,
-    p_txt_ruta_contrato  IN  vve_cred_soli.txt_ruta_contrato %TYPE,
-    p_txt_ruta_docs_firm IN  vve_cred_soli.txt_ruta_docs_firm %TYPE,
+    p_url                IN  vve_cred_soli.txt_ruta_anex %TYPE,
+    p_tipo_doc           IN  VARCHAR2,
     p_cod_usuario        IN gen_solicitud_credito.cod_usuario_crea%TYPE,
     p_ret_esta           OUT NUMBER,
     p_ret_mens           OUT VARCHAR2
@@ -822,11 +848,67 @@ Log de Cambios
  ----------------------------------------------------------------------------*/ 
   PROCEDURE SP_LISTAR_ANEXOS_FACTURAS
   (
-    p_cod_oper IN  arlcrd.cod_oper%TYPE,
+    p_cod_soli_cred IN  vve_cred_soli.cod_soli_cred%TYPE,
+    p_ret_cursor    OUT SYS_REFCURSOR,
+    p_ret_esta      OUT NUMBER,
+    p_ret_mens      OUT VARCHAR2
+  );
+  
+   /*-----------------------------------------------------------------------------
+    Nombre : SP_LISTAR_ANEXOS_PAGOS
+    Proposito : Listar pagos relacionadas a un anexo.
+    Referencias : 
+    Parametros :
+    Log de Cambios 
+      Fecha        Autor         Descripcion
+/    07/02/2020    EBARBOZA  
+ /----------------------------------------------------------------------------*/ 
+  
+   PROCEDURE SP_LISTAR_ANEXOS_PAGOS
+  (
+    p_cod_soli_cred     IN  vve_cred_soli_movi.cod_soli_cred%TYPE,
     p_ret_cursor   OUT SYS_REFCURSOR,
     p_ret_esta     OUT NUMBER,
     p_ret_mens     OUT VARCHAR2
-  ); 
+  );
+  
+  /*-----------------------------------------------------------------------------
+    Nombre : SP_LISTAR_GARANTIAS
+    Proposito : Listar pagos relacionadas a un anexo.
+    Referencias : 
+    Parametros :
+    Log de Cambios 
+      Fecha        Autor         Descripcion
+/    07/02/2020    EBARBOZA  
+ /----------------------------------------------------------------------------*/ 
+  
+  
+  PROCEDURE SP_LISTAR_GARANTIAS
+  (
+    p_cod_soli_cred     IN  vve_cred_soli_movi.cod_soli_cred%TYPE,
+    p_ind_tipo_gara     IN  VARCHAR2,
+    p_ret_cursor        OUT SYS_REFCURSOR,
+    p_ret_esta          OUT NUMBER,
+    p_ret_mens          OUT VARCHAR2
+  );
+  
+  
+  /*-----------------------------------------------------------------------------
+    Nombre : SP_MOSTRAR_PAGOS_TOTAL
+    Proposito : Listar facturas relacionadas a un anexo.
+    Referencias : 
+    Parametros :
+    Log de Cambios 
+      Fecha        Autor         Descripcion
+     10/02/2020   EBARBOZA  
+ ----------------------------------------------------------------------------*/ 
+  PROCEDURE SP_MOSTRAR_PAGOS_TOTAL
+  (
+    p_cod_soli_cred     IN  vve_cred_soli_movi.cod_soli_cred%TYPE,
+    p_ret_cursor   OUT SYS_REFCURSOR,
+    p_ret_esta     OUT NUMBER,
+    p_ret_mens     OUT VARCHAR2
+  );
     /*-----------------------------------------------------------------------------
     Nombre : SP_LISTAR_DATOS_ANEXOS
     Proposito : Listar datos para la impresión de un anexo.
@@ -858,7 +940,26 @@ Log de Cambios
   (
     p_cod_soli_cred IN  vve_cred_soli.cod_soli_cred%TYPE, 
     p_ret_cursor    OUT SYS_REFCURSOR,
+    p_ret_crono     OUT SYS_REFCURSOR,
     p_ret_esta      OUT NUMBER,
     p_ret_mens      OUT VARCHAR2
-  ); 
-END PKG_SWEB_CRED_SOLI_LEGAL; 
+  );
+  
+ /*-----------------------------------------------------------------------------
+    Nombre : FN_OBTE_RUTA_DOC
+    Proposito : Obtener la ruta del documento sea legal, garantia o aval.
+    Referencias : 
+    Parametros :
+    Log de Cambios 
+      Fecha        Autor         Descripcion
+      10/12/2019   PHRAMIREZ  
+ ----------------------------------------------------------------------------*/
+  FUNCTION FN_OBTE_RUTA_DOC
+  (
+    p_cod_soli_cred IN vve_cred_fina_docu.cod_soli_cred%TYPE,
+    p_cod_tipope    IN gen_operacion_legal.cod_tipope%TYPE,
+    p_cod_opeleg    IN gen_operacion_legal.cod_opeleg%TYPE,
+    p_tip_opc       IN VARCHAR2
+  ) RETURN VARCHAR;
+ 
+END PKG_SWEB_CRED_SOLI_LEGAL;

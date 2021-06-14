@@ -1,4 +1,4 @@
-create or replace PACKAGE  VENTA.PKG_SWEB_CRED_SOLI_FLUJO_CAJA AS
+create or replace PACKAGE       VENTA.PKG_SWEB_CRED_SOLI_FLUJO_CAJA AS
 
   PROCEDURE sp_inse_param_camiones 
     (      
@@ -10,8 +10,8 @@ create or replace PACKAGE  VENTA.PKG_SWEB_CRED_SOLI_FLUJO_CAJA AS
      p_ret_esta                     OUT     NUMBER,
      p_ret_mens                     OUT     VARCHAR2
     );
-  
-  
+
+
   PROCEDURE sp_inse_fact_mes 
     (      
      p_cod_soli_cred                IN      vve_cred_soli.cod_soli_cred%TYPE,
@@ -31,7 +31,7 @@ create or replace PACKAGE  VENTA.PKG_SWEB_CRED_SOLI_FLUJO_CAJA AS
      p_ret_esta                     OUT     NUMBER,
      p_ret_mens                     OUT     VARCHAR2
     );
-    
+
   PROCEDURE sp_calc_proy_cami 
     (      
      p_cod_soli_cred                IN      vve_cred_soli.cod_soli_cred%TYPE,
@@ -42,12 +42,12 @@ create or replace PACKAGE  VENTA.PKG_SWEB_CRED_SOLI_FLUJO_CAJA AS
      p_ret_esta                     OUT     NUMBER,
      p_ret_mens                     OUT     VARCHAR2
     );
-    
+
   FUNCTION fn_ret_text
     (
      p_val_ano                       IN      NUMBER
     ) RETURN VARCHAR2;
-    
+
   FUNCTION fn_ret_val_cred_soli_fact_fc
     (
      p_cod_soli_cred                 IN      vve_cred_soli_fact_fc.cod_soli_cred%TYPE,
@@ -56,33 +56,35 @@ create or replace PACKAGE  VENTA.PKG_SWEB_CRED_SOLI_FLUJO_CAJA AS
      p_val_ano                       IN      vve_cred_soli_fact_fc.val_ano%TYPE,
      p_ind_tipo_fc                   IN      vve_cred_soli_fact_fc.ind_tipo_fc%TYPE   
     ) RETURN NUMBER;
-    
-    
+
+
   FUNCTION fn_ret_val_cred_soli_para_fc
     (
      p_cod_soli_cred                 IN      vve_cred_soli_para_fc.cod_soli_cred%TYPE,
      p_cod_cred_para_fc              IN      vve_cred_soli_para_fc.cod_cred_para_fc%TYPE,
      p_ind_tipo_fc                   IN      vve_cred_soli_para_fc.ind_tipo_fc%TYPE   
     ) RETURN NUMBER;
-   
-  
+
+
   PROCEDURE sp_list_para_fc
     (      
      p_cod_soli_cred                IN      vve_cred_soli.cod_soli_cred%TYPE,
      p_ind_tipo_fc                  IN      vve_cred_soli_para_fc.ind_tipo_fc%TYPE,
      p_cod_usua_sid                 IN      sistemas.usuarios.co_usuario%TYPE,
      p_ret_cursor                   OUT     SYS_REFCURSOR,
-     p_ret_cabe_urba                OUT     SYS_REFCURSOR, 
+     p_ret_cabe_urba                OUT     SYS_REFCURSOR,
      p_ret_fact_cons_if             OUT     SYS_REFCURSOR, 
-     p_ret_fact_cons_ef             OUT     SYS_REFCURSOR,
+     p_ret_fact_cons_ef             OUT     SYS_REFCURSOR, 
      p_ret_fact_ajus_if             OUT     SYS_REFCURSOR, 
-     p_ret_fact_ajus_ef             OUT     SYS_REFCURSOR, 
+     p_ret_fact_ajus_ef             OUT     SYS_REFCURSOR,
      p_ret_colu_ano                 OUT     SYS_REFCURSOR, 
      p_ret_fc_proy                  OUT     SYS_REFCURSOR, 
      p_ret_esta                     OUT     NUMBER,
      p_ret_mens                     OUT     VARCHAR2
     );
-    
+
+
+
   PROCEDURE sp_repo_fluj_caja
     (      
      p_cod_soli_cred                IN      vve_cred_soli.cod_soli_cred%TYPE,
@@ -96,7 +98,7 @@ create or replace PACKAGE  VENTA.PKG_SWEB_CRED_SOLI_FLUJO_CAJA AS
      p_ret_esta                     OUT     NUMBER,
      p_ret_mens                     OUT     VARCHAR2
     );
-  
+    
 
   PROCEDURE sp_obte_info_fc
   (
@@ -107,4 +109,4 @@ create or replace PACKAGE  VENTA.PKG_SWEB_CRED_SOLI_FLUJO_CAJA AS
      p_ret_mens      OUT VARCHAR2    
   );
 
-END PKG_SWEB_CRED_SOLI_FLUJO_CAJA; 
+END PKG_SWEB_CRED_SOLI_FLUJO_CAJA;

@@ -1,4 +1,4 @@
-create or replace PACKAGE  VENTA.pkg_sweb_five_mant_correos IS
+create or replace PACKAGE VENTA.pkg_sweb_five_mant_correos IS
 
   -- Author  : LAQS
   -- Created : 31/01/2018 09:18:12 a.m.
@@ -57,7 +57,7 @@ create or replace PACKAGE  VENTA.pkg_sweb_five_mant_correos IS
                    añardir el bloque de Cliente Facturacion, Cliente Propietario y Cliente Usuario.
                    Se creó la variable de entrada p_nombre_entidad. La modificación empieza en la línea
                    1518 hasta 1543.
-
+  
   ----------------------------------------------------------------------------*/
 
   PROCEDURE sp_gen_plantilla_correo_sfactu
@@ -143,6 +143,18 @@ create or replace PACKAGE  VENTA.pkg_sweb_five_mant_correos IS
     p_ret_mens      OUT VARCHAR2
   );
 
+--<I Req. 87567 E2.1 ID## avilca 15/01/2021>  
+ PROCEDURE sp_obtener_plant_prof
+  (
+    p_cod_ref_proc  IN VARCHAR2,
+    p_tipo_ref_proc IN VARCHAR2,
+    p_id_usuario    IN sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
+    p_ret_correos   OUT SYS_REFCURSOR,
+    p_ret_esta      OUT NUMBER,
+    p_ret_mens      OUT VARCHAR2
+  );
+--<F Req. 87567 E2.1 ID## avilca 15/01/2021>
+
   PROCEDURE sp_actualizar_envio
   (
     p_cod_correo_prof   IN VARCHAR2,
@@ -212,7 +224,7 @@ create or replace PACKAGE  VENTA.pkg_sweb_five_mant_correos IS
     p_num_ficha_vta_veh IN VARCHAR2,
     x_auto_env          VARCHAR2,
     x_auto_apro         VARCHAR2,
-
+    
     x_fec_usuario_aut DATE,
     p_cod_usua_sid    IN sistemas.usuarios.co_usuario%TYPE,
     p_cod_usua_web    IN sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
@@ -242,5 +254,5 @@ create or replace PACKAGE  VENTA.pkg_sweb_five_mant_correos IS
                                   tildes al código ascii.  
   ----------------------------------------------------------------------------*/  
   FUNCTION FUN_LIST_CARAC_CORR (P_VAL_CARA IN VARCHAR2) RETURN VARCHAR2;
-
-END pkg_sweb_five_mant_correos; 
+  
+END pkg_sweb_five_mant_correos;

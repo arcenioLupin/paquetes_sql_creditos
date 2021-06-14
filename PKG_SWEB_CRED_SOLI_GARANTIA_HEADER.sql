@@ -1,4 +1,4 @@
-create or replace PACKAGE    VENTA.PKG_SWEB_CRED_SOLI_GARANTIA AS
+create or replace PACKAGE VENTA.PKG_SWEB_CRED_SOLI_GARANTIA AS
 PROCEDURE sp_list_garantia
   (
     p_cod_soli_cred     IN vve_cred_soli_gara.cod_soli_cred%TYPE,
@@ -55,13 +55,17 @@ PROCEDURE sp_ins_gara_soli
      p_nuevo                VARCHAR2,
      p_val_ano_fab          VARCHAR2,
      p_num_pedido_veh       VARCHAR2,
+     p_ind_pre_const        VARCHAR2,
+     p_ind_seg_dive         VARCHAR2,
+     p_num_asiento          VARCHAR2,
+     p_cod_tipo_fam         VARCHAR2,
      p_cod_usua_sid         IN sistemas.usuarios.co_usuario%TYPE,
      p_cod_usua_web         IN sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
      p_cod_garantia_out     OUT VARCHAR2,
      p_ret_esta             OUT NUMBER,
      p_ret_mens             OUT VARCHAR2
   );
-
+  
 PROCEDURE sp_list_garantia_histo
   (
     p_cod_soli_cred     IN vve_cred_soli_even.cod_soli_cred%TYPE,
@@ -75,18 +79,19 @@ PROCEDURE sp_list_garantia_histo
     p_ret_esta          OUT NUMBER,
     p_ret_mens          OUT VARCHAR2
   );
-
+  
 PROCEDURE sp_eli_gara_soli
   (
      p_cod_soli_cred     IN vve_cred_soli_even.cod_soli_cred%TYPE,
      p_ind_tipo_garantia IN vve_cred_maes_gara.ind_tipo_garantia%TYPE,
      p_list_gara_vig     IN VARCHAR2,
+     p_list_gara_elim    IN VARCHAR2,--<I Req. 87567 E2.1 ID 144 avilca 12/02/2021>  
      p_cod_usua_sid      IN sistemas.usuarios.co_usuario%TYPE,
      p_cod_usua_web      IN sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
      p_ret_esta          OUT NUMBER,
      p_ret_mens          OUT VARCHAR2
   );
-
+  
  PROCEDURE sp_listado_paises(
     p_cod_cia          IN VARCHAR2,
     p_cod_usua_sid      IN sistemas.usuarios.co_usuario%TYPE,
@@ -96,7 +101,7 @@ PROCEDURE sp_eli_gara_soli
     p_ret_esta          OUT NUMBER,
     p_ret_mens          OUT VARCHAR2
   );
-
+  
   PROCEDURE sp_listado_departamentos(
     p_cod_pais          IN VARCHAR2,
     p_cod_usua_sid      IN sistemas.usuarios.co_usuario%TYPE,
@@ -106,7 +111,7 @@ PROCEDURE sp_eli_gara_soli
     p_ret_esta          OUT NUMBER,
     p_ret_mens          OUT VARCHAR2
   );
-
+  
   PROCEDURE sp_listado_provincias
   (
     p_cod_depa          IN gen_mae_departamento.cod_id_departamento%TYPE,
@@ -117,10 +122,11 @@ PROCEDURE sp_eli_gara_soli
     p_ret_esta          OUT NUMBER,
     p_ret_mens          OUT VARCHAR2
   );
-
+  
   PROCEDURE sp_listado_distritos
   (
     p_cod_prov          IN gen_mae_distrito.cod_id_provincia%TYPE,
+    p_cod_depa          IN gen_mae_departamento.cod_id_departamento%TYPE,
     p_cod_usua_sid      IN sistemas.usuarios.co_usuario%TYPE,
     p_cod_usua_web      IN sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
     p_ret_cursor        OUT SYS_REFCURSOR,
@@ -128,7 +134,7 @@ PROCEDURE sp_eli_gara_soli
     p_ret_esta          OUT NUMBER,
     p_ret_mens          OUT VARCHAR2
   );  
-
+  
   PROCEDURE sp_eli_by_gara
   (
      p_cod_soli_cred     IN vve_cred_soli_even.cod_soli_cred%TYPE,
@@ -139,14 +145,16 @@ PROCEDURE sp_eli_gara_soli
      p_ret_esta          OUT NUMBER,
      p_ret_mens          OUT VARCHAR2
   );
+  
 
   FUNCTION fn_obt_val_const_depr
   (
     p_cod_soli_cred     IN vve_cred_soli_gara.cod_soli_cred%TYPE,
     p_cod_garantia      IN vve_cred_maes_gara.cod_garantia%TYPE,
     p_cod_tipo_veh      IN vve_cred_mae_depr.cod_tipo_veh%TYPE,
-    p_tipo_garantia     IN VARCHAR2     
-  ) return NUMBER;  
+    p_val_const_act     IN NUMBER
+  )  
+  return NUMBER; 
 
 PROCEDURE sp_list_cobergara_fc
     (      
@@ -157,5 +165,18 @@ PROCEDURE sp_list_cobergara_fc
         p_ret_esta          OUT     NUMBER,
         p_ret_mens          OUT     VARCHAR2
     ) ;   
+FUNCTION fn_obt_val_depr
+  (
+    p_cod_area_vta      IN vve_proforma_veh.cod_area_vta%TYPE,
+    p_cod_familia_veh   IN vve_proforma_veh_det.cod_familia_veh%TYPE,
+    p_cod_tipo_veh      IN vve_proforma_veh_det.Cod_Tipo_Veh%TYPE,
+    p_no_cia            IN vve_cred_soli.cod_empr%TYPE,
+    p_ano_fab           IN NUMBER,
+    p_ano_futuro        IN NUMBER,
+    p_val_const_act     IN NUMBER,
+    p_ano_ult_modi      IN NUMBER
+  )  
+  RETURN NUMBER ;
 
-END PKG_SWEB_CRED_SOLI_GARANTIA; 
+  
+END PKG_SWEB_CRED_SOLI_GARANTIA;

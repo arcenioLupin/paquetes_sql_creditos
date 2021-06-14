@@ -1,4 +1,4 @@
-create or replace PACKAGE BODY   VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
+create or replace PACKAGE BODY     VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
 
   PROCEDURE sp_list_comp_segu
   (
@@ -347,6 +347,10 @@ create or replace PACKAGE BODY   VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
       lv_exists_solcre          CHAR(1) := 'S';
       ln_tmp_sal_fin_cuo        NUMBER := 0;
       ln_dif_cuota              NUMBER;
+      lv_ind_pgra_sint          VARCHAR2(2);
+      
+      lv_fec_max_simu  VARCHAR2(10);
+      lv_fec_min_simu  VARCHAR2(10);      
   BEGIN  
     --Obtener los valores de la periodicidad seleccionada
     SELECT 12 / valor_adic_1, 
@@ -395,7 +399,8 @@ create or replace PACKAGE BODY   VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
            val_tasa_seg,
            cod_tip_unidad,
            val_porc_gast_adm,
-           val_gast_adm          
+           val_gast_adm,
+           ind_pgra_sint
     INTO ln_cod_moneda_prof, 
          ln_val_ci,
          ln_val_pago_cont_ci,
@@ -413,7 +418,8 @@ create or replace PACKAGE BODY   VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
          ln_val_tasa_segu,
          ln_cod_tipo_unid,
          ln_val_porc_gast_admi,
-         ln_val_gasto_admi                    
+         ln_val_gasto_admi,
+         lv_ind_pgra_sint
     FROM vve_cred_simu
     WHERE cod_simu = p_cod_simu
         AND ind_inactivo = 'N';
@@ -543,12 +549,12 @@ create or replace PACKAGE BODY   VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
         
         --Calcular el monto de la cuota
         IF ln_can_let_per_gra >= cuota THEN
-            ln_mon_calc_cuo := round(ln_val_int_cuo,2) + round(ln_val_igv_cuo,2) + round(ln_val_prima_segu_per,2);
+              ln_mon_calc_cuo := round(ln_val_int_cuo,2) + round(ln_val_igv_cuo,2) + round(ln_val_prima_segu_per,2);
         ELSE
             IF p_porc_cb > 0 AND cuota < ln_nro_cuotas THEN
-               ln_mon_calc_cuo := round(ln_val_cuo_bal_men,2) + round(ln_val_prima_segu_per,2);
+                 ln_mon_calc_cuo := round(ln_val_cuo_bal_men,2) + round(ln_val_prima_segu_per,2);
             ELSIF p_porc_cb > 0 AND cuota = ln_nro_cuotas THEN
-               ln_mon_calc_cuo := round(ln_val_cuo_bal,2) + round(ln_val_prima_segu_per,2); 
+                 ln_mon_calc_cuo := round(ln_val_cuo_bal,2) + round(ln_val_prima_segu_per,2); 
             ELSE 
                ln_mon_calc_cuo := ln_mon_calc + ln_val_prima_segu_per;
             END IF;
@@ -575,11 +581,25 @@ create or replace PACKAGE BODY   VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
             ---***Lu
             ln_amo_cap_cuo := ln_mon_calc - ln_val_igv_cuo - ln_val_int_cuo;
             ln_dif_cuota   := 0;
-            ln_dif_cuota   := round(ln_mon_calc_cuo - (round(ln_amo_cap_cuo,2)+round(ln_val_int_cuo,2)+round(ln_val_igv_cuo,2)+round(ln_val_prima_segu_per,2)),2);
-            ln_amo_cap_cuo := round(ln_amo_cap_cuo+ ln_dif_cuota,2);
+            -- I comentar AVILCA 25/08/2020 - se redondeaba 2 veces montos ya redondeados previamente
+            --ln_dif_cuota   := round(ln_mon_calc_cuo - (round(ln_amo_cap_cuo,2)+round(ln_val_int_cuo,2)+round(ln_val_igv_cuo,2)+round(ln_val_prima_segu_per,2)),2);
+            --ln_amo_cap_cuo := round(ln_amo_cap_cuo+ ln_dif_cuota,2);
+            -- F comentar AVILCA 25/08/2020 - se redondeaba 2 veces montos ya redondeados previamente
+            
+            --<I Req. 87567 E2.1 ID 80 AVILCA 25/08/2020>
+            ln_dif_cuota   :=  ln_mon_calc_cuo - (round(ln_amo_cap_cuo,2)+round(ln_val_int_cuo,2)+round(ln_val_igv_cuo,2)+round(ln_val_prima_segu_per,2));            
+            ln_amo_cap_cuo := ln_amo_cap_cuo+ ln_dif_cuota;
+            --<F Req. 87567 E2.1 ID 80 AVILCA 25/08/2020>
+            
             if cuota = ln_nro_cuotas then 
               ln_amo_cap_cuo := ln_sal_ini_cuo;
-              ln_dif_cuota   := round(ln_mon_calc_cuo - (round(ln_amo_cap_cuo,2)+round(ln_val_int_cuo,2)+round(ln_val_igv_cuo,2)+round(ln_val_prima_segu_per,2)),2);
+               -- I comentar AVILCA 25/08/2020 - se redondeaba 2 veces montos ya redondeados previamente
+                --ln_dif_cuota   := round(ln_mon_calc_cuo - (round(ln_amo_cap_cuo,2)+round(ln_val_int_cuo,2)+round(ln_val_igv_cuo,2)+round(ln_val_prima_segu_per,2)),2);
+               -- F comentar AVILCA 25/08/2020 - se redondeaba 2 veces montos ya redondeados previamente
+               
+               --<I Req. 87567 E2.1 ID 80 AVILCA 25/08/2020>
+              ln_dif_cuota   := ln_mon_calc_cuo - (round(ln_amo_cap_cuo,2)+round(ln_val_int_cuo,2)+round(ln_val_igv_cuo,2)+round(ln_val_prima_segu_per,2));
+              --<F Req. 87567 E2.1 ID 80 AVILCA 25/08/2020>
               ln_val_int_cuo := ln_val_int_cuo + ln_dif_cuota;
             end if;            
         END IF;    
@@ -600,7 +620,22 @@ create or replace PACKAGE BODY   VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
         ln_mon_calc_letr := ln_mon_calc_cuo;
         
         --Calcular la fecha de vencimiento de la cuota
-        ln_fec_vcto := ADD_MONTHS(ln_fec_vcto, ln_val_meses_periodo);
+       -- ln_fec_vcto := ADD_MONTHS(ln_fec_vcto, ln_val_meses_periodo); comentado por AVILCA 20/07/2020 - Periodo de gracia sin interes
+       
+       --<I Req. 87567 E2.1 ID 77 AVILCA 20/07/2020>
+        IF cuota = 1 THEN
+        
+            ln_fec_vcto := CASE WHEN lv_ind_pgra_sint = 'S' THEN 
+                        --ADD_MONTHS(ln_fec_vcto, ln_val_meses_periodo + (ln_can_dias_venc_1ra_letr/ln_val_dias_periodo))
+                        ADD_MONTHS(ln_fec_vcto, 2 * ln_val_meses_periodo)  --<I Req. 87567 E2.1 ID 69 AVILCA 24/07/2020>
+                       ELSE
+                         ADD_MONTHS(ln_fec_vcto, ln_val_meses_periodo)
+                       END;        
+        ELSE
+            ln_fec_vcto := ADD_MONTHS(ln_fec_vcto, ln_val_meses_periodo);
+        END IF;
+       --<F Req. 87567 E2.1 ID 77 AVILCA 20/07/2020>
+        
         
         --Calcular el saldo final de la cuota
         --ln_tmp_sal_fin_cuo := ROUND(ln_sal_ini_cuo, 2) - ROUND(ln_amo_cap_cuo, 2);
@@ -710,12 +745,25 @@ create or replace PACKAGE BODY   VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
         val_tcea = ln_val_tcea
     WHERE cod_simu = p_cod_simu
         AND ind_inactivo = 'N';
+        
+    -- Obteniendo fechas máxima y mínima del simulador          
+      SELECT TO_CHAR(MIN(fec_venc),'dd/mm/yyyy'), TO_CHAR(MAX(fec_venc),'dd/mm/yyyy')
+       INTO lv_fec_min_simu,lv_fec_max_simu
+       FROM vve_cred_simu_lede
+       WHERE cod_simu =  p_cod_simu
+       ORDER BY  fec_venc desc;        
 
-    --Actualizar TIR y TCEA en la tabla de la solicitud de crédito        
+    --Actualizar TIR,TCEA y otros parametros  en la tabla de la solicitud de crédito        
     IF lv_exists_solcre = 'S' THEN
         UPDATE vve_cred_soli
         SET val_tir = ln_val_tir,
-            val_tcea = ln_val_tcea
+            val_tcea = ln_val_tcea,
+            --//I Req. 87567 E2.1  avilca 25/09/2020
+            fec_inic_vige_poli = to_date(lv_fec_min_simu,'dd/mm/yyyy'),
+            fec_fin_vige_poli = to_date(lv_fec_max_simu,'dd/mm/yyyy'),
+            ind_soli_apro_tseg = 'S',
+            cod_usua_gest_seg = p_cod_usua_sid
+            --//F Req. 87567 E2.1  avilca 25/09/2020
         WHERE cod_soli_cred = ln_cod_soli_cred;
     END IF;        
 
@@ -1054,7 +1102,7 @@ create or replace PACKAGE BODY   VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
         ln_tot_mon_fin      := ln_val_mon_fin;
         ln_tot_amortizacion := ln_tot_amortizacion + lt_arr_crono_modi(i).capital;
         ln_tot_seg_fin      := ln_val_prima_seg;
-        ln_tot_interes      := ln_tot_interes + lt_arr_crono_modi(i).interes;
+        ln_tot_interes      := ln_tot_interes + lt_arr_crono_modi(i).interes + lt_arr_crono_modi(i).igv;--<I Req. 87567 E2.1 ID## avilca 02/02/2021>
         ln_tot_cuotas       := ln_tot_cuotas + lt_arr_crono_modi(i).cuota;         
     END LOOP;    
   
@@ -1193,6 +1241,7 @@ create or replace PACKAGE BODY   VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
     p_tip_soli_cred          IN vve_cred_soli.tip_soli_cred%TYPE, 
     p_txt_otr_cond           IN vve_cred_simu.txt_otr_cond%TYPE,
     p_val_tc                 IN vve_cred_simu.val_tc%TYPE,
+    p_val_ind_sin_int        IN vve_cred_simu.ind_pgra_sint%TYPE,--Req. 87567 E2.1 ID## AVILCA
     p_cod_usua_sid           IN sistemas.usuarios.co_usuario%TYPE,
     p_cod_usua_web           IN sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
     p_ret_cod_simu           OUT vve_cred_simu.cod_simu%TYPE,
@@ -1269,7 +1318,8 @@ create or replace PACKAGE BODY   VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
         can_dias_venc_1ra_letr,
         tip_soli_cred,
         txt_otr_cond,
-        val_tc
+        val_tc,
+        ind_pgra_sint --Req. 87567 E2.1 ID## AVILCA
     ) 
     VALUES 
     (
@@ -1283,13 +1333,18 @@ create or replace PACKAGE BODY   VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
         p_val_mon_fin,
         p_val_pag_cont_ci,
         --SYSDATE + ln_val_dias_periodo,
-        ADD_MONTHS(SYSDATE, ln_val_meses_periodo),
+        CASE
+             WHEN p_val_ind_sin_int = 'S' THEN
+                ADD_MONTHS(SYSDATE, 2 * ln_val_meses_periodo)--<I Req. 87567 E2.1 ID 69 AVILCA 25/08/2020>
+             ELSE
+               ADD_MONTHS(SYSDATE, ln_val_meses_periodo)
+        END ,
         p_cod_per_cred_sol,
         p_can_tot_let,
         p_can_plaz_meses,
         p_ind_tip_per_gra,
         p_val_dias_per_gra,
-        p_can_let_per_gra,
+       (CASE p_val_ind_sin_int WHEN 'S' THEN 0 ELSE p_can_let_per_gra END),--Req. 87567 E2.1 ID## AVILCA
         p_val_porc_tea_sigv,
         p_val_porc_tep_sigv,
         p_ind_gps,
@@ -1308,10 +1363,11 @@ create or replace PACKAGE BODY   VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
         p_cod_usua_sid,
         SYSDATE,
         DECODE(p_cod_moneda, 'SOL', 1, 2),
-        ln_can_dias_venc_1ra_letr,
+        p_can_dias_venc_1ra_letr,--<I Req. 87567 E2.1 ID 69 AVILCA 25/08/2020>
         p_tip_soli_cred,
         p_txt_otr_cond,
-        p_val_tc
+        p_val_tc,
+        p_val_ind_sin_int --Req. 87567 E2.1 ID## AVILCA
     );
     
     --Actualización de estado de solicitud si se cambia la tasa del seguro
@@ -1514,7 +1570,7 @@ create or replace PACKAGE BODY   VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
         SELECT p.des_conc,
                c.val_mon_conc,
                TO_NUMBER(c.cod_nume_letr) cod_nume_letr,
-               TO_CHAR(c.fec_venc,''DD/MM/YYYY'') fec_venc
+               TO_CHAR(TO_DATE(c.fec_venc), ''DD/MM/YYYY'') fec_venc
         FROM vve_cred_simu_lede c             
         INNER JOIN vve_cred_maes_conc_letr p
             ON p.cod_conc_col = c.cod_conc_col 
@@ -1567,6 +1623,9 @@ create or replace PACKAGE BODY   VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
             p_ret_mens            
         );
     END IF;
+    
+        -- Atualizando actividades y etapas   
+    PKG_SWEB_CRED_SOLI_ACTIVIDAD.sp_actu_acti(p_cod_soli_cred,'E4','A21',p_cod_usua_sid,p_ret_esta,p_ret_mens);
         
     p_ret_esta := 1;
     p_ret_mens := 'Consulta ejecutada de forma exitosa';
@@ -1602,13 +1661,20 @@ create or replace PACKAGE BODY   VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
             DECODE(gm.cod_moneda, 1, 'Soles', 'Dólares') nom_moneda,
             gm.des_moneda,
             tuv.descripcion tip_uso_veh,
-            vcm.val_mon_fin + vcm.val_ci val_total,
+            --<I Req. 87567 E2.1 ID 77 avilca 20/07/220>
+            CASE 
+               WHEN vcm.tip_soli_cred = 'TC02' OR vcm.tip_soli_cred = 'TC03' OR vcm.tip_soli_cred = 'TC06' THEN
+                   (vcm.val_ci)/(vcm.val_porc_ci/100)--<Req. 87567 E2.1 ID 77 avilca 03/12/2020>
+               ELSE
+                 vcm.val_mon_fin + vcm.val_ci
+               END val_total,  
+           --<F Req. 87567 E2.1 ID 77 avilca 20/07/220>               
             vcm.val_ci,
             vcm.val_mon_fin,
             vcm.can_plaz_meses,
             pcs.descripcion per_cred_sol,
             vcm.can_dias_venc_1ra_letr,
-            vcm.can_tot_let,
+            (vcm.can_tot_let + vcm.can_let_per_gra)can_tot_let, --< Req. 87567 E2.1 ID 77 avilca 24/02/2021>
             vcm.val_porc_tea_sigv val_porc_tea,
             vcm.val_int_per_gra,
             vcsl.val_mont_letr,
@@ -1620,7 +1686,21 @@ create or replace PACKAGE BODY   VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
             fn_val_cred_simu_lede(vcm.cod_simu,vcm.can_let_per_gra + 1,4) int_1ra_letra, --Interes   
             fn_val_cred_simu_lede(vcm.cod_simu,vcm.can_let_per_gra + 1,5) total_letra,   --Cuota   
             NVL(fn_val_cred_simu_lede(vcm.cod_simu,vcm.can_let_per_gra + 1,8),0) val_seg_letra,  --Seguro
-            NVL(csp.can_veh_fin,0) * NVL(pvd.val_pre_veh,0) * 0.18 val_garantia
+            NVL(csp.can_veh_fin,0) * NVL(pvd.val_pre_veh,0) * 0.18 val_garantia,
+            --<I Req. 87567 E2.1 ID 77 avilca 28/12/2020>
+            CASE 
+               WHEN vcm.tip_soli_cred = 'TC02' OR vcm.tip_soli_cred = 'TC03' OR vcm.tip_soli_cred = 'TC06' THEN
+                   'Garantías adicionales'
+               ELSE
+                 'Mismas unidades'
+               END des_garantias,
+            CASE 
+               WHEN vcm.tip_soli_cred = 'TC02' OR vcm.tip_soli_cred = 'TC03' OR vcm.tip_soli_cred = 'TC06' THEN
+                   'Endosado'
+               ELSE
+                 'Seguro de las unidades contratado a través de Diveimport SA'
+               END des_seguros
+           --<F Req. 87567 E2.1 ID 77 avilca 28/12/2020>   
         FROM vve_cred_simu vcm
         INNER JOIN vve_cred_simu_letr vcsl
             ON vcsl.cod_simu = vcm.cod_simu 
@@ -1650,7 +1730,7 @@ create or replace PACKAGE BODY   VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
             
    
     -- Atualizando actividades y etapas   
-    PKG_SWEB_CRED_SOLI_ACTIVIDAD.sp_actu_acti(p_cod_soli_cred,'E4','A21',p_cod_usua_sid,p_ret_esta,p_ret_mens);
+   -- PKG_SWEB_CRED_SOLI_ACTIVIDAD.sp_actu_acti(p_cod_soli_cred,'E4','A21',p_cod_usua_sid,p_ret_esta,p_ret_mens);
     
     p_ret_esta := 1;
     p_ret_mens := 'Consulta ejecutada de forma exitosa';
@@ -1699,7 +1779,7 @@ create or replace PACKAGE BODY   VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
     FROM sistemas.sis_mae_usuario
     WHERE cod_id_usuario = p_cod_usua_web;
 
-    v_asunto := ' Solicitud de aprobación TASA MENOR - Nro. Solicitud: ' || p_cod_soli_cred;
+    v_asunto := ' Solicitud de aprobación TASA MENOR - Nro. Solicitud: ' || LTRIM(p_cod_soli_cred,'0');
 
     v_mensaje := '<!DOCTYPE html>
           <html lang="es" class="baseFontStyles" style="color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 16px; line-height: 1.35;">
@@ -1756,7 +1836,7 @@ create or replace PACKAGE BODY   VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
                               <tr>
                                 <td>
                                   <div class="to100" style="display:inline-block;width: 400px">
-                                    <p style="font-weight: bold;font-family: helvetica, arial, sans-serif; font-size: 15px; line-height: 1.35; margin: 0;">Validar los datos de la póliza ingresados para la solicitud nro: ' || p_cod_soli_cred ||'</p>
+                                    <p style="font-weight: bold;font-family: helvetica, arial, sans-serif; font-size: 15px; line-height: 1.35; margin: 0;">Validar los datos de la póliza ingresados para la solicitud nro: ' || LTRIM(p_cod_soli_cred,'0') ||'</p>
                                   </div>
                                 </td>
                               </tr>
@@ -1982,9 +2062,23 @@ create or replace PACKAGE BODY   VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
     p_ret_esta           OUT NUMBER,
     p_ret_mens           OUT VARCHAR2
   ) AS
+    v_can_veh_ori NUMBER :=0;
   BEGIN
     p_ret_num_prof_veh := p_num_prof_veh;
     
+   /** I Req. 87567 E2.1 ID:11 - avilca 26/08/2020 **/
+    --Obteniendo número de vehículos 
+    BEGIN
+        SELECT can_veh_fin  INTO v_can_veh_ori
+         FROM vve_cred_soli_prof 
+        WHERE cod_soli_cred= p_cod_soli_cred
+        AND num_prof_veh = p_num_prof_veh;
+   EXCEPTION
+            WHEN NO_DATA_FOUND THEN  
+            v_can_veh_ori := 0;
+   END; 
+  /** F Req. 87567 E2.1 ID:11 - avilca 26/08/2020 **/
+  
     IF p_ind_registro = 'N' THEN
         BEGIN
             /*Eliminando relación entre garantía y solicitud*/
@@ -2038,7 +2132,15 @@ create or replace PACKAGE BODY   VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
                     AND num_prof_veh = p_num_prof_veh;
         END;
     END IF;
-      
+    
+    /** I Req. 87567 E2.1 ID:11 - avilca 26/08/2020 **/
+    --Si se cambia el número de vehiculos en la proforma del simulador se elimina los datos
+    -- generados en el flujo de caja
+    IF v_can_veh_ori <> 0 AND  v_can_veh_ori <> p_can_veh_fin THEN
+     DELETE FROM vve_cred_soli_fact_fc
+     WHERE cod_soli_cred = p_cod_soli_cred;
+    END IF;
+    /** F Req. 87567 E2.1 ID:11 - avilca 26/08/2020 **/   
     COMMIT;
 
     p_ret_esta := 1;
@@ -2055,6 +2157,7 @@ create or replace PACKAGE BODY   VENTA.PKG_SWEB_CRED_SOLI_SIMULADOR AS
                                           p_ret_mens,
                                           p_cod_soli_cred);
       ROLLBACK; 
-  END sp_inse_para_proforma;  
-
-END PKG_SWEB_CRED_SOLI_SIMULADOR; 
+  END sp_inse_para_proforma;
+  
+  
+END PKG_SWEB_CRED_SOLI_SIMULADOR;

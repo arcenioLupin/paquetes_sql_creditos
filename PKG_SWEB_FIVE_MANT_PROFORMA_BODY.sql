@@ -1,4 +1,4 @@
-create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
+create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant_proforma AS
 
   /*-----------------------------------------------------------------------------
     Nombre : SP_LIST_PROF_ASIG_FICHA
@@ -10,7 +10,8 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
     11/05/2017   AVILCA         Creacion
     20/10/2017   MEGUILUZ       Req. 84611 Notificacion PROF y FDV
     20/11/2017   BPALACIOS      Sprint 4 Ficha de venta
-	12/11/2018   SOPORTE LEGADOS Req. 86268 Modificacion de visualizacion de FV
+    12/11/2018   SOPORTE LEGADOS Req. 86268 Modificacion de visualizacion de FV
+    09/10/2020   SOPORTE LEGADOS REQ 90917_L_Absorcion_Legados_Fase_2
   ----------------------------------------------------------------------------*/
   PROCEDURE sp_list_prof_asig_ficha
   (
@@ -21,11 +22,12 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
     p_ret_esta          OUT NUMBER,
     p_ret_mens          OUT VARCHAR
   ) AS
-
+  
   v_ano_fabricacion varchar2(6); --<86268 soporte legados- variable para guardar el año de fabricacion>--
-
+  p_tip_orig_crea   varchar2(2);          --REQ 90917_L_Absorcion_Legados_Fase_2
+  p_txt_etiq_sap    varchar2(250);        --REQ 90917_L_Absorcion_Legados_Fase_2
   BEGIN
-
+  
     --<I-86268 obteniendo el año de fabricación>
     /*
      BEGIN  
@@ -48,7 +50,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
      END;  
      */    
      --<F-86268 obteniendo el año de fabricación>
-
+  
     OPEN p_ret_cursor FOR
       SELECT pv.num_ficha_vta_veh,
              pv.nur_ficha_vta_prof,
@@ -93,7 +95,12 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
             ,
              pc.fec_crea_reg AS fech_tentativa , -- FECHA TENTATIVA
              nvl(v_ano_fabricacion,'')  ano_fabricacion_veh --< 86268 año de fabricacion
-
+             --<I-90917_L_Absorcion_Legados_Fase_2>
+             ,pc.TIP_ORIG_CREA as TIP_ORIG_CREA             
+             ,pkg_sweb_five_mant_proforma.fu_ruta_prof_sap(pc.TIP_ORIG_CREA) as  ruta_prof_sap
+             --<F-90917_L_Absorcion_Legados_Fase_2>
+			 ,cs.cod_soli_cred
+             ,cs.cod_estado as cod_estado_soli_cred
         FROM venta.vve_proforma_veh           pc,
              venta.vve_proforma_veh_det       pd,
              venta.vve_tipo_importacion       ti,
@@ -102,7 +109,9 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
              venta.vve_baumuster              bm,
              venta.vve_config_veh             cv,
              venta.vve_tipo_veh               vt,
-             venta.vve_ficha_vta_proforma_veh pv
+             venta.vve_ficha_vta_proforma_veh pv,
+             venta.vve_cred_soli_prof csp,--<Req. 87567 E2.1 ID:desasignar proforma avilca 03/11/2020>
+             venta.vve_cred_soli cs  --<Req. 87567 E2.1 ID:desasignar proforma avilca 03/11/2020>
        WHERE pc.num_prof_veh = pd.num_prof_veh(+)
          AND pc.cod_tipo_importacion = ti.cod_tipo_importacion(+)
          AND pd.cod_familia_veh = fv.cod_familia_veh(+)
@@ -116,6 +125,8 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
          AND pd.cod_config_veh = cv.cod_config_veh(+)
          AND pd.cod_tipo_veh = vt.cod_tipo_veh(+)
          AND pv.num_prof_veh = pc.num_prof_veh(+)
+         AND pv.num_prof_veh = csp.num_prof_veh(+)--<Req. 87567 E2.1 ID:desasignar proforma avilca 03/11/2020>
+         AND csp.cod_soli_cred = cs.cod_soli_cred(+)--<Req. 87567 E2.1 ID:desasignar proforma avilca 03/11/2020>
             --<I 84611>
          AND pv.num_ficha_vta_veh =
              nvl(p_num_ficha_vta_veh, pv.num_ficha_vta_veh)
@@ -123,10 +134,10 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
          AND pc.num_prof_veh = nvl(p_num_prof_veh, pc.num_prof_veh)
          AND pv.ind_inactivo = 'N'
        ORDER BY pc.fec_prof_veh DESC;
-
+  
     p_ret_esta := 1;
     p_ret_mens := 'Consulta exitosa';
-
+  
   EXCEPTION
     WHEN OTHERS THEN
       CLOSE p_ret_cursor;
@@ -138,7 +149,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
                                           'Error al listar las proformas de ficha la ficha de venta',
                                           p_ret_mens,
                                           p_num_ficha_vta_veh);
-
+    
   END;
 
   /*-----------------------------------------------------------------------------
@@ -199,7 +210,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
          AND pd.cod_baumuster = cv.cod_baumuster(+)
          AND pd.cod_config_veh = cv.cod_config_veh(+)
          AND pd.cod_tipo_veh = vt.cod_tipo_veh(+);
-
+  
     p_ret_esta := 1;
     p_ret_mens := 'Consulta exitosa';
   EXCEPTION
@@ -293,9 +304,9 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
            fec_crea_reg          = SYSDATE
      WHERE num_prof_veh = p_num_prof_veh
        AND num_ficha_vta_veh = p_num_ficha_vta_veh;
-
+  
     COMMIT;
-
+  
     p_ret_mens := 'Se actualizó correctamente';
     p_ret_esta := 1;
   EXCEPTION
@@ -355,19 +366,19 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
     p_ret_mens              OUT VARCHAR2
   ) AS
     v_num_reg_nur_ficha_prof NUMBER;
-
+  
     v_tem_mens VARCHAR2(4000);
     v_tem_retu NUMBER(10);
-
+  
   BEGIN
     SAVEPOINT a;
     SELECT nvl(MAX(a.nur_ficha_vta_prof), 0)
       INTO v_num_reg_nur_ficha_prof
       FROM venta.vve_ficha_vta_proforma_veh a
      WHERE a.num_ficha_vta_veh = p_num_ficha_vta_veh;
-
+  
     v_num_reg_nur_ficha_prof := v_num_reg_nur_ficha_prof + 1;
-
+  
     INSERT INTO venta.vve_ficha_vta_proforma_veh
       (num_ficha_vta_veh,
        nur_ficha_vta_prof,
@@ -433,9 +444,9 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
        p_cod_id_usuario,
        SYSDATE)
     RETURNING nur_ficha_vta_prof INTO v_num_reg_nur_ficha_prof;
-
+  
     COMMIT;
-
+  
     BEGIN
       --envia datos a CRM
       pkg_sweb_gest_five.sp_envi_five_crm(p_num_ficha_vta_veh,
@@ -448,7 +459,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
       WHEN OTHERS THEN
         NULL;
     END;
-
+      
     BEGIN
       --envia datos a CRM
       pkg_sweb_vta_prof_proc.sp_envi_prof_crm(p_num_prof_veh,
@@ -461,7 +472,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
       WHEN OTHERS THEN
         NULL;
     END;
-
+  
     --<I 84952>      
     DECLARE
       vestado      VARCHAR2(30);
@@ -475,7 +486,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
                                            '',
                                            p_cod_id_usuario,
                                            vestado);
-
+    
     EXCEPTION
       WHEN OTHERS THEN
         v_log_error1 := SQLERRM;
@@ -484,14 +495,14 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
                                        p_num_prof_veh,
                                        NULL);
     END;
-
+  
     p_ret_mens := 'Se actualizó correctamente';
     p_ret_esta := 1;
   EXCEPTION
     WHEN OTHERS THEN
       p_ret_esta := -1;
       p_ret_mens := SQLERRM;
-
+    
       pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
                                           'SP_INSE_PEDI',
                                           p_cod_id_usuario,
@@ -546,7 +557,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
     p_ret_esta              OUT NUMBER,
     p_ret_mens              OUT VARCHAR2
   ) AS
-
+  
     ve_error EXCEPTION;
     v_existe INTEGER;
   BEGIN
@@ -555,9 +566,9 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
       FROM venta.vve_ficha_vta_proforma_veh a
      WHERE a.num_ficha_vta_veh = p_num_ficha_vta_veh
        AND a.num_prof_veh = p_num_prof_veh;
-
+  
     IF v_existe > 0 THEN
-
+    
       sp_actu_prof_ficha(p_num_ficha_vta_veh,
                          p_num_prof_veh,
                          p_num_soli_cred_veh,
@@ -590,7 +601,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
                          p_cod_usua_web,
                          p_ret_esta,
                          p_ret_mens);
-
+    
       IF (p_ret_esta <> 1) THEN
         RAISE ve_error;
       END IF;
@@ -626,19 +637,19 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
                          p_cod_id_usuario,
                          p_ret_esta,
                          p_ret_mens);
-
+    
       IF (p_ret_esta <> 1) THEN
         RAISE ve_error;
       END IF;
     END IF;
-
+  
     p_ret_mens := 'Se actualizó correctamente';
     p_ret_esta := 1;
   EXCEPTION
     WHEN ve_error THEN
       p_ret_esta := 0;
     WHEN OTHERS THEN
-
+    
       p_ret_esta := -1;
       p_ret_mens := 'SP_GUARDA_PROF_FICHA:' || SQLERRM;
       pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
@@ -694,7 +705,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
              pd.cod_familia_veh,
              pd.cod_marca,
              pd.cod_baumuster
-
+      
         FROM venta.vve_proforma_veh           p,
              venta.vve_proforma_veh_det       pd,
              venta.vve_ficha_vta_proforma_veh f,
@@ -708,7 +719,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
          AND pd.cod_marca = cv.cod_marca(+)
          AND pd.cod_baumuster = cv.cod_baumuster(+)
          AND pd.cod_config_veh = cv.cod_config_veh(+);
-
+  
     p_ret_esta := 1;
     p_ret_mens := 'Consulta exitosa';
   EXCEPTION
@@ -741,7 +752,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
     p_ret_esta          OUT NUMBER,
     p_ret_mens          OUT VARCHAR
   ) AS
-
+  
   BEGIN
     OPEN p_ret_cursor FOR
       SELECT num_ficha_vta_veh,
@@ -761,12 +772,12 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
              val_dcto_veh,
              val_vtn_veh,
              val_pre_veh
-
+      
         FROM venta.v_ficha_vta_proforma_veh
        WHERE nvl(ind_inactivo, 'N') = 'N'
          AND num_prof_veh = p_num_prof_veh
          AND num_ficha_vta_veh = p_num_ficha_vta_veh;
-
+  
     p_ret_esta := 1;
     p_ret_mens := 'Consulta exitosa';
   EXCEPTION
@@ -801,10 +812,10 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
     p_ret_esta           OUT NUMBER,
     p_ret_mens           OUT VARCHAR
   ) AS
-
+  
   BEGIN
     OPEN p_ret_cursor FOR
-
+    
       SELECT num_horario_cap,
              cod_area_vta,
              cod_familia_veh,
@@ -844,7 +855,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
                          AND nvl(s.ind_inactivo, 'N') = 'N'
                        GROUP BY s.num_soli_cap_veh))
        ORDER BY num_horario_cap;
-
+  
     p_ret_esta := 1;
     p_ret_mens := 'Consulta exitosa';
   EXCEPTION
@@ -883,35 +894,276 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
   ) AS
     ve_error EXCEPTION;
     vn_exist_pedido NUMBER;
+    v_cod_soli_cred     VARCHAR2(20);
+    v_cod_estado_solcre VARCHAR2(6);
+    
+    --<I Req. 87567 E2.1 ID## avilca 15/01/2021>
+    v_cont_solcre          INTEGER;
+    v_cod_estado_solicred  VARCHAR(10);
+    v_asunto_solcre        VARCHAR2(2000);
+    v_mensaje_solcre       CLOB;
+    v_html_head_solcre     VARCHAR2(2000);
+    l_destinatarios_solcre vve_correo_prof.destinatarios%TYPE;
+    v_cod_correo      vve_correo_prof.cod_correo_prof%TYPE;
+    v_cod_id_usuario  sistemas.sis_mae_usuario.cod_id_usuario%TYPE;
+    v_correoori       usuarios.di_correo%TYPE;
+     
+--<F Req. 87567 E2.1 ID## avilca 15/01/2021>	
 
   BEGIN
-    -- Verificamos si existen pedidos asociados a  la proforma en ela ficha de venta
-    SELECT COUNT(*)
-      INTO vn_exist_pedido
-      FROM venta.v_ficha_vta_pedido_veh vve_ficha_vta_pedido_veh
-     WHERE num_ficha_vta_veh = p_num_ficha_vta_veh
-       AND num_prof_vehf = p_num_prof_veh
-       AND ind_inactivo = 'N';
+  --< I Req. 87567 E2.1 ID:desasignar proforma avilca 03/11/2020>
+    -- Obteniendo solicitud de crédito y estado relacionado a la proforma
+      BEGIN
+         SELECT cs.cod_soli_cred,cod_estado 
+          INTO v_cod_soli_cred,v_cod_estado_solcre
+          FROM vve_cred_soli cs
+         JOIN vve_cred_soli_prof csp ON csp.cod_soli_cred = cs.cod_soli_cred
+         WHERE  num_prof_veh = p_num_prof_veh;
+      EXCEPTION
+       WHEN NO_DATA_FOUND THEN
+         v_cod_soli_cred:='';
+         v_cod_estado_solcre:='';
+      END;
+    
+    IF   v_cod_estado_solcre = 'ES03' THEN  
+        -- Inactivamos las garantía asociadas a los pedidos de la ficha
+        UPDATE vve_cred_soli_gara 
+        SET ind_inactivo = 'S',
+            cod_usua_modi_regi = p_co_usuario_inactiva,
+            fec_modi_regi = SYSDATE
+          WHERE cod_gara IN (SELECT cod_garantia FROM vve_cred_maes_gara
+                              WHERE  num_pedido_veh IN 
+                               (SELECT NUM_PEDIDO_VEH
+                                  FROM venta.v_ficha_vta_pedido_veh --vve_ficha_vta_pedido_veh
+                                WHERE num_ficha_vta_veh = p_num_ficha_vta_veh
+                                  AND num_prof_vehf = p_num_prof_veh
+                                  AND ind_inactivo = 'N'));
+                               
+      --< I Req. 87567 E2.1 ID:desasignar proforma avilca 05/03/2021>                        
+       -- Inactivamos las garantias  asociadas a la solicitud de crédito 
+          /*UPDATE vve_cred_soli_gara 
+           SET ind_inactivo = 'S',
+            cod_usua_modi_regi = p_co_usuario_inactiva,
+            fec_modi_regi = SYSDATE
+          WHERE cod_soli_cred = v_cod_soli_cred
+            AND ind_inactivo = 'N';*/
+     -- Desvincula pedido de la garantía
 
-    IF vn_exist_pedido > 0 THEN
-      p_ret_mens := 'La Proforma tiene pedidos asociados, no se puede desasignar de la ficha de venta.';
-      p_ret_esta := 0;
+        UPDATE vve_cred_maes_gara 
+        SET num_pedido_veh = null,
+            txt_ruta_veh = null,
+            can_nro_asie = null,
+            cod_usua_modi_regi = p_co_usuario_inactiva,
+            fec_modi_regi = SYSDATE
+          WHERE cod_garantia IN (SELECT sg.cod_gara 
+                                    FROM vve_cred_soli_gara sg 
+                                    INNER JOIN vve_cred_soli_prof csp on csp.cod_soli_cred = sg.cod_soli_cred
+                                    WHERE sg.cod_soli_cred = v_cod_soli_cred
+                                    and  sg.ind_inactivo = 'S'
+                                    and  csp.num_prof_veh = p_num_prof_veh );
+        
+         
+       -- Inactivamos simulador        
+          UPDATE vve_cred_simu
+          SET ind_inactivo = 'S'
+          WHERE cod_soli_cred = v_cod_soli_cred
+          AND ind_inactivo = 'N';
+          
+       -- Eliminamos flujo de caja para la solicitud de crédito
+          DELETE FROM vve_cred_soli_para_fc
+          WHERE  cod_soli_cred = v_cod_soli_cred;
+          
+          DELETE FROM vve_cred_soli_fact_ajust
+          WHERE  cod_soli_cred = v_cod_soli_cred;
+          
+          DELETE FROM vve_cred_soli_fact_fc
+          WHERE  cod_soli_cred = v_cod_soli_cred;
+          
+       --Inactivamos pedidos relacionados a la proforma
+        --< I Req. 87567 E2.1 ID:desasignar proforma avilca 05/03/2021> 
+           FOR c_pedido IN (SELECT num_pedido_veh 
+                                  FROM vve_ficha_vta_pedido_veh 
+                                 WHERE num_prof_veh = p_num_prof_veh
+                                )
+             LOOP
+        
+                  UPDATE vve_cred_soli_pedi_veh 
+                   SET ind_inactivo = 'S',
+                    cod_usua_modi_regi = p_co_usuario_inactiva,
+                    fec_modi_regi = SYSDATE
+                  WHERE num_pedido_veh = c_pedido.num_pedido_veh
+                    AND ind_inactivo = 'N';
 
-    END IF;
-
-    IF (vn_exist_pedido = 0) THEN
+          END LOOP;
+          --< F Req. 87567 E2.1 ID:desasignar proforma avilca 05/03/2021>      
+       -- Inactivando aprobadores
+         UPDATE vve_cred_soli_apro 
+           SET ind_inactivo = 'S',
+            cod_usua_modi_regi = p_co_usuario_inactiva,
+            fec_modi_regi = SYSDATE
+          WHERE cod_soli_cred = v_cod_soli_cred
+            AND ind_inactivo = 'N';    
+            
+      --Inactivando relación solicitud - proforma     
+       UPDATE vve_cred_soli_prof
+         SET ind_inactivo        = 'S',
+             cod_usua_modi_reg = p_co_usuario_inactiva,
+             fec_modi_reg    = SYSDATE
+       WHERE num_prof_veh    = p_num_prof_veh
+         AND cod_soli_cred   = v_cod_soli_cred;
+       
+      --< F Req. 87567 E2.1 ID:desasignar proforma avilca 05/03/2021> 
       UPDATE venta.vve_ficha_vta_proforma_veh
          SET ind_inactivo        = 'S',
              co_usuario_inactiva = p_co_usuario_inactiva,
              fec_inactiva        = SYSDATE
        WHERE num_prof_veh = p_num_prof_veh
          AND num_ficha_vta_veh = p_num_ficha_vta_veh;
-
+    
       COMMIT;
-
+    
       p_ret_mens := 'Se inactivo correctamente la proforma de la ficha de venta';
-      p_ret_esta := 1;
+      p_ret_esta := 1;   
+      
+    ELSE
+        -- Verificamos si existen pedidos asociados a  la proforma en ela ficha de venta
+        SELECT COUNT(*)
+          INTO vn_exist_pedido
+          FROM venta.v_ficha_vta_pedido_veh vve_ficha_vta_pedido_veh
+         WHERE num_ficha_vta_veh = p_num_ficha_vta_veh
+           AND num_prof_vehf = p_num_prof_veh
+           AND ind_inactivo = 'N';
+      
+        IF vn_exist_pedido > 0 THEN
+          p_ret_mens := 'La Proforma tiene pedidos asociados, no se puede desasignar de la ficha de venta.';
+          p_ret_esta := 0;
+        
+        END IF;
+        
+    IF (vn_exist_pedido = 0) THEN
+          UPDATE venta.vve_ficha_vta_proforma_veh
+             SET ind_inactivo        = 'S',
+                 co_usuario_inactiva = p_co_usuario_inactiva,
+                 fec_inactiva        = SYSDATE
+           WHERE num_prof_veh = p_num_prof_veh
+             AND num_ficha_vta_veh = p_num_ficha_vta_veh;
+        
+          COMMIT;
+        
+          p_ret_mens := 'Se inactivo correctamente la proforma de la ficha de venta';
+          p_ret_esta := 1;
+        
+        END IF;
+    --<F Req. 87567 E2.1 ID:desasignar proforma avilca 03/11/2020>
     END IF;
+
+--<I Req. 87567 E2.1 ID## avilca 15/01/2021>
+    -- Preparando correo para usuarios de solictud de crédito
+    --destinatarios SOLCRE
+    
+        --Obtenemos el correo origen
+    BEGIN
+      SELECT txt_correo, a.cod_id_usuario
+        INTO v_correoori, v_cod_id_usuario
+        FROM sistemas.sis_mae_usuario a
+       WHERE a.txt_usuario = p_cod_id_usuario;
+    EXCEPTION
+      WHEN OTHERS THEN
+        v_correoori := 'apps@divemotor.com.pe';
+    END;
+ 
+    v_cont_solcre := 1;
+	
+	 --< I Req. 87567 E2.1 ID:desasignar proforma avilca 05/03/2021> 
+    FOR c_mail_solcre IN (SELECT a.txt_correo
+                                FROM sistemas.sis_mae_usuario a
+                                INNER JOIN sistemas.sis_mae_perfil_usuario b
+                                  ON a.cod_id_usuario = b.cod_id_usuario
+                                 AND b.ind_inactivo = 'N'
+                                INNER JOIN sistemas.sis_mae_perfil_procesos c
+                                  ON b.cod_id_perfil = c.cod_id_perfil
+                                 AND c.ind_inactivo = 'N'
+                               WHERE c.cod_id_procesos = 124
+                                 AND c.cod_id_perfil IN ('1674690')
+                                 AND txt_correo IS NOT NULL
+                          UNION
+                              SELECT  a.txt_correo
+                              FROM sistemas.sis_mae_usuario a
+                              WHERE a.txt_usuario in (select cod_resp_fina from vve_cred_soli where cod_soli_cred = v_cod_soli_cred)
+                        )
+    LOOP
+    
+      IF (v_cont_solcre = 1) THEN
+        l_destinatarios_solcre := l_destinatarios_solcre || c_mail_solcre.txt_correo;
+      ELSE
+        l_destinatarios_solcre := l_destinatarios_solcre || ',' || c_mail_solcre.txt_correo;
+      END IF;
+      v_cont_solcre := v_cont_solcre + 1;
+
+    END LOOP;
+        --< F Req. 87567 E2.1 ID:desasignar proforma avilca 05/03/2021> 
+    -- Estructura de correo para solicitud de crédito
+    
+        BEGIN
+              SELECT ax.txt_asun_pla, ax.txt_cabe_pla, ax.txt_deta_pla
+                INTO v_asunto_solcre, v_html_head_solcre, v_mensaje_solcre
+                FROM sis_maes_plan ax
+               WHERE ax.cod_plan_reg = 6
+                 AND nvl(ax.ind_inac_pla, 'N') = 'N';
+         EXCEPTION
+          WHEN no_data_found THEN
+            v_asunto_solcre    := NULL;
+            v_html_head_solcre := NULL;
+            v_mensaje_solcre   := NULL;
+          WHEN OTHERS THEN
+            v_mensaje_solcre   := NULL;
+            v_html_head_solcre := NULL;
+            v_asunto_solcre   := NULL;
+         END;
+         
+        v_asunto_solcre := REPLACE(v_asunto_solcre, '#proforma#', p_num_prof_veh);
+        v_asunto_solcre := REPLACE(v_asunto_solcre, '#codsolcre#', LTRIM(v_cod_soli_cred,'0'));
+        
+        v_mensaje_solcre := v_html_head_solcre || v_mensaje_solcre;
+        v_mensaje_solcre := logistica_web.pkg_correo_log.replace_clob(v_mensaje_solcre,
+                                                           '#PPROFORMA#',
+                                                            p_num_prof_veh);
+                                                           
+    SELECT VVE_CORREO_PROF_SQ01.NEXTVAL INTO V_COD_CORREO FROM DUAL;
+  
+
+    INSERT INTO vve_correo_prof
+      (cod_correo_prof,
+       cod_ref_proc,
+       tipo_ref_proc,
+       destinatarios,
+       copia,
+       asunto,
+       cuerpo,
+       correoorigen,
+       ind_enviado,
+       ind_inactivo,
+       fec_crea_reg,
+       cod_id_usuario_crea)
+    VALUES
+      (v_cod_correo,
+       p_num_ficha_vta_veh || p_num_prof_veh || 'PS', --P_COD_PLAN_ENTR_VEHI,
+       'PS',
+       l_destinatarios_solcre,
+       NULL,
+       v_asunto_solcre,
+       v_mensaje_solcre,
+       v_correoori,
+       'N',
+       'N',
+       SYSDATE,
+       v_cod_id_usuario); 
+                                                                  
+                                                       
+      --<F Req. 87567 E2.1 ID## avilca 15/01/2021>    
+    p_ret_mens := 'Se anulo correctamente.';
+    p_ret_esta := 1; 
+    
   EXCEPTION
     WHEN ve_error THEN
       p_ret_esta := 0;
@@ -969,7 +1221,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
               WHERE V.NUM_PROF_VEH = P.NUM_PROF_VEH
                 AND V.IND_INACTIVO = ''N''
             ) AND ';
-
+  
     v_where := v_where ||
                ' EXISTS(SELECT 1
                                    FROM SISTEMAS.SIS_VIEW_USUA_PORG U,
@@ -978,33 +1230,33 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
                                     AND A.COD_AREA_VTA = P.COD_AREA_VTA
                                     AND U.TXT_USUARIO = ''' ||
                p_co_usuario || ''')';
-
+  
     IF p_nom_perso IS NOT NULL THEN
       v_where := v_where || ' AND UPPER(G.NOM_PERSO) LIKE ''%' ||
                  upper(p_nom_perso) || '%''';
     END IF;
-
+  
     IF p_num_prof_veh IS NOT NULL THEN
       v_where := v_where || ' AND P.NUM_PROF_VEH LIKE ''%' ||
                  p_num_prof_veh || '%''';
     END IF;
-
+  
     IF p_cod_estados IS NOT NULL THEN
       v_where := v_where || ' AND P.COD_ESTADO_PROF IN (' ||
                  upper(p_cod_estados) || ')';
     END IF;
-
+  
     v_query := v_query || v_where;
-
+  
     v_order := ' ORDER BY P.NUM_PROF_VEH DESC ';
-
+  
     v_query := v_query || v_order;
     --PKG_SWEB_FICHA_VENTA_LARRY.CUSTOM_OUTPUT(V_QUERY);
     OPEN p_ret_cursor FOR v_query;
-
+  
     p_ret_esta := 1;
     p_ret_mens := 'Consulta exitosa';
-
+  
   EXCEPTION
     WHEN OTHERS THEN
       CLOSE p_ret_cursor;
@@ -1056,7 +1308,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
       FETCH c_codchek
         INTO v_cod_chek;
       EXIT WHEN c_codchek%NOTFOUND;
-
+    
       INSERT INTO vve_five_prof_chek
         (cod_five_prof_chek,
          num_ficha_vta_veh,
@@ -1077,7 +1329,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
          p_cod_usua_web);
     END LOOP;
     CLOSE c_codchek;
-
+  
     p_ret_mens := 'Se actualizó correctamente';
     p_ret_esta := 1;
     COMMIT;
@@ -1116,7 +1368,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
     p_ret_mens          OUT VARCHAR2
   ) AS
     ve_error EXCEPTION;
-
+  
     v_query   VARCHAR2(4000);
     c_codcolr SYS_REFCURSOR;
     v_cod_col VARCHAR2(4);
@@ -1129,18 +1381,18 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
       v_query := 'SELECT COLR.COD_COLOR_FABRICA_VEH FROM VVE_COLOR_FABRICA_VEH COLR  WHERE COLR.COD_COLOR_FABRICA_VEH IN (' ||
                  p_cod_colo || ')';
     END IF;
-
+  
     UPDATE vve_five_prof_colo t
        SET t.ind_inactivo = 'S'
      WHERE t.num_ficha_vta_veh = p_num_ficha_vta_veh
        AND t.num_prof_veh = p_num_prof_veh;
-
+  
     OPEN c_codcolr FOR v_query;
     LOOP
       FETCH c_codcolr
         INTO v_cod_col;
       EXIT WHEN c_codcolr%NOTFOUND;
-
+    
       INSERT INTO vve_five_prof_colo
         (cod_five_prof_colo,
          num_ficha_vta_veh,
@@ -1159,7 +1411,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
          p_cod_usua_web);
     END LOOP;
     CLOSE c_codcolr;
-
+  
     p_ret_mens := 'Se actualizó correctamente';
     p_ret_esta := 1;
     COMMIT;
@@ -1198,7 +1450,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
     p_ret_mens          OUT VARCHAR2
   ) AS
     ve_error EXCEPTION;
-
+  
   BEGIN
     IF p_num_colo = 0 THEN
       INSERT INTO vve_five_prof_colo
@@ -1224,7 +1476,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
              cod_usuario_modi      = p_cod_usua_web
        WHERE cod_five_prof_colo = p_num_colo;
     END IF;
-
+  
     p_ret_mens := 'Se actualizó correctamente';
     p_ret_esta := 1;
     COMMIT;
@@ -1266,7 +1518,17 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
   ) AS
     ve_error EXCEPTION;
   BEGIN
-
+    
+        pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR_ECUBAS',
+                                          'SP_ACTU_CHEK_PROF_FIVE',
+                                          p_cod_usua_sid,
+                                           'p_num_chek ' ||  p_num_chek || ' ' ||
+                                           'p_cod_chek ' ||p_cod_chek|| ' ' ||
+                                           'p_cod_area_vta ' ||p_cod_area_vta|| ' ' ||
+                                           'p_num_prof_veh ' || p_num_prof_veh|| ' ' ||
+                                           'p_ind_inactivo ' ||p_ind_inactivo  ,
+                                          p_ret_mens);
+  
     IF p_num_chek = 0 THEN
       INSERT INTO vve_five_prof_chek
         (cod_five_prof_chek,
@@ -1287,19 +1549,19 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
          SYSDATE,
          p_cod_usua_web);
     ELSE
-      IF p_ind_inactivo = 'Y' THEN
+      /*IF p_ind_inactivo = 'S' THEN
         UPDATE vve_five_prof_chek
            SET ind_inactivo = p_ind_inactivo
          WHERE cod_five_prof_chek = p_num_chek;
-      ELSE
+      ELSE*/
         UPDATE vve_five_prof_chek
            SET cod_chek         = p_cod_chek,
                fec_modi_reg     = SYSDATE,
                cod_usuario_modi = p_cod_usua_web,
                ind_inactivo     = p_ind_inactivo
          WHERE cod_five_prof_chek = p_num_chek;
-      END IF;
-
+      /*END IF;*/
+    
     END IF;
     p_ret_mens := 'Se actualizó correctamente';
     p_ret_esta := 1;
@@ -1331,8 +1593,8 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
        Log de Cambios
        Fecha        Autor         Descripcion
        19/09/2017   GUCORREA     Creación del procedure
-	   10/10/2018	FGRANDEZ	REQ-86364, se crea la variable p_lista para la
-								condicional del listado.
+     10/10/2018  FGRANDEZ  REQ-86364, se crea la variable p_lista para la
+                condicional del listado.
   ----------------------------------------------------------------------------*/
   PROCEDURE sp_list_colo_prof_five
   (
@@ -1344,7 +1606,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
     p_ret_mens          OUT VARCHAR,
     p_lista             IN VARCHAR2 DEFAULT NULL
   ) AS
-
+  
   BEGIN
     IF p_lista IS NOT NULL THEN
        OPEN p_ret_cursor FOR
@@ -1377,7 +1639,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
          AND codcolr.num_prof_veh = p_num_prof_veh
          AND nvl(codcolr.ind_inactivo, 'N') = 'N';
      END IF;
-
+     
     p_ret_esta := 1;
     p_ret_mens := 'Consulta exitosa';
   EXCEPTION
@@ -1414,7 +1676,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
     p_ret_esta          OUT NUMBER,
     p_ret_mens          OUT VARCHAR
   ) AS
-
+  
   BEGIN
     OPEN p_ret_cursor FOR
       SELECT chekpro.cod_five_prof_chek,
@@ -1427,7 +1689,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
        WHERE chekpro.num_ficha_vta_veh = p_num_ficha_vta_veh
          AND chekpro.num_prof_veh = p_num_prof_veh
          AND nvl(chekpro.ind_inactivo, 'N') = 'N';
-
+  
     p_ret_esta := 1;
     p_ret_mens := 'Consulta exitosa';
   EXCEPTION
@@ -1462,7 +1724,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
     p_ret_esta     OUT NUMBER,
     p_ret_mens     OUT VARCHAR
   ) AS
-
+  
   BEGIN
     OPEN p_ret_cursor FOR
       SELECT cod.cod_chek, des.des_chek, cod.ind_default
@@ -1472,7 +1734,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
        WHERE cod.cod_area_vta = p_cod_area_vta
          AND nvl(cod.ind_inactivo, 'N') = 'N'
          AND nvl(des.ind_inactivo, 'N') = 'N';
-
+  
     p_ret_esta := 1;
     p_ret_mens := 'Consulta exitosa';
   EXCEPTION
@@ -1507,14 +1769,14 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
   BEGIN
     OPEN p_ret_cursor FOR
       SELECT SUM(v.val_tot_equipo_local_veh) AS val_tot_equipo_local_veh
-
+      
         FROM vve_prof_equipo_local_veh v, vve_equipo_local_veh e
        WHERE v.cod_equipo_local_veh = e.cod_equipo_local_veh
          AND v.val_equipo_local_veh > 0
          AND v.can_equipo_local_veh > 1
             --AND E.COD_TIPO_EQUIPO_LOCAL_VEH    = '94'
          AND v.num_prof_veh = p_num_prof_veh;
-
+  
     p_ret_esta := 1;
     p_ret_mens := 'Consulta exitosa';
   EXCEPTION
@@ -1562,11 +1824,11 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
   ) AS
     v_cod_five_bono NUMBER;
   BEGIN
-
+  
     SELECT seq_vve_five_bono.nextval INTO v_cod_five_bono FROM dual;
-
+  
     -- V_NUM_REG_NUR_FICHA_PROF := P_COD_FIVE_BONO + 1;
-
+  
     INSERT INTO vve_five_bono
       (cod_five_bono,
        num_ficha_vta_veh,
@@ -1593,7 +1855,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
        p_cod_id_usuario,
        SYSDATE,
        p_cod_id_usuario);
-
+  
     INSERT INTO vve_five_bono_vale
       (cod_vale_five_bono,
        cod_five_bono,
@@ -1622,7 +1884,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
        p_cod_id_usuario,
        SYSDATE,
        p_cod_id_usuario);
-
+  
     INSERT INTO vve_five_bono_vehi
       (cod_vehi_five_bono,
        cod_five_bono,
@@ -1649,16 +1911,16 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
        p_cod_id_usuario,
        SYSDATE,
        p_cod_id_usuario);
-
+  
     p_ret_mens := 'Se inserto correctamente';
     p_ret_esta := 1;
-
+  
     COMMIT;
   EXCEPTION
     WHEN OTHERS THEN
       p_ret_esta := -1;
       p_ret_mens := SQLERRM;
-
+    
       pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
                                           'SP_INSE_PEDI',
                                           p_cod_id_usuario,
@@ -1668,7 +1930,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
                                           p_ret_mens,
                                           p_num_prof_veh);
       ROLLBACK;
-
+    
   END;
 
   /*-----------------------------------------------------------------------------
@@ -1701,9 +1963,9 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
      WHERE cod_five_bono = p_cod_five_bono
        AND num_prof_veh = p_num_prof_veh
        AND num_ficha_vta_veh = p_num_ficha_vta_veh;
-
+  
     COMMIT;
-
+  
     p_ret_mens := 'Se actualizó correctamente';
     p_ret_esta := 1;
   EXCEPTION
@@ -1735,13 +1997,13 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
     p_ret_esta          OUT NUMBER,
     p_ret_mens          OUT VARCHAR
   ) AS
-
+  
     v_where       VARCHAR(2000);
     v_query       VARCHAR(2000);
     v_query_final VARCHAR(2000);
     v_final       VARCHAR2(10000);
   BEGIN
-
+  
     v_query := 'SELECT  A.COD_FIVE_BONO,
               A.NUM_FICHA_VTA_VEH,
               A.NUM_PROF_VEH,
@@ -1762,19 +2024,19 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
         VVE_FIVE_BONO_VEHI C
   WHERE A.COD_FIVE_BONO = B.COD_FIVE_BONO
         AND B.COD_FIVE_BONO = C.COD_FIVE_BONO ';
-
+  
     IF p_num_ficha_vta_veh IS NOT NULL AND p_num_ficha_vta_veh <> '' THEN
       v_where := v_where || ' AND  A.NUM_FICHA_VTA_VEH = ' ||
                  p_num_ficha_vta_veh || '';
     END IF;
-
+  
     v_query_final := v_query || v_where;
-
+  
     v_final := 'SELECT * FROM (' || v_final || ') X ';
     v_final := 'SELECT ROWNUM RM, X.* FROM (' || v_query_final || ') X ';
-
+  
     OPEN p_ret_cursor FOR v_final;
-
+  
     p_ret_esta := 1;
     p_ret_mens := 'Consulta exitosa';
   EXCEPTION
@@ -1788,7 +2050,43 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
                                           'Error al obtener información de la suma total de bonos',
                                           p_ret_mens,
                                           p_num_ficha_vta_veh);
-
+    
   END;
+  /*-----------------------------------------------------------------------------
+    Nombre : SP_INSE_COLO_PROF_FIVE
+    Proposito : Inserta color asociado a una proforma en la ficha de venta
+    Referencias :
+    Parametros :
+    Log de Cambios
+    Fecha        Autor         Descripcion
+    30/05/2017   JFLORESM      Creacion
+  ---------------------------------------------------------------------------*/
+  FUNCTION fu_ruta_prof_sap (
+        p_tip_orig_crea VARCHAR2
+    ) RETURN VARCHAR2 IS
+        p_txt_etiq_sap   vve_vari_impr.txt_etiq%TYPE;
+    BEGIN
+        /*SELECT
+            a.des_familia_veh
+        INTO v_des_familia_veh
+        FROM
+            vve_familia_veh a
+        WHERE
+            a.cod_familia_veh = p_cod_familia_veh;*/
+         IF   p_tip_orig_crea = '3'  THEN    
+             SELECT vi.txt_etiq 
+               INTO p_txt_etiq_sap   
+               FROM vve_vari_impr vi
+              WHERE vi.DES_VARI='PROFORMA_SAP';
+                  
+             p_txt_etiq_sap := p_txt_etiq_sap;
+             --p_num_prof_veh; --aplicar logica para generar la ruta de proforma sap
+           END IF;
 
-END PKG_SWEB_FIVE_MANT_PROFORMA; 
+        return(p_txt_etiq_sap);
+    EXCEPTION
+        WHEN OTHERS THEN
+            RETURN NULL;
+    END fu_ruta_prof_sap;
+
+END pkg_sweb_five_mant_proforma;

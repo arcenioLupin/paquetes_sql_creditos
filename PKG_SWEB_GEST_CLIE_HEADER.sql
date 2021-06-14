@@ -1,4 +1,4 @@
-create or replace PACKAGE   VENTA.PKG_SWEB_GEST_CLIE AS
+create or replace PACKAGE       VENTA.PKG_SWEB_GEST_CLIE AS
 PROCEDURE SP_LIST_CLIE --SP_LISTADO_CLIENTE
   (
     P_CADENAB     IN VARCHAR,
@@ -13,7 +13,7 @@ FUNCTION fu_vali_tipo_clie(
   p_cod_clie VARCHAR2
   ) RETURN NUMBER;
   
-PROCEDURE sp_list_enti_fina (
+PROCEDURE sp_list_enti_fina(
    p_ret_curs           OUT SYS_REFCURSOR
   ,p_ret_esta           OUT NUMBER
   ,p_ret_mens           OUT VARCHAR2 
@@ -70,4 +70,4 @@ FUNCTION fu_vali_mail_clie(
     L_CURSOR      OUT SYS_REFCURSOR,
     L_CANTIDAD    OUT VARCHAR
   );    
-END PKG_SWEB_GEST_CLIE; 
+END PKG_SWEB_GEST_CLIE;

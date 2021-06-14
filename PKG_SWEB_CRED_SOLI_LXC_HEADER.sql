@@ -1,4 +1,4 @@
-create or replace PACKAGE  VENTA.PKG_SWEB_CRED_SOLI_LXC AS
+create or replace PACKAGE VENTA.PKG_SWEB_CRED_SOLI_LXC AS
 
   PROCEDURE sp_list_docu_rela
     (
@@ -89,4 +89,4 @@ create or replace PACKAGE  VENTA.PKG_SWEB_CRED_SOLI_LXC AS
     p_ret_mens            OUT               VARCHAR2   
     );
 
-END PKG_SWEB_CRED_SOLI_LXC; 
+END PKG_SWEB_CRED_SOLI_LXC;

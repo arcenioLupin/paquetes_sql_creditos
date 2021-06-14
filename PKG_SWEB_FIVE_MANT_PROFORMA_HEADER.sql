@@ -1,4 +1,4 @@
-create or replace PACKAGE       VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
+create or replace PACKAGE VENTA.pkg_sweb_five_mant_proforma AS
   /* TODO enter package declarations (types, exceptions, methods etc) here */
   PROCEDURE sp_list_prof_asig_ficha
   (
@@ -421,5 +421,16 @@ create or replace PACKAGE       VENTA.PKG_SWEB_FIVE_MANT_PROFORMA AS
     p_ret_esta          OUT NUMBER,
     p_ret_mens          OUT VARCHAR
   );
+  
+  /*-----------------------------------------------------------------------------
+    Nombre : fu_ruta_prof_sap
+    Proposito : Obtiene la ruta de proforma sap por tipo de origen creacion de la tabla proforma
+    Referencias :  90917_L_Absorcion_Legados_Fase_2
+    Parametros :        p_tip_orig_crea
+    Log de Cambios
+      Fecha        Autor            Descripcion
+    15/10/2020   SPTE LEGADOS       Obtiene la ruta de proforma sap por tipo de origen creacion de la tabla proforma
+  ---------------------------------------------------------------------------*/
+  FUNCTION fu_ruta_prof_sap(p_tip_orig_crea VARCHAR2) RETURN VARCHAR2;
 
-END PKG_SWEB_FIVE_MANT_PROFORMA; 
+END pkg_sweb_five_mant_proforma; 
