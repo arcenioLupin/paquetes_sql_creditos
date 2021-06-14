@@ -1,4 +1,4 @@
-create or replace PACKAGE   VENTA.PKG_SWEB_CRED_LXC AS
+create or replace PACKAGE VENTA.PKG_SWEB_CRED_LXC AS
   /* se define este tipo de cursor para la lista de documentos ingresados por pantalla */
   --  TYPE c_fact_x_op is REF CURSOR; -- select tipo_docu,no_cliente,no_docu,fecha,est_ref,moneda,monto from ARLCRD;   -- est_ref = D (capital)  
 
@@ -184,7 +184,7 @@ create or replace PACKAGE   VENTA.PKG_SWEB_CRED_LXC AS
   pc_tipo_cred      IN      vve_cred_soli.tip_soli_cred%TYPE,
   pc_tipo_doc_op    IN      arlcop.tipo_factu%TYPE,
   pd1_fecha_cont    IN      varchar2, -- fecha contrato
-  pd1_fecha_ini     IN      varchar2, -- fecha de entrega
+  pd1_fecha_entr     IN      varchar2, -- fecha de entrega <E2.1 LR 23.07.2020>
   pc_tipo_cuota     IN      arlcop.tipo_cuota%TYPE,
   pd1_fecha_aut     IN      varchar2,
   pc_usuario_aprb   IN      arlcop.usuario_aprb%TYPE,
@@ -453,6 +453,11 @@ create or replace PACKAGE   VENTA.PKG_SWEB_CRED_LXC AS
   pn_ret_esta       OUT     NUMBER,
   pc_ret_mens       OUT     VARCHAR2
   ) RETURN BOOLEAN;
+  
+  Procedure sp_actu_fec_let(
+  p_cod_soli_cred     IN    vve_cred_soli.cod_soli_cred%TYPE,
+  p_fec_venc_1ra_let  IN    varchar2 --vve_cred_soli.fec_venc_1ra_let%TYPE
+  );
 
   Procedure sp_eliminar_op(
     pc_no_cia         IN      vve_cred_soli.cod_empr%TYPE,
@@ -461,4 +466,4 @@ create or replace PACKAGE   VENTA.PKG_SWEB_CRED_LXC AS
     pc_tipo_cred      IN      vve_cred_soli.tip_soli_cred%TYPE
     );
 
-END PKG_SWEB_CRED_LXC; 
+END PKG_SWEB_CRED_LXC;

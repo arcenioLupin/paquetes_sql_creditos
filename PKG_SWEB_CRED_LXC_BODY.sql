@@ -64,7 +64,7 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
   pc_tipo_cred      IN      vve_cred_soli.tip_soli_cred%TYPE,
   pc_tipo_doc_op    IN      arlcop.tipo_factu%TYPE,
   pd1_fecha_cont    IN      varchar2, -- fecha contrato
-  pd1_fecha_ini     IN      varchar2, -- fecha de entrega
+  pd1_fecha_entr     IN      varchar2, -- fecha de entrega
   pc_tipo_cuota     IN      arlcop.tipo_cuota%TYPE,
   pd1_fecha_aut     IN      varchar2,
   pc_usuario_aprb   IN      arlcop.usuario_aprb%TYPE,
@@ -77,8 +77,8 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
   pc_ret_mens       OUT     VARCHAR2
   ) AS
   
-  pd_fecha_cont arlcop.fecha%TYPE;
-  pd_fecha_ini  arlcop.fecha_ini%TYPE;
+  pd_fecha_ini  arlcop.fecha_ini%TYPE; -- <E2.1 LR 23.07.2020>
+  pd_fecha      arlcop.fecha%TYPE; -- <E2.1 LR 23.07.2020>
   pd_fecha_aut  arlcop.fecha_aut_ope%TYPE;
   
  
@@ -103,26 +103,30 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
   ln_tipo_cambio    arlcop.tipo_cambio%type;
   lc_mon_tasa_igv   arlcop.mon_tasa_igv%type;
   lc_cod_oper       arlcop.cod_oper%type;
-  
-  
+  v_txt_usuario     VARCHAR2(20);
   ve_error EXCEPTION;
 
   Begin
   
-  pd_fecha_cont := TO_DATE(pd1_fecha_cont, 'dd/mm/yyyy');
-  pd_fecha_ini  := TO_DATE(pd1_fecha_ini, 'dd/mm/yyyy');
-  pd_fecha_aut  := sysdate;
   
-    pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
+  pd_fecha_ini := TO_DATE(pd1_fecha_cont, 'dd/mm/yyyy'); -- fecha contrato -- <E2.1 LR 23.07.2020>
+  pd_fecha  := TO_DATE(pd1_fecha_entr, 'dd/mm/yyyy'); -- fecha entrega -- <E2.1 LR 23.07.2020>
+  pd_fecha_aut  := sysdate;
+
+  sp_actu_fec_let(pc_num_soli,pd1_fecha_entr); -- ID 279 - ACTUALIZANDO FECHA DE LETRAS CON LA FECHA DE ENTREGA(ARLCOP.FECHA)
+  
+  
+    pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_INFO',
                                         'sp_guardar_op',
                                         pc_cod_usua_web,
-                                        pc_no_cia || '-' ||      
+                                        'PASO 1 '||pc_no_cia || '-' ||      
                                         pc_no_cliente || '-' ||          
                                         pc_num_soli || '-' ||            
                                         pc_tipo_cred || '-' ||           
-                                        pc_tipo_doc_op || '-' ||         
-                                        pd_fecha_cont || '-' ||           
-                                        pd_fecha_ini || '-' ||            
+                                        pc_tipo_doc_op || '-' || 
+                                        'pd1'||'-'||pd1_fecha_cont || '-' ||        
+                                        pd_fecha_ini || '(fecha contrato)-' ||           -- <E2.1 LR 23.07.2020>
+                                        pd_fecha || '(fecha entrega)-' ||            -- <E2.1 LR 23.07.2020>
                                         pc_tipo_cuota || '-' ||           
                                         pd_fecha_aut || '-' ||             
                                         pc_usuario_aprb || '-' ||        
@@ -140,10 +144,28 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
       WHEN NO_DATA_FOUND THEN
         ln_cod_oper := NULL;
     END;
+    
+        pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_INFO',
+                                        'sp_guardar_op',
+                                        pc_cod_usua_web,
+                                        'PASO 2 '||pc_no_cia || '-' ||      
+                                        pc_no_cliente || '-' ||          
+                                        pc_num_soli || '-' ||            
+                                        pc_tipo_cred || '-' ||           
+                                        pc_tipo_doc_op || '-' || 
+                                        'pd1'||'-'||pd1_fecha_cont || '-' ||        
+                                        pd_fecha_ini || '(fecha contrato)-' ||           -- <E2.1 LR 23.07.2020>
+                                        pd_fecha || '(fecha entrega)-' ||            -- <E2.1 LR 23.07.2020>
+                                        pc_tipo_cuota || '-' ||           
+                                        pd_fecha_aut || '-' ||             
+                                        pc_usuario_aprb || '-' ||        
+                                        pc_cod_usua_web,
+                                        'antes de setear la tabla p_cur_fact',
+                                        pc_num_soli);
 
     IF ln_cod_oper IS NULL THEN                                     
         select grupo into lc_grupo from cxc.arccmc where no_cia = pc_no_cia and no_cliente = pc_no_cliente;  
-        
+       
         FOR i IN 1 .. p_cur_fact.COUNT
         LOOP
             lr_reclet(i).tipo_docu := p_cur_fact(i).tipo_docu;
@@ -158,20 +180,20 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
             lr_reclet(i).est_ref := p_cur_fact(i).est_ref;
             lr_reclet(i).saldo_anterior := p_cur_fact(i).saldo_anterior;
             
-            pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
+            pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_INFO',
                                             'sp_guardar_op',
                                             pc_cod_usua_web,
-                                            p_cur_fact(i).tipo_docu || '-' ||
+                                            'PASO 3 '||p_cur_fact(i).tipo_docu || '-' ||
                                             lr_reclet(i).no_docu || '-' ||
                                             p_cur_fact(i).moneda || '-' ||
-                                            p_cur_fact(i).monto,
-                                            'despues de setear el tipo lr_reclet',
+                                            p_cur_fact(i).monto || '-' ||' fecha doc: '||p_cur_fact(i).fecha,
+                                            'despues de setear el tipo lr_reclet 1',
                                             pc_num_soli);       
         END LOOP;
      
         OPEN lref_fact FOR
             SELECT * FROM TABLE(lr_reclet);
-        
+                  
         
         /*Genera el nro de op y registra en arlcop*/
         begin
@@ -181,8 +203,8 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
                           ln_cod_oper,
                           pc_tipo_cred,
                           pc_tipo_doc_op,
-                          pd_fecha_cont,
-                          pd_fecha_ini,
+                          pd_fecha_ini, -- fecha contrato -- <E2.1 LR 23.07.2020>
+                          pd_fecha, -- fecha entrega -- <E2.1 LR 23.07.2020>
                           pc_tipo_cuota,
                           pd_fecha_aut,
                           pc_usuario_aprb,
@@ -192,10 +214,10 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
                           pc_ret_mens
                           );
            
-            pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
+            pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_INFO',
                                                 'sp_guardar_op - creo arlcop',
                                                 pc_cod_usua_web,
-                                                'Paso sp_crear_arlcop: COD_OPER' || ' - ' || 
+                                                'PASO 4 - Paso sp_crear_arlcop: COD_OPER' || ' - ' || 
                                                 ln_cod_oper,
                                                 pc_num_soli,
                                                 pc_num_soli); 
@@ -217,19 +239,19 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
           where  no_cia = pc_no_cia 
           and    cod_oper = ln_cod_oper;
           
-          pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
+          pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_INFO',
                                                 'Error consulta',
                                                 pc_cod_usua_web,
-                                                'Error en sp_guardar_op lc_cod_oper IS NOT NULL OP:'||lc_cod_oper||'- ln_cod_oper:'||TO_CHAR(ln_cod_oper),
+                                                'PASO 5 - Error en sp_guardar_op lc_cod_oper IS NOT NULL OP:'||lc_cod_oper||'- ln_cod_oper:'||TO_CHAR(ln_cod_oper),
                                                 pc_num_soli,
                                                 pc_num_soli);               
 
         END IF;
         
-        pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
+        pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_INFO',
                                                 'Error consulta',
                                                 pc_cod_usua_web,
-                                                'Error en sp_guardar_op lc_cod_oper IS  NULL OP:'||lc_cod_oper||'- ln_cod_oper:'||TO_CHAR(ln_cod_oper),
+                                                'PASO 6 - Error en sp_guardar_op lc_cod_oper IS  NULL OP:'||lc_cod_oper||'- ln_cod_oper:'||TO_CHAR(ln_cod_oper),
                                                 pc_num_soli,
                                                 pc_num_soli); 
         
@@ -240,21 +262,22 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
             lr_reclet(i).no_cliente := pc_no_cliente; --p_cur_fact(i).no_cliente;
             lr_reclet(i).no_docu := p_cur_fact(i).no_docu;
             lr_reclet(i).cod_oper := lc_cod_oper; --p_cur_fact(i).cod_oper;
-            lr_reclet(i).fecha := p_cur_fact(i).fecha;
+            --lr_reclet(i).fecha := p_cur_fact(i).fecha; 
+            lr_reclet(i).fecha :=p_cur_fact(i).fecha;
             lr_reclet(i).moneda := p_cur_fact(i).moneda;
             lr_reclet(i).monto := p_cur_fact(i).monto;
             lr_reclet(i).cod_ref := p_cur_fact(i).cod_ref;
             lr_reclet(i).est_ref := p_cur_fact(i).est_ref;
             lr_reclet(i).saldo_anterior := p_cur_fact(i).saldo_anterior;
             
-            pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
+            pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_INFO',
                                             'sp_guardar_op',
                                             pc_cod_usua_web,
-                                            p_cur_fact(i).tipo_docu || '-' ||
+                                            'PASO 7 - '||p_cur_fact(i).tipo_docu || '-' ||
                                             lr_reclet(i).no_docu || '-' ||
                                             p_cur_fact(i).moneda || '-' ||
-                                            p_cur_fact(i).monto,
-                                            'despues de setear el tipo lr_reclet',
+                                            p_cur_fact(i).monto|| '-' ||' fecha doc: '||p_cur_fact(i).fecha,
+                                            'despues de setear el tipo lr_reclet 2',
                                             pc_num_soli);       
         END LOOP;
 
@@ -280,10 +303,10 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
                              
           p_cur_fact_ret := lref_fact;   
           
-          pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
+          pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_INFO',
                                               'sp_guardar_op',
                                               pc_cod_usua_web,
-                                              'Paso sp_crear_arlcrd',
+                                              'PASO 8 - Paso sp_crear_arlcrd',
                                               pc_num_soli,
                                               pc_num_soli);
         exception
@@ -309,10 +332,10 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
                           pc_ret_mens
                         );
                         
-          pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
+          pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_INFO',
                                               'sp_guardar_op',
                                               pc_cod_usua_web,
-                                              'Paso sp_crear_arlcml',
+                                              'PASO 9 - Paso sp_crear_arlcml',
                                               pc_num_soli,
                                               pc_num_soli);
         exception
@@ -324,10 +347,10 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
                                               pc_num_soli,
                                               pc_num_soli);
         end;                                      
-        pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
+        pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_INFO',
                                             'sp_guardar_op',
                                             pc_cod_usua_web,
-                                            'Antes de arlcav COD_OPER = ' || ' ' ||ln_cod_oper,
+                                            'PASO 10 - Antes de arlcav COD_OPER = ' || ' ' ||ln_cod_oper,
                                             pc_num_soli,
                                             pc_num_soli);
         
@@ -344,6 +367,16 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
             lr_recaval(i).no_soli := p_cur_aval(i).no_soli ;
             lr_recaval(i).ruc := p_cur_aval(i).ruc ;
             lr_recaval(i).representante := p_cur_aval(i).representante ;
+            
+                        pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_INFO',
+                                            'sp_guardar_op',
+                                            pc_cod_usua_web,
+                                            'PASO 10.1 - '||lr_recaval(i).le|| '-' ||
+                                            lr_recaval(i).nom_aval || '-' ||
+                                            lr_recaval(i).sec_aval || '-' ||
+                                             lr_recaval(i).cod_oper,
+                                            'despues de setear el tipo lr_recaval',
+                                            pc_num_soli);  
         END LOOP;              
         
         open lref_aval for
@@ -360,10 +393,10 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
                           pc_ret_mens);
                                                                 
           pc_ret_mens := 'Paso sp_crear_arlcav';
-          pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
+          pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_INFO',
                                               'sp_guardar_op',
                                               pc_cod_usua_web,
-                                              'Paso sp_crear_arlcav',
+                                              'PASO 11 -Paso sp_crear_arlcav',
                                               pc_ret_mens,
                                               pc_num_soli);
         exception
@@ -398,16 +431,16 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
         begin
             sp_crear_arlcgo(pc_no_cia,
                             ln_cod_oper,
-                            pd_fecha_ini,
+                            pd_fecha, -- fecha de entrega -- <E2.1 LR 23.07.2020>
                             lref_gastos,
                             pc_cod_usua_web,
                             pc_ret_mens,
                             pc_ret_mens);
                             
-            pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
+            pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_INFO',
                                                 'sp_guardar_op',
                                                 pc_cod_usua_web,
-                                                'Paso sp_crear_arlcgo',
+                                                'PASO 12 - Paso sp_crear_arlcgo',
                                                 pc_num_soli,
                                                 pc_num_soli);
         exception 
@@ -431,27 +464,74 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
                          pc_ret_mens
                          );
                          
-          pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
+          pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_INFO',
                                               'sp_guardar_op',
                                               pc_cod_usua_web,
-                                              'Paso sp_act_op_soli',
+                                              'PASO 13 - Paso sp_act_op_soli',
                                               pc_num_soli,
                                               pc_num_soli);
         end if;
 
         pn_ret_esta := 1;
         pc_ret_mens := 'Se guardó correctamente la Operacion LXC';
-        pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
+        pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_INFO',
                                               'sp_guardar_op - se guardo LxC',
                                               pc_cod_usua_web,
-                                              'Paso sp_act_op_soli',
+                                              'PASO 14 - Paso sp_act_op_soli',
                                               pc_ret_mens,
-                                              pc_num_soli);   
+                                              pc_num_soli); 
+                                              
+    -- <I E2.1 LR 23.07.2020>
+     BEGIN
+        UPDATE vve_cred_soli
+           SET fec_firm_cont = pd_fecha_ini 
+         WHERE cod_empr      = pc_no_cia 
+           AND cod_soli_cred = pc_num_soli;
+	--        COMMIT;
+            pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
+                                        'PKG_SWEB_CRED_LXC.SP_GUARDAR_OP',
+                                        pc_cod_usua_web,
+                                        'Desppués de actualizar vve_cred_soli : '||pd_fecha_ini||'-'||pc_no_cia||'-'||pc_num_soli,
+                                        pc_ret_mens,
+                                        pc_ret_mens);
+      EXCEPTION 
+        WHEN OTHERS THEN 
+          pn_ret_esta := -1;
+          pc_ret_mens := 'ERROR AL ACTUALIZAR - NO SE ENCONTRO SOLICITUD';
+          pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
+                                              'PKG_SWEB_CRED_LXC.SP_ACT_OP_SOLI',
+                                              pc_cod_usua_web,
+                                              'Error en el update para Financ. <> Ref',
+                                              pc_ret_mens,
+                                              pc_ret_mens);
+      END;
+    -- <F E2.1 LR 23.07.2020>
+    -- I E2-1-87567-avilca-20/06/2020- obteniendo usuario para registro de Act.                                          
+    SELECT txt_usuario
+    INTO v_txt_usuario
+    FROM sistemas.sis_mae_usuario 
+    WHERE cod_id_usuario = pc_cod_usua_web;                                          
+   --F -E2-1-87567-avilca-20/06/2020- obteniendo usuario para registro de Act
+   
                -- Atualizando actividades y etapas   
-        PKG_SWEB_CRED_SOLI_ACTIVIDAD.sp_actu_acti(pc_num_soli,'E7','A36',pc_cod_usua_web,pn_ret_esta,pc_ret_mens);   
-        PKG_SWEB_CRED_SOLI_ACTIVIDAD.sp_actu_acti(pc_num_soli,'E7','A37',pc_cod_usua_web,pn_ret_esta,pc_ret_mens);
+        PKG_SWEB_CRED_SOLI_ACTIVIDAD.sp_actu_acti(pc_num_soli,'E7','A36',v_txt_usuario,pn_ret_esta,pc_ret_mens);   
+        PKG_SWEB_CRED_SOLI_ACTIVIDAD.sp_actu_acti(pc_num_soli,'E7','A37',v_txt_usuario,pn_ret_esta,pc_ret_mens);
+        --<I E2-1-87567-avilca-24/02/2021
+        PKG_SWEB_CRED_SOLI_ACTIVIDAD.sp_actu_acti(pc_num_soli,'E7','A51',v_txt_usuario,pn_ret_esta,pc_ret_mens);
+        --<F E2-1-87567-avilca-24/02/2021
+        
+            
+        pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_INFO',
+                                              'sp_guardar_op - se guardo LxC',
+                                              pc_cod_usua_web,
+                                              'PASO 15 - Después de actalizar actividad',
+                                              pc_ret_mens,
+                                              pc_num_soli);         
     ELSE
         pc_ret_mens := 'Ya existe una operación para esta solicitud';
+        --E2-1-87567-avilca-07/01/2020- Modficación Avales-Ini
+        pn_ret_esta := 2;
+        --E2-1-87567-avilca-07/01/2020- Modficación Avales-Fin
     END IF;    
     EXCEPTION
         WHEN ve_error THEN
@@ -554,7 +634,7 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
   ld_fec_aut_ope    arlcop.fecha_aut_ope%TYPE; -- parametro
   lc_cod_simu       vve_cred_simu.cod_simu%TYPE; 
   lc_cod_usua_web   sis_mae_usuario.txt_usuario%TYPE;
-  kc_clase_cambio   arcgtc.clase_cambio%TYPE:= '02';
+  kc_clase_cambio   arcgtc.clase_cambio%TYPE:= '09';
   kc_clave_igv      arcgiv.clave%TYPE := '01';
   kc_periodicidad   vve_tabla_maes.cod_grupo_rec%TYPE := 88;
   kc_para_tipo_peri vve_tabla_maes.cod_tipo_rec%TYPE := 'PER';
@@ -589,6 +669,7 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
   lc_modal_cred_new arlcop.modal_cred%TYPE;
   cur_arlcop        sys_refcursor;
   sec_op            NUMBER(3);
+  ln_tea_nominal    arlcop.tea%type;
   
   lr_t_fact_x_op t_fact_x_op;
   type t_tipo_nu is varray(2) of vve_pedido_veh.ind_nuevo_usado%type;
@@ -843,9 +924,16 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
         
         if pd_fecha_ini is not null then 
           begin
-            select TO_NUMBER(TO_CHAR(pd_fecha_ini,'YYYY'),'9999'),TO_NUMBER(TO_CHAR(pd_fecha_ini,'MM'),'99') 
+            -- Obtiene el año y mes del módulo de Letras
+              select ano_proc		,mes_proc 
+              into 	ln_ano,ln_mes
+              from 	arlcmc 
+              where no_cia = pc_no_cia;  
+           
+          /* select TO_NUMBER(TO_CHAR(pd_fecha_ini,'YYYY'),'9999'),TO_NUMBER(TO_CHAR(pd_fecha_ini,'MM'),'99') 
               into ln_ano,ln_mes 
               from DUAL;
+          */
           
             pc_ret_mens := 'obteniendo fechas ln_ano: '||to_char(ln_ano,'9999')||', ln_mes: '||to_char(ln_mes,'99');
             pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
@@ -934,13 +1022,15 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
                                         pd_fecha_ini,
                                         pc_ret_mens,
                                         pc_num_soli);
+      
+          
           select tipo_cambio 
           into   ln_tipo_cambio 
           from   arcgtc 
           where  clase_cambio = kc_clase_cambio
           --and    fecha = trunc(pd_fecha_ini);
           and    fecha IN (select MIN(X.fecha) 
-                 from (select max(fecha) fecha from arcgtc where  clase_cambio = '02' 
+                 from (select max(fecha) fecha from arcgtc where  clase_cambio = kc_clase_cambio 
                        union 
                        select trunc(pd_fecha_ini) fecha from dual)X);  
           
@@ -1435,7 +1525,7 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
          p_rec_arlcop.num_prof_veh      := null;
        end if;
        
---       p_rec_arlcop.ind_ajuste_fecha  := null;
+       --p_rec_arlcop.ind_ajuste_fecha  := null;
 
  /*      
        open cur_arlcop for
@@ -2320,7 +2410,8 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
                 c_fact.no_docu,
                 pc_grupo,
                 pc_no_cliente,
-                c_fact.fecha,
+                --c_fact.fecha,
+                TO_DATE(c_fact.fecha,'dd/mm/yyyy'),
                 ln_clave,
                 c_fact.moneda,
                 pn_tipo_cambio,
@@ -2338,7 +2429,8 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
                 'Generado automaticamente por Lxc',
                 lc_no_cta,
                 pc_cod_usua_web,
-                c_fact.fecha,
+                --c_fact.fecha, 
+                TO_DATE(c_fact.fecha,'dd/mm/yyyy'),
                 to_char(c_fact.fecha,'RRRR'),
                 to_char(c_fact.fecha,'MM'),
                 lc_no_docu_sap
@@ -2491,12 +2583,38 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
                                     '5 p_ret_cur_fact cerrado');  
           END IF;
           
-          FETCH p_ret_cur_fact INTO lr_fact; --lr_fact  PKG_SWEB_CRED_LXC.t_fact_x_op;
+        pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
+                                    'sp_crear_arlcrd',
+                                    pc_cod_usua_web,
+                                    'Antes del seteo del lb_tipo_doc_ok/lb_existe_no_docu',
+                                    'Antes del seteo del lb_tipo_doc_ok/lb_existe_no_docu',
+                                    'Antes del seteo del lb_tipo_doc_ok/lb_existe_no_docu');  
+          
+          FETCH p_ret_cur_fact INTO lr_fact; --lr_fact  PKG_SWEB_CRED_LXC.t_fact_x_op;  
+         pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
+                                    'sp_crear_arlcrd',
+                                    pc_cod_usua_web,
+                                    'Despues del seteo en lr_fact',
+                                    'Despues del seteo en lr_fact',
+                                    'Despues del seteo en lr_fact');            
           EXIT WHEN p_ret_cur_fact%NOTFOUND;
+          
+        pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
+                                    'sp_crear_arlcrd',
+                                    pc_cod_usua_web,
+                                    'Despues de p_ret_cur_fact%NOTFOUND',
+                                    'Despues de p_ret_cur_fact%NOTFOUND',
+                                    'Despues de p_ret_cur_fact%NOTFOUND');            
          
-          lb_tipo_doc_ok    := sf_valida_tipo_docu(pc_no_cia,lc_modal_cred,lc_no_cliente,lc_moneda,lr_fact,pc_cod_usua_web,pn_ret_esta,pc_ret_mens);
+          lb_tipo_doc_ok    := sf_valida_tipo_docu(pc_no_cia,lc_modal_cred,lc_no_cliente,lc_moneda,lr_fact,pc_cod_usua_web,pn_ret_esta,pc_ret_mens);       
           lb_existe_no_docu := sf_valida_no_docu(pc_no_cia,lc_modal_cred,lr_fact,pc_cod_usua_web,pn_ret_esta,pc_ret_mens);
-          --lb_existe_no_docu := sf_valida_no_docu(pc_no_cia,lc_modal_cred,p_cur_fact(i),pc_cod_usua_web,pn_ret_esta,pc_ret_mens);
+       
+                  pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
+                                    'sp_crear_arlcrd',
+                                    pc_cod_usua_web,
+                                    'Despues  del seteo del lb_tipo_doc_ok/lb_existe_no_docu',
+                                    'Despues del seteo del lb_tipo_doc_ok/lb_existe_no_docu',
+                                    'Despues del seteo del lb_tipo_doc_ok/lb_existe_no_docu '); 
           if lb_tipo_doc_ok then 
             pc_ret_mens := '5.0.1.lb_tipo_doc_ok is TRUE';
             pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
@@ -2601,7 +2719,7 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
                     ln_monto,
                     lc_moneda,
                     ln_tipo_cambio,
-                    ld_fecha,
+                    TO_DATE(ld_fecha,'dd/mm/yyyy'),                    
                     lc_cod_ref,
                     lc_est_ref,
                     lc_grupo_refe,
@@ -2636,9 +2754,38 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
   )
   AS
   c_avales          PKG_SWEB_CRED_LXC.t_rec_aval;
+
   BEGIN
+  
+   pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
+                                              'sp_crear_arlcav',
+                                              pc_cod_usua_web,
+                                              'ENTRO a sp_crear_arlcav pc_cod_oper:'||pc_cod_oper,
+                                              pc_ret_mens,
+                                              pc_ret_mens);
     LOOP
+       pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
+                                              'sp_crear_arlcav',
+                                              pc_cod_usua_web,
+                                              'ENTRO a loop sp_crear_arlcav pc_cod_oper:'||pc_cod_oper,
+                                              pc_ret_mens,
+                                              pc_ret_mens);
       FETCH p_ret_cur_aval INTO c_avales;
+           pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
+                                              'sp_crear_arlcav',
+                                              pc_cod_usua_web,
+                                              'Dentro del loop: '|| c_avales.no_cia || ' ' ||
+                                              c_avales.cod_oper || ' ' ||
+                                              c_avales.sec_aval || ' ' ||
+                                              c_avales.nom_aval || ' ' ||
+                                              c_avales.direc_aval || ' ' ||
+                                              c_avales.le || ' ' ||
+                                              c_avales.telf_aval || ' ' ||
+                                              c_avales.des_aval,
+                                              pc_ret_mens,
+                                              pc_ret_mens);
+      
+      
       EXIT WHEN p_ret_cur_aval%NOTFOUND;
       
      pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
@@ -2790,12 +2937,25 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
     lc_cod_oper_ori   vve_cred_soli.cod_oper_rel%TYPE;
   BEGIN
     IF pc_cod_oper IS NOT NULL AND pc_tipo_cred <> kc_tcred_refi THEN
+    
+    pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
+                                        'PKG_SWEB_CRED_LXC.SP_ACT_OP_SOLI',
+                                        pc_cod_usua_web,
+                                        'Entró IF : '||pc_cod_oper||'-'||pc_tipo_cred||'-'||kc_tcred_refi,
+                                        pc_ret_mens,
+                                        pc_ret_mens);
       begin
         update vve_cred_soli
-           set cod_oper_rel  = pc_cod_oper 
+           set cod_oper_rel  = pc_cod_oper
          where cod_empr      = pc_no_cia 
            and cod_soli_cred = pc_num_soli;
         commit;
+            pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
+                                        'PKG_SWEB_CRED_LXC.SP_ACT_OP_SOLI',
+                                        pc_cod_usua_web,
+                                        'Desppués de actualizar vve_cred_soli : '||pc_cod_oper||'-'||pc_no_cia||'-'||pc_num_soli,
+                                        pc_ret_mens,
+                                        pc_ret_mens);
       EXCEPTION 
         WHEN OTHERS THEN 
           pn_ret_esta := -1;
@@ -2808,9 +2968,24 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
                                               pc_ret_mens);
       end;
     ELSE 
-    	IF pc_cod_oper IS NOT NULL THEN 
+           
+    pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
+                                        'PKG_SWEB_CRED_LXC.SP_ACT_OP_SOLI',
+                                        pc_cod_usua_web,
+                                        'Entró ELSE : '||pc_cod_oper||'-'||pc_tipo_cred||'-'||kc_tcred_refi,
+                                        pc_ret_mens,
+                                        pc_ret_mens);
+     IF pc_cod_oper IS NOT NULL THEN 
          select substr(pc_cod_oper,1,instr(pc_cod_oper,'-')-1) into lc_cod_oper_ori from dual;
       END IF;
+      
+          
+    pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
+                                        'PKG_SWEB_CRED_LXC.SP_ACT_OP_SOLI',
+                                        pc_cod_usua_web,
+                                        'Formateando pc_cod_oper : '||pc_cod_oper,
+                                        pc_ret_mens,
+                                        pc_ret_mens);
       begin
       update vve_cred_soli
          set cod_oper_orig = lc_cod_oper_ori,
@@ -2818,6 +2993,12 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
        where cod_empr      = pc_no_cia 
          and cod_soli_cred = cod_soli_cred;
       commit;
+      pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
+                                        'PKG_SWEB_CRED_LXC.SP_ACT_OP_SOLI',
+                                        pc_cod_usua_web,
+                                        'Desppués de actualizar vve_cred_soli en ELSE : '||pc_cod_oper||'-'||pc_no_cia||'-'||pc_num_soli,
+                                        pc_ret_mens,
+                                        pc_ret_mens);      
       EXCEPTION 
         WHEN OTHERS THEN 
           pn_ret_esta := -1;
@@ -3051,7 +3232,7 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
         pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
                                         'sp_crear_arlcop',
                                         pc_cod_usua_web,
-                                        'Entrando a insertar en arlcop',
+                                        'Entrando a insertar en arlcop - ln_cod_oper: ' || ln_cod_oper,
                                         'Entrando a insertar en arlcop',
                                         'Entrando a insertar en arlcop'); 
         
@@ -3069,7 +3250,7 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
                         
         
         insert into arlcop (select    c.no_cia,
-                                      ln_cod_oper,
+                                      c.cod_oper,--ln_cod_oper, avilca 17/06/2020
                                       c.ano,
                                       c.mes,
                                       c.grupo,
@@ -3139,11 +3320,21 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
                                       c.tipodocgen,
                                       c.fecha_aut_ope,
                                       c.fecha_cre_reg,
-                                      c.num_prof_veh /*,
-                                      c.ind_ajuste_fecha */
+                                      c.num_prof_veh 
+                                      --c.ind_ajuste_fecha 
                                       from dual);
        
         commit;
+                pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_INFO',
+                                        'sp_crear_arlcop',
+                                        pc_cod_usua_web,
+                                        c.ano || ' - ' ||
+                                        c.cod_oper || ' - ' ||
+                                        c.mes || ' - ' ||
+                                        c.no_cia || ' - ' ||
+                                        c.tipo_cuota,
+                                        'Despues de insertar en arlcop',
+                                        'Despues de insertar en arlcop'); 
         END IF;
     end if;                      
     
@@ -4219,6 +4410,93 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
       RETURN lb_result;
     END IF;  
   END sp_valida_doc_gast;
+
+  Procedure sp_actu_fec_let(
+    p_cod_soli_cred     IN    vve_cred_soli.cod_soli_cred%TYPE,
+    p_fec_venc_1ra_let  IN    varchar2 --vve_cred_soli.fec_venc_1ra_let%TYPE
+    )as
+  v_op                  vve_cred_soli.cod_oper_rel%TYPE; -- <E2.1 LR 23.07.2020>
+  v_cod_simu            vve_cred_simu.cod_simu%TYPE;
+  v_valor_peri          number(2); --vve_tabla_maes.valor_adic_2%TYPE;
+  v_fec_venc_prim_letr  varchar2(10); --vve_cred_soli.fec_venc_1ra_let%TYPE;
+  Begin
+
+    -- <I E2.1 LR 23.07.2020> VALIDANDO SI LA SOLICITUD NO TIENE OP PARA ACTUALIZAR LAS LETRAS
+    BEGIN
+        SELECT cod_oper_rel 
+        INTO v_op 
+        FROM 
+            vve_cred_soli 
+        WHERE cod_soli_cred = p_cod_soli_cred 
+            AND ind_inactivo = 'N';
+    EXCEPTION 
+        WHEN NO_DATA_FOUND THEN
+           v_op := NULL; 
+    END;        
+    -- <F E2.1 LR 23.07.2020>
+    IF v_op IS NULL THEN     -- <E2.1 LR 23.07.2020>
+      -- OBTENIENDO EL COD_SIMULADOR
+      BEGIN
+          SELECT cod_simu 
+          INTO v_cod_simu 
+          FROM 
+              vve_cred_simu 
+          WHERE cod_soli_cred = p_cod_soli_cred 
+              AND ind_inactivo = 'N';
+      EXCEPTION 
+          WHEN NO_DATA_FOUND THEN
+             v_cod_simu := NULL; 
+      END;        
+
+      IF v_cod_simu IS NOT NULL AND p_fec_venc_1ra_let IS NOT NULL THEN        
+
+        -- OBTENIENDO LA PERIOCIDAD PARA EL CALCULO
+        SELECT valor_adic_2/30  
+        INTO v_valor_peri
+        FROM vve_cred_soli s 
+        INNER JOIN vve_tabla_maes m 
+            ON (m.cod_tipo = s.cod_peri_cred_soli)
+        WHERE cod_grupo = 88 
+            AND cod_soli_cred = p_cod_soli_cred;            
+
+        -- SETEANDO LA PRIMERA FECHA DE VENCIMIENTO DE LETRA EN VARIABLE GENERAL
+        v_fec_venc_prim_letr := p_fec_venc_1ra_let;            
+
+        -- RECORRIENDO LA CONSULTA
+        FOR c IN (SELECT to_number(cod_nume_letr) AS cod_nume_letr 
+                  FROM vve_cred_simu_lede 
+                  WHERE cod_simu = v_cod_simu 
+                  GROUP BY cod_nume_letr 
+                  ORDER BY to_number(cod_nume_letr)) 
+        LOOP                    
+          -- OBTENIENDO LAS FECHAS PARA LAS SIGUIENTES CUOTAS
+          SELECT TO_CHAR(add_months(TO_DATE(v_fec_venc_prim_letr, 'DD/MM/YYYY'), v_valor_peri), 'DD/MM/YYYY') 
+          INTO v_fec_venc_prim_letr
+          FROM dual;
+
+          -- ACTUALIZANDO VENC. PRIMERA FECHA DE LETRA EN LA TABLA SOLICITUD
+          -- <I E2.1 LR 23.07.2020>
+          IF c.cod_nume_letr = 1 THEN
+            UPDATE vve_cred_soli
+            SET fec_venc_1ra_let = TO_DATE(v_fec_venc_prim_letr, 'DD/MM/YYYY')
+            WHERE cod_soli_cred = p_cod_soli_cred;
+          END IF;
+          -- <F E2.1 LR 23.07.2020>  
+          
+          -- ACTUALIZANDO FECHAS
+          UPDATE vve_cred_simu_lede 
+          SET fec_venc = TO_DATE(v_fec_venc_prim_letr, 'DD/MM/YYYY') 
+          WHERE cod_simu = v_cod_simu 
+          AND cod_nume_letr = c.cod_nume_letr;
+
+          UPDATE vve_cred_simu_letr 
+          SET fec_venc    = TO_DATE(v_fec_venc_prim_letr, 'DD/MM/YYYY') 
+          WHERE cod_simu  = v_cod_simu 
+          AND cod_nume_letr = c.cod_nume_letr;
+        END LOOP;    
+      END IF;
+    END IF; -- <E2.1 LR 23.07.2020>
+  End sp_actu_fec_let;  
   
   Procedure sp_eliminar_op(
     pc_no_cia         IN      vve_cred_soli.cod_empr%TYPE,
@@ -4229,4 +4507,5 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
   begin
     null;
   end;
-END PKG_SWEB_CRED_LXC; 
+  
+END PKG_SWEB_CRED_LXC;

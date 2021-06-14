@@ -1,4 +1,4 @@
-create or replace PACKAGE VENTA.PKG_SWEB_CRED_SOLI AS
+create or replace PACKAGE       VENTA.PKG_SWEB_CRED_SOLI AS
 
   /********************************************************************************
     Nombre:     SP_INSE_CRED_SOLI
@@ -19,31 +19,39 @@ create or replace PACKAGE VENTA.PKG_SWEB_CRED_SOLI AS
     Version    Fecha       Autor            Descripcion
     ---------  ----------  ---------------  ------------------------------------
     1.0        28/11/2018  PHRAMIREZ        Creación del procedure.
+    2.0        25/03/2020  AVILCA           Modificación para guardar plazo factura crédito
   ********************************************************************************/
 
   PROCEDURE sp_inse_cred_soli
   (
-    p_cod_clie           IN     vve_cred_soli.cod_clie%TYPE,
-    p_tip_soli_cred      IN     vve_cred_soli.tip_soli_cred%TYPE,
-    p_cod_mone_soli      IN     vve_cred_soli.cod_mone_soli%TYPE,
-    p_cod_banco          IN     vve_cred_soli.cod_banco%TYPE,
-    p_cod_estado         IN     vve_cred_soli.cod_estado%TYPE,
-    p_val_mon_fin        IN     vve_cred_soli.val_mon_fin%TYPE,
-    p_can_plaz_mes       IN     vve_cred_soli.can_plaz_mes%TYPE,
-    p_txt_obse_crea      IN     vve_cred_soli.txt_obse_crea%TYPE,   
-    p_cod_res_fina       IN     VARCHAR2,
-    p_num_telf_movil     IN     VARCHAR2,
-    p_dir_correo         IN     VARCHAR2,
-    p_num_prof_veh       IN     VARCHAR2,
-    p_val_vta_tot_fin    IN     vve_cred_soli_prof.val_vta_tot_fin%TYPE,
-    p_flag_registro      IN     VARCHAR2,
-    p_cod_empr           IN     vve_cred_soli.cod_empr%TYPE,
-    p_cod_usua_sid       IN     sistemas.usuarios.co_usuario%TYPE,
-    p_cod_usua_web       IN     sistemas.sis_mae_usuario.cod_id_usuario%TYPE,    
-    p_ret_cod_soli_cred  OUT    vve_cred_soli.cod_soli_cred%TYPE,
-    p_ret_esta           OUT    NUMBER,
-    p_ret_mens           OUT    VARCHAR2
-  );
+        p_cod_clie            IN                    vve_cred_soli.cod_clie%TYPE,
+        p_tip_soli_cred       IN                    vve_cred_soli.tip_soli_cred%TYPE,
+        p_cod_mone_soli       IN                    vve_cred_soli.cod_mone_soli%TYPE,
+        p_cod_banco           IN                    vve_cred_soli.cod_banco%TYPE,
+        p_cod_estado          IN                    vve_cred_soli.cod_estado%TYPE,
+        p_val_mon_fin         IN                    vve_cred_soli.val_mon_fin%TYPE,
+        p_can_plaz_mes        IN                    vve_cred_soli.can_plaz_mes%TYPE,
+        p_txt_obse_crea       IN                    vve_cred_soli.txt_obse_crea%TYPE,
+        p_cod_res_fina        IN                    VARCHAR2,
+        p_num_telf_movil      IN                    VARCHAR2,
+        p_num_tele_fijo_ejec  IN                    vve_cred_soli.num_tele_fijo_ejec%TYPE,
+        p_cod_sucursal        IN                    vve_cred_soli.cod_sucursal%TYPE,
+        p_cod_filial          IN                    vve_cred_soli.cod_filial%TYPE,
+        p_cod_area_venta      IN                    vve_cred_soli.cod_area_vta%TYPE,
+        p_cod_vendedor        IN                    vve_cred_soli.vendedor%TYPE,
+        p_cod_zona            IN                    vve_cred_soli.cod_zona%TYPE,
+        p_dir_correo          IN                    VARCHAR2,
+        p_num_prof_veh        IN                    VARCHAR2,
+        p_val_vta_tot_fin     IN                    vve_cred_soli_prof.val_vta_tot_fin%TYPE,
+        p_flag_registro       IN                    VARCHAR2,
+        p_cod_empr            IN                    vve_cred_soli.cod_empr%TYPE,
+        p_can_dias_fact_cred  IN                    VARCHAR2, /** Req. 87567 E2.1 ID: 309 - avilca 25/03/2020 **/  
+        p_cod_usua_sid        IN                    sistemas.usuarios.co_usuario%TYPE,
+        p_cod_usua_web        IN                    sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
+        p_ret_cod_soli_cred   OUT                   vve_cred_soli.cod_soli_cred%TYPE,
+        p_ret_esta            OUT                   NUMBER,
+        p_ret_mens            OUT                   VARCHAR2
+    );
 
 
   /********************************************************************************
@@ -67,6 +75,11 @@ create or replace PACKAGE VENTA.PKG_SWEB_CRED_SOLI AS
 
   PROCEDURE sp_update_cred_soli
     (
+        p_cod_zona              IN vve_cred_soli.cod_zona%TYPE,
+        p_cod_area_vta          IN vve_cred_soli.cod_area_vta%TYPE,
+        p_vendedor              IN vve_cred_soli.vendedor%TYPE,
+        p_cod_filial            IN vve_cred_soli.cod_filial%TYPE,
+        p_cod_sucursal          IN vve_cred_soli.cod_sucursal%TYPE,
         p_cod_soli_cred         IN vve_cred_soli.cod_soli_cred%TYPE,
         p_cod_estado            IN vve_cred_soli.cod_estado%TYPE,
         p_cod_perso             IN VARCHAR2,
@@ -82,6 +95,9 @@ create or replace PACKAGE VENTA.PKG_SWEB_CRED_SOLI AS
         p_txt_obse_gest_banc    IN vve_cred_soli.txt_obse_gest_banc%TYPE,
         p_cod_esta_gest_banc    IN vve_cred_soli.cod_esta_gest_banc%TYPE,
         p_flag_actualiza        IN VARCHAR2,
+        p_ven_factura           IN VARCHAR2, 
+        p_cod_banco             IN VARCHAR2, --Req. 87567 E1 ID 27 AVILCA 01/07/2020 
+        p_telf_fijo             IN VARCHAR2, --Req. 87567 E1 ID 27 AVILCA 01/07/2020 
         p_cod_usua_sid          IN sistemas.usuarios.co_usuario%TYPE,
         p_ret_esta              OUT NUMBER,
         p_ret_mens              OUT VARCHAR2
@@ -138,12 +154,12 @@ create or replace PACKAGE VENTA.PKG_SWEB_CRED_SOLI AS
     p_cantidad       OUT NUMBER,
     p_ret_esta       OUT NUMBER,
     p_ret_mens       OUT VARCHAR2
-  );  
+  );
 
   PROCEDURE sp_list_proforma
   (
     p_cod_clie        IN                VARCHAR2,
-    p_num_prof_veh       IN                 VARCHAR2,
+    p_num_prof_veh 	  IN 				VARCHAR2,
     p_cod_usua_sid    IN                sistemas.usuarios.co_usuario%TYPE,
     p_ret_cursor      OUT               SYS_REFCURSOR,
     p_ret_esta        OUT               NUMBER,
@@ -195,7 +211,7 @@ create or replace PACKAGE VENTA.PKG_SWEB_CRED_SOLI AS
   PROCEDURE sp_actu_indi_vehiculo
   (
     p_num_pedido_veh     IN     vve_cred_soli_pedi_veh.num_pedido_veh%TYPE,
-    p_indicativo         IN     VARCHAR2,   
+    p_indicativo         IN     VARCHAR2, 
     p_cod_usua_sid       IN     sistemas.usuarios.co_usuario%TYPE,
     p_ret_esta           OUT    NUMBER,
     p_ret_mens           OUT    VARCHAR2
@@ -250,7 +266,7 @@ create or replace PACKAGE VENTA.PKG_SWEB_CRED_SOLI AS
         p_cod_oper        IN                VARCHAR2,
         p_cod_clie        IN                vve_cred_soli.cod_clie%TYPE,
         p_no_cia          IN                VARCHAR2,
-        p_cod_usua_sid    IN                 sistemas.usuarios.co_usuario%TYPE,
+        p_cod_usua_sid    IN 			    sistemas.usuarios.co_usuario%TYPE,
         p_ret_cursor      OUT               SYS_REFCURSOR,
         p_ret_esta        OUT               NUMBER,
         p_ret_mens        OUT               VARCHAR2
@@ -265,6 +281,8 @@ create or replace PACKAGE VENTA.PKG_SWEB_CRED_SOLI AS
     p_txt_info_oper       IN                vve_cred_soli.txt_info_oper%TYPE,
     p_cod_usua_sid        IN                sistemas.usuarios.co_usuario%TYPE,
     p_fec_contrato        IN                VARCHAR2,
+    p_plazo_fact_cred     IN                VARCHAR2,/**Req. 87567 E2.1 ID: 309 - avilca 24/03/2020 **/
+	p_monto_financiar     IN                vve_cred_soli.val_mon_fin%TYPE,/**Req. 87567 E2.1 ID: 309 - avilca 14/04/2021 **/
     p_ret_cursor          OUT               SYS_REFCURSOR,
     p_ret_esta            OUT               NUMBER,
     p_ret_mens            OUT               VARCHAR2   
@@ -310,9 +328,45 @@ create or replace PACKAGE VENTA.PKG_SWEB_CRED_SOLI AS
     p_ret_cursor_ghipo_adi      OUT               SYS_REFCURSOR,
     p_ret_cursor_garantias      OUT               SYS_REFCURSOR,
     p_ret_cursor_info_refinan   OUT               SYS_REFCURSOR,
+    p_ret_cursor_info_garante   OUT               SYS_REFCURSOR,
+    p_ret_cursor_info_ref_lea   OUT               SYS_REFCURSOR,
     p_ret_esta                  OUT               NUMBER,
     p_ret_mens                  OUT               VARCHAR2  
   );
+  
+  PROCEDURE sp_list_formato_leasing
+  (
+    p_cod_soli_cred             IN                vve_cred_soli.cod_soli_cred%TYPE,
+    p_cod_usua_sid              IN                sistemas.usuarios.co_usuario%TYPE,
+    p_ret_cursor_cabe           OUT               SYS_REFCURSOR,
+    p_ret_cursor_aval           OUT               SYS_REFCURSOR,
+    p_ret_cursor_gmobi          OUT               SYS_REFCURSOR,
+    p_ret_cursor_gmobi_adi      OUT               SYS_REFCURSOR,
+    p_ret_cursor_ghipo_adi      OUT               SYS_REFCURSOR,
+    p_ret_cursor_garantias      OUT               SYS_REFCURSOR,
+    p_ret_cursor_info_refinan   OUT               SYS_REFCURSOR,
+    p_ret_cursor_info_garante   OUT               SYS_REFCURSOR,
+    p_ret_cursor_info_ref_lea   OUT               SYS_REFCURSOR,
+    p_ret_esta                  OUT               NUMBER,
+    p_ret_mens                  OUT               VARCHAR2  
+  ); 
+
+  PROCEDURE sp_list_formato_mutuo
+  (
+    p_cod_soli_cred             IN                vve_cred_soli.cod_soli_cred%TYPE,
+    p_cod_usua_sid              IN                sistemas.usuarios.co_usuario%TYPE,
+    p_ret_cursor_cabe           OUT               SYS_REFCURSOR,
+    p_ret_cursor_aval           OUT               SYS_REFCURSOR,
+    p_ret_cursor_gmobi          OUT               SYS_REFCURSOR,
+    p_ret_cursor_gmobi_adi      OUT               SYS_REFCURSOR,
+    p_ret_cursor_ghipo_adi      OUT               SYS_REFCURSOR,
+    p_ret_cursor_garantias      OUT               SYS_REFCURSOR,
+    p_ret_cursor_info_refinan   OUT               SYS_REFCURSOR,
+    p_ret_cursor_info_garante   OUT               SYS_REFCURSOR,
+    p_ret_cursor_info_ref_lea   OUT               SYS_REFCURSOR,
+    p_ret_esta                  OUT               NUMBER,
+    p_ret_mens                  OUT               VARCHAR2  
+  );  
 
   /********************************************************************************
     Nombre:     SP_PERM_USUA_SOLCRE
@@ -348,6 +402,8 @@ create or replace PACKAGE VENTA.PKG_SWEB_CRED_SOLI AS
     p_num_prof_veh      IN  VARCHAR2,
     p_cod_clie          IN  VARCHAR2,
     p_cod_zona          IN  VARCHAR2,
+    p_cod_filial        IN  VARCHAR2,
+    p_cod_area_vta      IN  VARCHAR2,    
     p_flag_busq         IN  VARCHAR2,
     p_flag_edit         IN  VARCHAR2,
     p_cod_usua_sid      IN  sistemas.usuarios.co_usuario%TYPE,
@@ -370,12 +426,18 @@ create or replace PACKAGE VENTA.PKG_SWEB_CRED_SOLI AS
     p_val_lc_actu       IN  vve_cred_soli_hist.val_lc_actual%TYPE,
     p_fec_plaz          IN  VARCHAR2,    
     p_val_lc_util       IN  vve_cred_soli_hist.val_lc_util%TYPE,  
+    p_val_dven_dc       IN  vve_cred_soli_hist.VAL_MONT_DVEN_DC%TYPE, 
+    p_val_dven_di       IN  vve_cred_soli_hist.VAL_MONT_DVEN_DI%TYPE, 
+    p_val_porc_dc       IN  vve_cred_soli_hist.VAL_PORC_DVEN_DC%TYPE, 
+    p_val_porc_di       IN  vve_cred_soli_hist.VAL_PORC_DVEN_DI%TYPE, 
     p_cod_usua_sid      IN  sistemas.usuarios.co_usuario%TYPE,
     p_cod_usua_web      IN  sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
     p_ret_cod           OUT VARCHAR2, 
     p_ret_esta          OUT NUMBER,
     p_ret_mens          OUT VARCHAR2
   );
+  
+  
 
   PROCEDURE sp_inse_cred_hist_ope
   (
@@ -396,6 +458,8 @@ create or replace PACKAGE VENTA.PKG_SWEB_CRED_SOLI AS
     p_val_val_gar           IN  vve_cred_hist_ope.val_val_gar%TYPE, 
     p_val_porc_rat_gar      IN  vve_cred_hist_ope.val_porc_rat_gar%TYPE, 
     p_cod_clie              IN  vve_cred_hist_ope.cod_clie%TYPE, 
+    p_dias_max_venc         IN  vve_cred_hist_ope.DIAS_MAX_VENC%TYPE,--<I Req. 87567 E2.1 ID## AVILCA 10/02/2020>
+    p_dias_venc_prom        IN  vve_cred_hist_ope.DIAS_VENC_PROM%TYPE,--<I Req. 87567 E2.1 ID## AVILCA 10/02/2020>
     p_cod_usua_sid          IN  sistemas.usuarios.co_usuario%TYPE,
     p_cod_usua_web          IN  sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
     p_ret_cod               OUT VARCHAR2, 
@@ -403,4 +467,45 @@ create or replace PACKAGE VENTA.PKG_SWEB_CRED_SOLI AS
     p_ret_mens              OUT VARCHAR2
   );
 
+  --ECUBAS <I>89642
+  PROCEDURE sp_list_motivos_aprobacion
+  ( 
+    p_cod_soli_cred   IN                vve_cred_hist_ope.cod_soli_cred%TYPE,
+    p_cod_usua_sid    IN                sistemas.usuarios.co_usuario%TYPE,
+    p_ret_cursor      OUT               SYS_REFCURSOR,
+    p_ret_esta        OUT               NUMBER,
+    p_ret_mens        OUT               VARCHAR2
+  );
+  --ECUBAS <F>89642
+  --<I Req. 87567 E2.1 ID:9 AVILCA 12/05/2020>
+   PROCEDURE sp_list_param_solcre
+  (
+    p_cod_param         IN  VARCHAR2,
+    p_cod_usua_sid      IN  sistemas.usuarios.co_usuario%TYPE,
+    p_cod_usua_web      IN  sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
+    p_ret_cursor        OUT SYS_REFCURSOR,
+    p_ret_esta          OUT NUMBER,
+    p_ret_mens          OUT VARCHAR
+  );
+  --<F Req. 87567 E2.1 ID:9 AVILCA 12/05/2020>  
+
+   --<I Req. 87567 E2.1 ID:9 AVILCA 10/02/2021>
+     PROCEDURE sp_list_clie_creditos
+  (
+    p_cod_soli_cred     IN  vve_cred_soli.cod_soli_cred%TYPE,
+    p_cod_usua_sid      IN  sistemas.usuarios.co_usuario%TYPE,
+    p_ret_cursor        OUT SYS_REFCURSOR,
+    p_ret_esta          OUT NUMBER,
+    p_ret_mens          OUT VARCHAR
+  );
+
+    PROCEDURE sp_list_clie_movimientos
+  (
+    p_cod_soli_cred     IN  vve_cred_soli.cod_soli_cred%TYPE,
+    p_cod_usua_sid      IN  sistemas.usuarios.co_usuario%TYPE,
+    p_ret_cursor        OUT SYS_REFCURSOR,
+    p_ret_esta          OUT NUMBER,
+    p_ret_mens          OUT VARCHAR
+  );
+ --<F Req. 87567 E2.1 ID:9 AVILCA 10/02/2021>
 END PKG_SWEB_CRED_SOLI;

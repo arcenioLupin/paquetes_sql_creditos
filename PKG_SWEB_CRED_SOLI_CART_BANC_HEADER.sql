@@ -1,4 +1,4 @@
-create or replace PACKAGE  VENTA.PKG_SWEB_CRED_SOLI_CART_BANC AS
+create or replace PACKAGE VENTA.PKG_SWEB_CRED_SOLI_CART_BANC AS
 
 
  /*-----------------------------------------------------------------------------
@@ -51,7 +51,7 @@ PROCEDURE SP_LIST_CRED_SOLI_CB(
         p_cod_banco				IN					vve_cred_soli.cod_banco%type,
 		p_txt_ofic_banc			IN					vve_cred_soli.txt_ofic_banc%TYPE,
 		p_num_fax				IN					vve_cred_soli.num_fax%TYPE,
-		p_fec_aprob_cart_ban	IN					vve_cred_soli.fec_aprob_cart_ban%TYPE,
+		p_fec_aprob_cart_ban	IN					VARCHAR2, --vve_cred_soli.fec_aprob_cart_ban%TYPE,
 		p_cod_mone_cart_banc	IN					vve_cred_soli.cod_mone_cart_banc%TYPE,
 		p_val_mone_aprob_banc	IN					vve_cred_soli.val_mone_aprob_banc%TYPE,
 		p_txt_nomb_ejec_banc	IN					vve_cred_soli.txt_nomb_ejec_banc%TYPE,
@@ -63,4 +63,4 @@ PROCEDURE SP_LIST_CRED_SOLI_CB(
         p_ret_mens              OUT                 VARCHAR2
     );
 
-END PKG_SWEB_CRED_SOLI_CART_BANC; 
+END PKG_SWEB_CRED_SOLI_CART_BANC;

@@ -1,4 +1,4 @@
-create or replace PACKAGE   VENTA.PKG_SWEB_CRED_SOLI_AVAL AS
+create or replace PACKAGE  VENTA.PKG_SWEB_CRED_SOLI_AVAL AS
 PROCEDURE sp_list_aval
   (
     p_cod_soli_cred     IN vve_cred_soli_even.cod_soli_cred%TYPE,
@@ -43,6 +43,8 @@ PROCEDURE sp_ins_aval
      p_cod_per_rel_aval   vve_cred_mae_aval.cod_per_rel_aval%TYPE,
      p_txt_doi            vve_cred_mae_aval.txt_doi%TYPE,
      p_ava_histo          VARCHAR2,
+     p_cod_tipo_otor      vve_cred_mae_aval.cod_tipo_otor%TYPE,
+     p_txt_telefono       vve_cred_mae_aval.txt_telefono%TYPE,
      p_cod_usua_sid       IN sistemas.usuarios.co_usuario%TYPE,
      p_cod_usua_web       IN sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
      p_cod_per_aval_ret   OUT VARCHAR2,
@@ -114,4 +116,4 @@ PROCEDURE sp_ins_aval
   );
 
 
-END PKG_SWEB_CRED_SOLI_AVAL; 
+END PKG_SWEB_CRED_SOLI_AVAL;
