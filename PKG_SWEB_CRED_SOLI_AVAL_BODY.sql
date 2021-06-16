@@ -14,22 +14,21 @@ PROCEDURE sp_list_aval
          OPEN p_ret_cursor FOR
          SELECT m.cod_per_aval,
                 -- E2-1-87567-avilca-06/01/2020- Modficación Avales -Ini
-                      CASE m.ind_esta_civil 
+                    CASE m.ind_esta_civil 
                          WHEN 'S' THEN  m.txt_doi
                          WHEN 'C' THEN ( m.txt_doi || '/' || (                          
                                     SELECT cma.txt_doi from vve_cred_mae_aval cma
+                                     INNER JOIN vve_cred_soli_aval csa ON cma.cod_per_aval = csa.cod_per_aval
                                      WHERE cma.cod_per_rel_aval=m.cod_per_aval
                                      AND  cma.COD_RELA_AVAL = 'RAVAL02'
+                                     AND  csa.ind_inactivo = 'N'
                                     )) 
-                        /* ELSE ( m.txt_doi || '/' || (                          
-                                    SELECT crma.txt_doi from vve_cred_mae_aval crma
-                                     WHERE crma.cod_per_rel_aval=m.cod_per_aval
-                                     AND  crma.COD_RELA_AVAL = 'RAVAL01'
-                                    )) */
                           ELSE ( m.txt_doi || '/' || (                          
                                     SELECT crma.txt_doi from vve_cred_mae_aval crma
+                                    INNER JOIN vve_cred_soli_aval csa ON crma.cod_per_aval = csa.cod_per_aval
                                      WHERE crma.cod_per_aval=m.cod_per_aval
                                      AND  crma.COD_RELA_AVAL = 'RAVAL01'
+                                     AND  csa.ind_inactivo = 'N'
                                     ))
                          END   txt_doi,
                 -- E2-1-87567-avilca-06/01/2020- Modficación Avales -Fin
@@ -73,15 +72,16 @@ PROCEDURE sp_list_aval
                 CASE m.ind_esta_civil WHEN 'S' THEN ( m.txt_nomb_pers||' '||m.txt_apel_pate_pers||' '||m.txt_apel_mate_pers)
                 WHEN 'C' THEN ( m.txt_nomb_pers||' '||m.txt_apel_pate_pers||' '||m.txt_apel_mate_pers||
                  '/'||(SELECT cma.txt_nomb_pers||' '||cma.txt_apel_pate_pers||' '|| cma.txt_apel_mate_pers from vve_cred_mae_aval cma
+                             INNER JOIN vve_cred_soli_aval csa ON cma.cod_per_aval = csa.cod_per_aval
                              WHERE cma.cod_per_rel_aval=m.cod_per_aval
-                             AND  cma.COD_RELA_AVAL = 'RAVAL02' )) 
+                             AND  cma.COD_RELA_AVAL = 'RAVAL02'
+                             AND  csa.ind_inactivo = 'N')) 
                 ELSE ( m.txt_nomb_pers||' '||m.txt_apel_pate_pers||' '||m.txt_apel_mate_pers ||
-                     /* '/'||(SELECT cma.txt_nomb_pers||' '||cma.txt_apel_pate_pers||' '|| cma.txt_apel_mate_pers from vve_cred_mae_aval cma
-                             WHERE cma.cod_per_rel_aval=m.cod_per_aval
-                             AND  cma.COD_RELA_AVAL = 'RAVAL01' )) END  nombre_completo,*/
                      '/'||(SELECT cma.txt_nomb_pers||' '||cma.txt_apel_pate_pers||' '|| cma.txt_apel_mate_pers from vve_cred_mae_aval cma
+                             INNER JOIN vve_cred_soli_aval csa ON cma.cod_per_aval = csa.cod_per_aval
                              WHERE cma.cod_per_aval=m.cod_per_aval
-                             )) END  nombre_completo,                             
+                             AND  csa.ind_inactivo = 'N'
+                             )) END  nombre_completo,                                
                 -- E2-1-87567-avilca-06/01/2020- Modficación Avales -Fin             
                 m.txt_nomb_pers,
                 m.txt_apel_pate_pers,
@@ -102,7 +102,7 @@ PROCEDURE sp_list_aval
      WHEN OTHERS THEN
             p_ret_esta := -1;
             p_ret_mens := 'sp_list_aval:' || SQLERRM;
-  END; 
+  END;
   
   
   PROCEDURE sp_list_aval_histo
@@ -184,59 +184,7 @@ PROCEDURE sp_list_aval
           NOT EXISTS (SELECT 1 FROM vve_cred_soli_aval sav WHERE sav.cod_per_aval = a.cod_per_aval AND sav.cod_soli_cred = p_cod_soli_cred
           -- MBARDALES REQ. REGISTRO DE AVAL 14/01/21
           AND sav.ind_inactivo = 'N');
-    
-        /*
-         SELECT a.cod_per_aval,
-                a.txt_doi,
-                a.ind_tipo_persona,
-                a.ind_esta_civil,
-                a.cod_rela_aval,
-                a.cod_moneda,
-                a.val_monto_fianza,
-                a.txt_direccion,
-                a.cod_distrito,
-                a.cod_provincia,
-                a.cod_departamento,
-                a.cod_empr,
-                a.cod_pais,
-                a.cod_zona,
-                (SELECT descripcion FROM vve_tabla_maes WHERE COD_GRUPO='105' AND valor_adic_1= a.ind_tipo_persona) des_tipo_persona,
-                (SELECT descripcion FROM vve_tabla_maes WHERE COD_GRUPO='104' AND valor_adic_1= a.ind_esta_civil) des_estado_civil,
-                (SELECT descripcion FROM vve_tabla_maes WHERE COD_GRUPO='110' AND valor_adic_1= a.ind_esta_civil) des_tipo_rela_aval,
-                (SELECT mo.des_moneda AS descripcion FROM gen_moneda mo WHERE mo.cod_moneda= a.cod_moneda) des_moneda,
-                 ---- E1-1-87567-avilca-07/07/2020- Modficación Avales -Ini
-               -- (SELECT des_nombre AS descripcion FROM gen_mae_distrito WHERE cod_id_distrito = a.cod_distrito) des_distrito,
-                (SELECT nom_ubigeo as descripcion   
-                 FROM gen_ubigeo WHERE cod_dpto = a.cod_departamento and cod_provincia = a.cod_provincia 
-                    and cod_distrito = a.cod_distrito)des_distrito,               
-                --(SELECT des_nombre AS descripcion FROM gen_mae_provincia WHERE cod_id_provincia = a.cod_provincia) des_provincia,
-                (SELECT nom_ubigeo as descripcion   
-                  FROM gen_ubigeo WHERE cod_dpto = a.cod_departamento and cod_provincia = a.cod_provincia 
-                    and cod_distrito = '00')des_provincia,               
-                --(SELECT des_nombre AS descripcion FROM gen_mae_departamento WHERE cod_id_departamento = a.cod_departamento) des_departamento,
-                (SELECT nom_ubigeo as descripcion   
-                  FROM gen_ubigeo WHERE cod_dpto = a.cod_departamento and cod_provincia = '00'
-                    and cod_distrito = '00')des_departamento,     
-                 ---- E1-1-87567-avilca-07/07/2020- Modficación Avales -Fin    
-                '' des_empr, 
-                --(SELECT nom_pais AS descripcion FROM gen_pais pa WHERE pa.cod_pais = a.cod_pais) des_pais,
-                (SELECT pa.des_nombre FROM gen_mae_pais pa, gen_mae_sociedad so WHERE pa.cod_id_pais = so.cod_id_pais 
-                    AND so.cod_cia IN (SELECT cod_cia FROM gen_mae_sociedad WHERE cod_id_pais = '001')
-                    AND ROWNUM = 1) AS DES_PAIS,
-                '' des_zona, 
-                a.txt_nomb_pers||' '||a.txt_apel_pate_pers||' '||a.txt_apel_mate_pers nombre_completo,
-                a.txt_nomb_pers,
-                a.txt_apel_pate_pers,
-                a.txt_apel_mate_pers,
-                a.cod_per_rel_aval
-         FROM vve_cred_mae_aval a, vve_cred_soli_aval sa, vve_cred_soli s 
-        WHERE a.cod_per_aval = sa.cod_per_aval  
-          AND sa.cod_soli_cred = s.cod_soli_cred
-          AND a.cod_per_rel_aval IS NULL
-          AND 
-          NOT EXISTS (SELECT 1 FROM vve_cred_soli_aval sav WHERE sav.cod_per_aval = a.cod_per_aval AND sav.cod_soli_cred = p_cod_soli_cred);
-        */
-     --<F Req. 87567 E2.1 ID 125 avilca 31/07/2020>   
+     
   p_ret_esta := 1;
   p_ret_mens := 'La consulta se realizó de manera exitosa';
   END sp_list_aval_histo;
@@ -265,6 +213,7 @@ PROCEDURE sp_list_aval
      p_ava_histo          VARCHAR2,
      p_cod_tipo_otor      vve_cred_mae_aval.cod_tipo_otor%TYPE,
      p_txt_telefono       vve_cred_mae_aval.txt_telefono%TYPE,--// I Req. 87567 E1.1 ID 53 AVILCA 12/11/2020
+     p_flag_coprop_eli    VARCHAR2,
      p_cod_usua_sid       IN sistemas.usuarios.co_usuario%TYPE,
      p_cod_usua_web       IN sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
      p_cod_per_aval_ret   OUT VARCHAR2,
@@ -384,6 +333,14 @@ PROCEDURE sp_list_aval
                     cod_tipo_otor = p_cod_tipo_otor,
                     txt_telefono = p_txt_telefono --// I Req. 87567 E1.1 ID 53 AVILCA 12/11/2020
               WHERE cod_per_aval = p_cod_per_aval;
+              
+              IF (p_flag_coprop_eli = 'S') THEN
+                UPDATE vve_cred_soli_aval 
+                SET ind_inactivo = 'S'
+                WHERE cod_soli_cred = p_cod_soli_cred
+                 AND cod_per_aval = p_cod_per_aval;
+              
+              END IF;
 
         END IF;
         
@@ -461,6 +418,7 @@ PROCEDURE sp_list_aval
                                               p_cod_soli_cred);
           ROLLBACK;
   END;
+  
   PROCEDURE sp_eli_aval_soli
   (
      p_cod_soli_cred     IN vve_cred_soli_even.cod_soli_cred%TYPE,
