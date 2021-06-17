@@ -76,12 +76,7 @@ PROCEDURE sp_list_aval
                              WHERE cma.cod_per_rel_aval=m.cod_per_aval
                              AND  cma.COD_RELA_AVAL = 'RAVAL02'
                              AND  csa.ind_inactivo = 'N')) 
-                ELSE ( m.txt_nomb_pers||' '||m.txt_apel_pate_pers||' '||m.txt_apel_mate_pers ||
-                     '/'||(SELECT cma.txt_nomb_pers||' '||cma.txt_apel_pate_pers||' '|| cma.txt_apel_mate_pers from vve_cred_mae_aval cma
-                             INNER JOIN vve_cred_soli_aval csa ON cma.cod_per_aval = csa.cod_per_aval
-                             WHERE cma.cod_per_aval=m.cod_per_aval
-                             AND  csa.ind_inactivo = 'N'
-                             )) END  nombre_completo,                                
+                ELSE ( m.txt_nomb_pers||' '||m.txt_apel_pate_pers||' '||m.txt_apel_mate_pers) END  nombre_completo,                                
                 -- E2-1-87567-avilca-06/01/2020- Modficación Avales -Fin             
                 m.txt_nomb_pers,
                 m.txt_apel_pate_pers,
