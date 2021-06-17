@@ -1,14 +1,11 @@
 create or replace PACKAGE VENTA.PKG_SWEB_CRED_SOLI_ACTIVIDAD AS
  PROCEDURE sp_list_acti
  (
-    --p_cod_soli_cred     IN vve_cred_fina_docu.cod_soli_cred%TYPE,  --<CC E2.1 ID225 LR 11.11.19>
     p_cod_soli_cred     IN vve_cred_soli.cod_soli_cred%TYPE,         --<CC E2.1 ID225 LR 11.11.19>
     p_cod_usua_sid      IN sistemas.usuarios.co_usuario%TYPE,
     p_cod_usua_web      IN sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
     p_act_actual        OUT vve_cred_maes_activ.des_acti_cred%TYPE,  --<CC E2.1 ID225 LR 11.11.19>
-    p_act_siguiente     OUT vve_cred_maes_activ.des_acti_cred%TYPE,  --<CC E2.1 ID225 LR 11.11.19>
-   -- p_act_actual        OUT vve_cred_maes_acti.des_acti_cred%TYPE, --<CC E2.1 ID225 LR 11.11.19>
-   -- p_act_siguiente     OUT vve_cred_maes_acti.des_acti_cred%TYPE, --<CC E2.1 ID225 LR 11.11.19>    
+    p_act_siguiente     OUT vve_cred_maes_activ.des_acti_cred%TYPE,  --<CC E2.1 ID225 LR 11.11.19>   
     p_ret_cursor        OUT SYS_REFCURSOR,
     p_ret_cantidad      OUT NUMBER,
     p_ret_esta          OUT NUMBER,

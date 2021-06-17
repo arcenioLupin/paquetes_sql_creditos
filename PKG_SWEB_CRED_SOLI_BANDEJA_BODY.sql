@@ -254,12 +254,6 @@ create or replace PACKAGE BODY       VENTA.PKG_SWEB_CRED_SOLI_BANDEJA AS
            and (p_cod_estado is null or (p_cod_estado is not null and p_cod_estado = sc.cod_estado))
            --<I Req 87567 E2.2 LR 01.03.2021>
            and ((pu.cod_id_perfil = v_perf_gf and u.txt_usuario = sc.cod_resp_fina) or (pu.cod_id_perfil <> v_perf_gf)) 
-           /*AND (exists (select 1 from vve_cred_org_cred_vtas ov where (pu.cod_id_perfil <> v_perf_asesor and ov.cod_area_vta = pv.cod_area_vta and ov.cod_filial = pv.cod_filial and ov.cod_zona = zf.cod_zona)  
-                                                                     and ((pu.cod_id_perfil = ov.cod_rol_usuario and ov.co_usua_bckp is null and ov.co_usuario = p_cod_usua_sid) 
-                                                                          or (pu.cod_id_perfil = ov.cod_rol_usuario and ov.co_usua_bckp is not null and ov.co_usua_bckp = p_cod_usua_sid)))
-               OR (pu.cod_id_perfil = v_perf_asesor and u.txt_usuario = sc.cod_pers_soli)
-               OR (exists (select 1 from vve_cred_soli_para where cod_cred_soli_para = 'ROLCONSOTR' and instr(val_para_car, pu.cod_id_perfil)>0))
-               )*/
            AND (exists (select 1 from vve_cred_org_cred_vtas ov where (pu.cod_id_perfil <> v_perf_asesor and ov.cod_area_vta = pv.cod_area_vta and ov.cod_filial = pv.cod_filial and ov.cod_zona = zf.cod_zona)  
                                                                          and (((pu.cod_id_perfil = ov.cod_rol_usuario and ov.co_usua_bckp is null and ov.co_usuario = p_cod_usua_sid) 
                                                                               or (pu.cod_id_perfil = ov.cod_rol_usuario and ov.co_usua_bckp is not null and ov.co_usua_bckp = p_cod_usua_sid))
@@ -434,12 +428,6 @@ create or replace PACKAGE BODY       VENTA.PKG_SWEB_CRED_SOLI_BANDEJA AS
        and (p_cod_estado is null or (p_cod_estado is not null and p_cod_estado = sc.cod_estado))
        --<I Req 87567 E2.2 LR 01.03.2021>
        and ((pu.cod_id_perfil = v_perf_gf and u.txt_usuario = sc.cod_resp_fina) or (pu.cod_id_perfil <> v_perf_gf)) 
-       /*AND (exists (select 1 from vve_cred_org_cred_vtas ov where (pu.cod_id_perfil <> v_perf_asesor and ov.cod_area_vta = sc.cod_area_vta and ov.cod_filial = sc.cod_filial and ov.cod_zona = zf.cod_zona)  
-                                                                 and ((pu.cod_id_perfil = ov.cod_rol_usuario and ov.co_usua_bckp is null and ov.co_usuario = p_cod_usua_sid) 
-                                                                      or (pu.cod_id_perfil = ov.cod_rol_usuario and ov.co_usua_bckp is not null and ov.co_usua_bckp = p_cod_usua_sid)))
-           OR (pu.cod_id_perfil = v_perf_asesor and u.txt_usuario = sc.cod_pers_soli)
-           OR (exists (select 1 from vve_cred_soli_para where cod_cred_soli_para = 'ROLCONSOTR' and instr(val_para_car, pu.cod_id_perfil)>0))
-           )*/
        AND (exists (select 1 from vve_cred_org_cred_vtas ov where (pu.cod_id_perfil <> v_perf_asesor and ov.cod_area_vta = sc.cod_area_vta and ov.cod_filial = sc.cod_filial and ov.cod_zona = zf.cod_zona)  
                                                                          and (((pu.cod_id_perfil = ov.cod_rol_usuario and ov.co_usua_bckp is null and ov.co_usuario = p_cod_usua_sid) 
                                                                               or (pu.cod_id_perfil = ov.cod_rol_usuario and ov.co_usua_bckp is not null and ov.co_usua_bckp = p_cod_usua_sid))
@@ -515,12 +503,6 @@ create or replace PACKAGE BODY       VENTA.PKG_SWEB_CRED_SOLI_BANDEJA AS
            and (p_cod_estado is null or (p_cod_estado is not null and p_cod_estado = sc.cod_estado))
            --<I Req 87567 E2.2 LR 01.03.2021>
            and ((pu.cod_id_perfil = v_perf_gf and u.txt_usuario = sc.cod_resp_fina) or (pu.cod_id_perfil <> v_perf_gf)) 
-           /*AND (exists (select 1 from vve_cred_org_cred_vtas ov where (pu.cod_id_perfil <> v_perf_asesor and ov.cod_area_vta = pv.cod_area_vta and ov.cod_filial = pv.cod_filial and ov.cod_zona = zf.cod_zona)  
-                                                                     and ((pu.cod_id_perfil = ov.cod_rol_usuario and ov.co_usua_bckp is null and ov.co_usuario = p_cod_usua_sid) 
-                                                                          or (pu.cod_id_perfil = ov.cod_rol_usuario and ov.co_usua_bckp is not null and ov.co_usua_bckp = p_cod_usua_sid)))
-               OR (pu.cod_id_perfil = v_perf_asesor and u.txt_usuario = sc.cod_pers_soli)
-               OR (exists (select 1 from vve_cred_soli_para where cod_cred_soli_para = 'ROLCONSOTR' and instr(val_para_car, pu.cod_id_perfil)>0))
-               )*/
            AND (exists (select 1 from vve_cred_org_cred_vtas ov where (pu.cod_id_perfil <> v_perf_asesor and ov.cod_area_vta = pv.cod_area_vta and ov.cod_filial = pv.cod_filial and ov.cod_zona = zf.cod_zona)  
                                                                          and (((pu.cod_id_perfil = ov.cod_rol_usuario and ov.co_usua_bckp is null and ov.co_usuario = p_cod_usua_sid) 
                                                                               or (pu.cod_id_perfil = ov.cod_rol_usuario and ov.co_usua_bckp is not null and ov.co_usua_bckp = p_cod_usua_sid))
@@ -583,12 +565,6 @@ create or replace PACKAGE BODY       VENTA.PKG_SWEB_CRED_SOLI_BANDEJA AS
        and (p_cod_estado is null or (p_cod_estado is not null and p_cod_estado = sc.cod_estado))
        --<I Req 87567 E2.2 LR 01.03.2021>
        and ((pu.cod_id_perfil = v_perf_gf and u.txt_usuario = sc.cod_resp_fina) or (pu.cod_id_perfil <> v_perf_gf)) 
-       /*AND (exists (select 1 from vve_cred_org_cred_vtas ov where (pu.cod_id_perfil <> v_perf_asesor and ov.cod_area_vta = sc.cod_area_vta and ov.cod_filial = sc.cod_filial and ov.cod_zona = zf.cod_zona)  
-                                                                 and ((pu.cod_id_perfil = ov.cod_rol_usuario and ov.co_usua_bckp is null and ov.co_usuario = p_cod_usua_sid) 
-                                                                      or (pu.cod_id_perfil = ov.cod_rol_usuario and ov.co_usua_bckp is not null and ov.co_usua_bckp = p_cod_usua_sid)))
-           OR (pu.cod_id_perfil = v_perf_asesor and u.txt_usuario = sc.cod_pers_soli)
-           OR (exists (select 1 from vve_cred_soli_para where cod_cred_soli_para = 'ROLCONSOTR' and instr(val_para_car, pu.cod_id_perfil)>0))
-           )*/
        AND (exists (select 1 from vve_cred_org_cred_vtas ov where (pu.cod_id_perfil <> v_perf_asesor and ov.cod_area_vta = sc.cod_area_vta and ov.cod_filial = sc.cod_filial and ov.cod_zona = zf.cod_zona)  
                                                                          and (((pu.cod_id_perfil = ov.cod_rol_usuario and ov.co_usua_bckp is null and ov.co_usuario = p_cod_usua_sid) 
                                                                               or (pu.cod_id_perfil = ov.cod_rol_usuario and ov.co_usua_bckp is not null and ov.co_usua_bckp = p_cod_usua_sid))

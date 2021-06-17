@@ -172,12 +172,6 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_SOLI_LEGAL IS
             and   mg.ind_tipo_garantia = decode(p_ord_titdoc,5,'M',4,'H');
 
             OPEN p_ret_cursor FOR
-              --<I E2.1 ID 224 LR 17.01.2020>
-              /*SELECT cod_docleg,descripcion,'N' ind_oblig 
-              FROM gen_documento_legal
-              WHERE cod_titdoc = p_ord_titdoc;
-              p_ret_esta := 1;
-              p_ret_mens := 'La consulta se realizó de manera exitosa';*/
               SELECT  l.cod_docleg,l.descripcion,decode(v_cant_gara,0,'N',d.ind_oblig_gral) ind_oblig 
               FROM    gen_documento_legal l, vve_cred_mae_docu d
               WHERE   l.ind_inactivo='N' 
@@ -1005,7 +999,7 @@ Log de Cambios
           p_ret_mens := 'SP_LISTAR_OPELEGAL_SOLCRE:' || SQLERRM;
   END;
   
-               /*-----------------------------------------------------------------------------
+/*-----------------------------------------------------------------------------
 Nombre : SP_LISTAR_PERFACULTADA_SOLCRE
 Proposito : Listar las persona facultadas de la solicitud de crédito
 Referencias : 
@@ -1882,17 +1876,6 @@ Log de Cambios
   )AS
   BEGIN
     open p_ret_cursor for
-        /*
-        SELECT alcv.nom_aval nom_fiador,
-        CASE (SELECT instr(alcv.nom_aval,'/')FROM dual) WHEN 0 THEN 'I' ELSE 'C' END tipo_fianza,
-        'D' tipo_doc,
-        CASE (SELECT instr(alcv.nom_aval,'/')FROM dual) WHEN 0 THEN 'I' ELSE 'C' END parentesco,
-        alcv.le doi,
-        alcv.cod_oper
-        FROM lxc.arlcav alcv
-        INNER JOIN vve_cred_soli csl ON
-        alcv.cod_oper = csl.cod_oper_rel
-        WHERE csl.cod_solcre_legal = p_cod_solcre;*/
        SELECT CASE  
            WHEN (select ma2.cod_rela_aval from vve_cred_mae_aval ma2 where ma2.cod_per_rel_aval = ma.cod_per_aval)is null THEN 'I' 
            WHEN (select ma2.cod_rela_aval from vve_cred_mae_aval ma2 where ma2.cod_per_rel_aval = ma.cod_per_aval) = 'RAVAL01' THEN 'T' 
@@ -1998,27 +1981,8 @@ Log de Cambios
   )AS
     v_cod_soli_cred VARCHAR(25);
   BEGIN
-  
-      /*SELECT cod_soli_cred  INTO v_cod_soli_cred
-      FROM vve_cred_soli
-      WHERE cod_solcre_legal =p_cod_solcre;*/
-      
-    open p_ret_cursor for
-       /* SELECT distinct l.cod_docleg,l.descripcion,f.ind_oblig,f.txt_ruta_doc
-            FROM gen_documento_legal l,vve_cred_mae_aval_docu f, vve_cred_mae_docu d
-            WHERE l.ind_inactivo='N'
-            and l.cod_titdoc in
-            (select cod_titdoc
-            from gen_titulo_documento a
-            where ord_titdoc=6)
-            and l.cod_docleg = d.cod_docleg
-            and f.cod_docu_eval = d.cod_docu_eval
-            and d.ind_tipo_docu = 'AN'
-            and f.cod_per_aval = '00001022'
-            and f.cod_soli_cred = v_cod_soli_cred
-            order by cod_docleg;
-            */
-            
+   
+    open p_ret_cursor for           
        SELECT a.cod_tipope,a.cod_opeleg, a.descripcion
         FROM gen_operacion_legal a,gen_tipo_operacion b,
         gen_plantilla_operacion c,gen_estructura_operacion d, gen_solicitud_credito e
@@ -2028,8 +1992,7 @@ Log de Cambios
         AND e.cod_estope=d.cod_estope
         AND b.cod_natope ='FSN'
         AND e.cod_solcre=p_cod_solcre;
-        --and a.cod_tipope=p_cod_tipope;
-        
+     
         p_ret_mens := 'La consulta se realizó correctamente!';
         p_ret_esta := 1;
         EXCEPTION
@@ -2333,17 +2296,7 @@ Log de Cambios
                
                tc.descripcion TIP_SOLI_CRED,
                tc.cod_tipo cod_tipo_cred
-               
-               /*
-               'Recon. de Deuda' TIP_SOLI_CRED,
-               'TC01' cod_tipo_cred
-               */
-               /*
-               'Recon. de Deuda Leasing' TIP_SOLI_CRED,
-               'TC02' cod_tipo_cred
-               
-                'Crédito Mutuo' TIP_SOLI_CRED,
-                'TC03' cod_tipo_cred*/
+
         FROM vve_cred_soli s,vve_tabla_maes tc
         WHERE 
               (s.cod_oper_rel is null or s.cod_oper_rel like '%'||p_cod_oper_rel||'%') 

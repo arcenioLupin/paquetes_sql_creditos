@@ -30,68 +30,8 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_FLUJO_CAJA AS
         delete from vve_cred_soli_fact_ajust where cod_soli_cred = p_cod_soli_cred;
         commit;
 
-        /*BEGIN                   
-            SELECT 
-                COUNT(*) 
-            INTO 
-                v_cantidad
-            FROM 
-                vve_cred_soli_para_fc WHERE cod_soli_cred = p_cod_soli_cred
-                AND ind_tipo_fc = p_indi_tipo_fc;
-            EXCEPTION
-                WHEN OTHERS THEN
-                v_cantidad := NULL;
-        END;*/
-
-        /*IF v_cantidad IS NOT NULL AND v_cantidad > 0 AND p_indi_tipo_fc = 'C' THEN
-            p_ret_esta := 1;
-            p_ret_mens := 'Se realizó el proceso satisfactoriamente para Camiones';
-            RETURN;
-        END IF;
-
-        IF v_cantidad IS NOT NULL AND v_cantidad > 0 AND p_indi_tipo_fc = 'I' THEN
-            p_ret_esta := 1;
-            p_ret_mens := 'Se realizó el proceso satisfactoriamente para Interprovincial';
-            RETURN;
-        END IF;*/
-
-        /*IF v_cantidad IS NOT NULL AND v_cantidad > 0 AND p_indi_tipo_fc = 'U' THEN
-            p_ret_esta := 1;
-            p_ret_mens := 'Se realizó el proceso satisfactoriamente para Urbano';
-            RETURN;
-        END IF;*/
-
         FOR i IN 1 .. p_list_ingr_egre.COUNT LOOP
 
-            /*BEGIN
-                SELECT
-                    lpad(nvl(MAX(cod_cred_soli_pfc), 0) + 1, 10, '0')
-                INTO p_ret_cod_cred_soli_pfc
-                FROM
-                    vve_cred_soli_para_fc;
-                EXCEPTION
-                    WHEN OTHERS THEN
-                    p_ret_cod_cred_soli_pfc := NULL;
-            END;
-            */
-            /*SELECT  COUNT(*) INTO  v_cant_param
-            FROM  vve_cred_soli_para_fc WHERE cod_soli_cred = p_cod_soli_cred AND ind_tipo_fc = p_list_ingr_egre(i).IND_TIPO_FC 
-      AND COD_CRED_PARA_FC = p_list_ingr_egre(i).COD_PARA_FC;
-
-            IF v_cant_param IS NOT NULL AND v_cant_param > 0 THEN
-        UPDATE vve_cred_soli_para_fc set
-        NO_CIA = p_no_cia,
-        --IND_TIPO_FC = p_list_ingr_egre(i). IND_TIPO_FC,
-        IND_TIPO = p_list_ingr_egre(i).IND_TIPO,
-        VAL_NRO_RUTA = p_list_ingr_egre(i).NRO_RUTA,
-        VAL_PARA = p_list_ingr_egre(i).VAL_PARA,
-        FEC_USUA_MODI_REGI  = SYSDATE 
-        WHERE 
-        cod_soli_cred = p_cod_soli_cred AND 
-        ind_tipo_fc = p_list_ingr_egre(i).IND_TIPO_FC AND 
-        COD_CRED_PARA_FC = p_list_ingr_egre(i).COD_PARA_FC;
-
-      ELSE */
                 INSERT INTO vve_cred_soli_para_fc (
                     COD_CRED_SOLI_PFC, COD_SOLI_CRED, NO_CIA, COD_CRED_PARA_FC, IND_TIPO_FC,
                     IND_TIPO, VAL_NRO_RUTA, VAL_PARA, COD_USUA_CREA_REGI, FEC_USUA_CREA_REGI , VAL_TXT
@@ -1141,19 +1081,13 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_FLUJO_CAJA AS
                         v_val_tota_ingr_mes_fact := fn_ret_val_cred_soli_fact_fc(p_cod_soli_cred, 'VAL_TOT_INGR_MES_CAM_FACT', rs_resu.val_mes, 
                         rs_resu.val_ano, 'C');
 
-                        -- dbms_output.put_line('v_val_tota_ingr_mes_fact');
-                        -- dbms_output.put_line(v_val_tota_ingr_mes_fact);
 
                         v_val_tota_egre_mes_fact := fn_ret_val_cred_soli_fact_fc(p_cod_soli_cred, 'VAL_TOT_EGRE_MES_CAM_FACT', rs_resu.val_mes, 
                         rs_resu.val_ano, 'C');
 
-                        -- dbms_output.put_line('v_val_tota_egre_mes_fact');
-                        -- dbms_output.put_line(v_val_tota_egre_mes_fact);
 
                         v_val_caja_disp_mes := (v_val_tota_ingr_mes_fact - v_val_tota_egre_mes_fact);
 
-                        -- dbms_output.put_line('v_val_caja_disp_mes');
-                        -- dbms_output.put_line(v_val_caja_disp_mes);
 
                         UPDATE vve_cred_soli_fact_fc 
                         SET val_para = v_val_caja_disp_mes
@@ -1178,9 +1112,6 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_FLUJO_CAJA AS
                             RETURN;
                         END;
 
-                        -- dbms_output.put_line('v_val_mont_cuot_mes');
-                        -- dbms_output.put_line(v_val_mont_cuot_mes);
-
                         UPDATE vve_cred_soli_fact_fc 
                         SET val_para = (v_val_mont_cuot_mes * v_tipo_cambio)
                         WHERE cod_soli_cred = p_cod_soli_cred AND cod_cred_para_fact = 'VAL_CUOT_FINA_MES'
@@ -1204,16 +1135,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_FLUJO_CAJA AS
                         AND EXTRACT(MONTH FROM fec_venc) = rs_resu.val_mes 
                         AND EXTRACT(YEAR FROM fec_venc) = rs_resu.val_ano;
 
-                        -- dbms_output.put_line('v_val_caja_disp_mes_calc');
-                        -- dbms_output.put_line(v_val_caja_disp_mes_calc);
-
-                        -- dbms_output.put_line('v_val_mont_cuot_mes_calc');
-                        -- dbms_output.put_line(v_val_mont_cuot_mes_calc);
-
                         v_val_caja_libr_mes := v_val_caja_disp_mes_calc - (v_val_mont_cuot_mes_calc * v_tipo_cambio);
-
-                        -- dbms_output.put_line('v_val_caja_libr_mes');
-                        -- dbms_output.put_line(v_val_caja_libr_mes);
 
                         UPDATE vve_cred_soli_fact_fc 
                         SET val_para = v_val_caja_libr_mes
@@ -2394,7 +2316,6 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_FLUJO_CAJA AS
                           NULL);
 
         OPEN p_ret_fact_ajus_ef FOR       
-            -- SELECT TO_CHAR(fec_ini, 'DD/MM/YYYY') AS fec_ini, TO_CHAR(fec_fin, 'DD/MM/YYYY') AS fec_fin, val_fact_ajust,
             SELECT fec_ini AS fec_ini, fec_fin AS fec_fin, val_fact_ajust,
             'EGRE' AS ind_ingr_egre
             from vve_cred_soli_fact_ajust where 
@@ -3498,12 +3419,6 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_FLUJO_CAJA AS
         IF ln_conc_anos_cabe_proy IS NOT NULL THEN
 
             dbms_output.put_line('Entro ln_conc_anos_cabe_proy != '); 
-
-            /*
-            OPEN p_ret_colu_ano FOR
-                SELECT val_ano AS num_ano FROM vve_cred_soli_fact_fc WHERE cod_soli_cred = p_cod_soli_cred 
-                    AND ind_tipo_fc = 'G' AND ind_tipo = 'A' ORDER BY val_ano;
-            */
 
             ln_pivot_sql_proy := 'SELECT * FROM
                 (

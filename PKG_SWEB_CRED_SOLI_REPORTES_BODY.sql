@@ -570,10 +570,8 @@ CREATE OR REPLACE PACKAGE BODY VENTA.pkg_sweb_cred_soli_reportes AS
                                       FROM
                                           vve_cred_maes_gara cmg
                                           INNER JOIN vve_cred_soli_gara csg ON csg.cod_gara = cmg.cod_garantia
-             --INNER JOIN vve_cred_soli crs ON crs.cod_soli_cred = csg.cod_soli_cred
                                       WHERE
-                                          csg.cod_soli_cred = cs.cod_soli_cred -- crs.cod_oper_rel = cs.cod_oper_rel
-             --AND crs.cod_soli_cred = cs.cod_soli_cred
+                                          csg.cod_soli_cred = cs.cod_soli_cred
                                           AND csg.ind_gara_adic = 'S'
                                           AND nvl(csg.ind_inactivo,'N') = 'N'
                                   ) AS garantias_adicionales,

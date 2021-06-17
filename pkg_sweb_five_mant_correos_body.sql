@@ -1054,7 +1054,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant_correos IS
     ve_error EXCEPTION;
     v_asunto  VARCHAR2(2000);
     v_mensaje CLOB;
-    -- v_html_head         VARCHAR2(2000);
     v_correoori usuarios.di_correo%TYPE;
     v_ambiente  VARCHAR2(100);
     v_query     VARCHAR2(4000);
@@ -1163,10 +1162,7 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant_correos IS
      WHERE num_ficha_vta_veh = p_num_ficha_vta_veh;
   
     --<REQ-86434>
-    /*
-     v_cod_clie_ped      VARCHAR(20);
-    v_nom_clie_ped      VARCHAR(20);
-     */
+
     BEGIN
       SELECT cod_propietario_veh, cod_usuario_veh, cod_clie
         INTO v_cod_propietario, v_cod_usuario, v_cod_clie_ped
@@ -2941,57 +2937,7 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant_correos IS
                                           p_num_ficha_vta_veh);
     
   END;
-  /*
-    PROCEDURE sp_obtener_plantilla
-    (
-      p_cod_ref_proc  IN VARCHAR2,
-      p_tipo_ref_proc IN VARCHAR2,
-      p_id_usuario    IN sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
-      p_ret_correos   OUT SYS_REFCURSOR,
-      p_ret_esta      OUT NUMBER,
-      p_ret_mens      OUT VARCHAR2
-    ) AS
-      ve_error EXCEPTION;
-    BEGIN
-    
-      OPEN p_ret_correos FOR
-        SELECT a.destinatarios, a.copia, a.asunto, a.cuerpo, a.correoorigen
-          FROM vve_correo_prof a
-         WHERE a.cod_ref_proc IN (SELECT CASE p_tipo_ref_proc
-                                           WHEN 'AD' THEN
-                                            p_cod_ref_proc
-                                           WHEN 'AF' THEN
-                                            p_cod_ref_proc
-                                           ELSE
-                                            ltrim(p_cod_ref_proc, '0')
-                                         END AS fdv
-                                    FROM dual)
-           AND a.tipo_ref_proc = p_tipo_ref_proc -- SOLICITUD DE FACTURACION
-           AND a.ind_enviado = 'N';
-    
-      pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
-                                          'SP_OBTENER_PLANTILLA',
-                                          NULL, --P_COD_USUA_SID,
-                                          p_tipo_ref_proc,
-                                          p_ret_mens,
-                                          p_cod_ref_proc);
-    
-      p_ret_esta := 1;
-      p_ret_mens := 'Se ejecuto correctamente';
-    EXCEPTION
-      WHEN ve_error THEN
-        p_ret_esta := 0;
-      WHEN OTHERS THEN
-        p_ret_esta := -1;
-        p_ret_mens := 'SP_OBTENER_PLANTILLA:' || SQLERRM;
-        pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
-                                            'SP_OBTENER_PLANTILLA',
-                                            NULL, --P_COD_USUA_SID,
-                                            'Error',
-                                            p_ret_mens,
-                                            p_cod_ref_proc);
-    END;
-  */
+
   PROCEDURE sp_gen_plantilla_correo_aprbon
   (
     p_num_ficha_vta_veh IN vve_plan_entr_hist.cod_plan_entr_vehi%TYPE,
@@ -3487,7 +3433,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant_correos IS
              a.fec_modi_reg        = SYSDATE
        WHERE a.cod_ref_proc = p_num_ficha_vta_veh
          AND a.tipo_ref_proc = p_tipo_ref_proc
-            --AND A.COD_CORREO_PROF = P_COD_CORREO_PROF
          AND a.ind_enviado = 'N';
     ELSE 
       UPDATE vve_correo_prof a
@@ -3497,21 +3442,9 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant_correos IS
        WHERE a.cod_ref_proc IN
              (SELECT to_number(p_num_ficha_vta_veh) FROM dual)
          AND a.tipo_ref_proc = p_tipo_ref_proc
-            --AND A.COD_CORREO_PROF = P_COD_CORREO_PROF
          AND a.ind_enviado = 'N';
     
     END IF;
-    /*
-            UPDATE vve_correo_prof a
-           SET a.ind_enviado         = 'S',
-               a.cod_id_usuario_modi = p_id_usuario,
-               a.fec_modi_reg        = SYSDATE
-    -     WHERE a.cod_ref_proc IN
-               (SELECT to_number(p_num_ficha_vta_veh) FROM dual)
-           AND a.tipo_ref_proc = p_tipo_ref_proc
-              --AND A.COD_CORREO_PROF = P_COD_CORREO_PROF
-           AND a.ind_enviado = 'N';
-           */
     COMMIT;
   
     p_ret_esta := 1;
@@ -3559,16 +3492,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant_correos IS
   BEGIN
 
     --<I - REQ.89338 - SOPORTE LEGADOS - 05/05/2020>
-    /*
-    BEGIN
-      SELECT MAX(cod_correo_prof) INTO v_cod_correo FROM vve_correo_prof;
-    EXCEPTION
-      WHEN OTHERS THEN
-        v_cod_correo := 0;
-    END;
-  
-    v_cod_correo := v_cod_correo + 1;
-    */
     SELECT VVE_CORREO_PROF_SQ01.NEXTVAL INTO V_COD_CORREO FROM DUAL;
     --<F - REQ.89338 - SOPORTE LEGADOS - 05/05/2020>
 
@@ -4531,16 +4454,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant_correos IS
       END LOOP;
     
       --<I - REQ.89338 - SOPORTE LEGADOS - 22/05/2020>
-      /*
-      BEGIN
-        SELECT MAX(cod_correo_prof) INTO v_cod_correo FROM vve_correo_prof;
-      EXCEPTION
-        WHEN OTHERS THEN
-          v_cod_correo := 0;
-      END;
-    
-      v_cod_correo := v_cod_correo + 1;
-      */
       SELECT VVE_CORREO_PROF_SQ01.NEXTVAL INTO V_COD_CORREO FROM DUAL;
       --<F - REQ.89338 - SOPORTE LEGADOS - 22/05/2020>
     

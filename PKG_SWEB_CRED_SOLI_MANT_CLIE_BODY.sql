@@ -573,15 +573,11 @@ PROCEDURE SP_LIST_OPERS(
         
         --
         SELECT sc.txt_ruta_cart_banc INTO  v_txt_ruta_cart_banc
-             FROM vve_cred_soli sc/*, arlcop o
-            WHERE sc.cod_oper_rel = o.cod_oper 
-              AND sc.cod_clie = o.no_cliente*/
+             FROM vve_cred_soli sc
               WHERE sc.cod_oper_rel = p_cod_oper
               AND sc.cod_clie = p_cod_clie; 
         
-        --dbms_output.put_line(v_cod_cia||','||v_nro_operacion||','||v_cod_tipo_operacion||','||v_tipo_operacion||','||v_fecha_otorgamiento||','||v_fecha_vencimiento||','||v_plazo_dias||','||v_tea_porc);
-    
-   
+        
         OPEN p_ret_cursor FOR
         SELECT v_cod_cia AS NRO_CIA,
                p_cod_oper AS NRO_OPERACION,
@@ -652,50 +648,6 @@ PROCEDURE SP_LIST_GARAN(
             AND (p_anio_fab IS NULL OR mg.val_ano_fab = p_anio_fab) -- <año ingresado>
             order by 1;
 
-           
-            /*SELECT s.cod_soli_cred,
-                   s.cod_oper_rel AS NRO_OPERACION,
-                   g.cod_garantia AS NRO_GARANTIA,
-                   g.ind_tipo_garantia as ind_tipo_garantia,
-                   decode(g.ind_tipo_garantia,'M','Mobiliaria','H','Hipotecaria') AS DES_TIPO_GARANTIA,
-                   s.tip_soli_cred as cod_tipo_credito,
-                   (select descripcion from vve_tabla_maes where cod_grupo = '86' and cod_tipo = s.tip_soli_cred) as des_tipo_credito,
-                   sg.ind_gara_adic as gara_adic,
-                   (CASE nvl(sg.ind_gara_adic,'N') WHEN 'N' THEN s.nro_poli_seg WHEN 'S' THEN NULL  END) AS NRO_POLIZA, 
-                   (CASE nvl(sg.ind_gara_adic,'N') WHEN 'N' THEN s.cod_esta_poli WHEN 'S' THEN NULL END) AS COD_EST_POLIZA,
-                    decode(nvl(sg.ind_gara_adic,'N'),'N',
-                          (SELECT descripcion 
-                             FROM vve_tabla_maes m 
-                            WHERE m.cod_grupo = 109 
-                              AND cod_tipo = s.cod_esta_poli),null, null) AS EST_POLIZA,
-                   'USD' AS DIVISA,
-                   g.val_const_gar*0.8 AS VAL_COMERCIAL,
-                   g.val_realiz_gar AS VAL_REALIZ,
-                   g.fec_fab_const AS FEC_CONST,
-                   g.cod_marca,
-                   g.txt_marca,
-                   g.txt_modelo,
-                   g.cod_tipo_veh,
-                   g.nro_placa,
-                   g.val_ano_fab,
-                   sg.cod_rang_gar,
-                   (select descripcion from vve_tabla_maes where cod_grupo = '106' and cod_tipo = sg.cod_rang_gar) as des_rang_gar,
-                   sg.ind_inactivo
-                   FROM vve_cred_maes_gara g, vve_cred_soli_gara sg, vve_cred_soli s
-            WHERE  s.cod_clie = p_cod_clie--<cod_cliente>
-            AND s.cod_soli_cred = sg.cod_soli_cred 
-            AND sg.cod_gara = g.cod_garantia 
-           -- AND s.cod_oper_rel = p_cod_oper--<cod_oper>
-            --AND sg.ind_inactivo = 'N'
-                AND (sg.ind_inactivo IS NULL OR sg.ind_inactivo <> v_estado_inactivo)
-            --AND (p_cod_oper IS NULL OR p_cod_oper = s.cod_oper_rel)
-           -- AND (p_cod_gara IS NULL OR p_cod_gara = g.cod_garantia)
-            AND (p_tipo_gara IS NULL OR p_tipo_gara = g.ind_tipo_garantia)
-           -- AND (p_cod_esta_poli IS NULL OR (p_cod_esta_poli = s.cod_esta_poli and sg.ind_gara_adic is null))
-            --and s.cod_oper_rel in ( '5621','5783','5785','5890','5892','5990','6166','6418')
-            ORDER BY 3;*/
-      
- 
       p_ret_esta := 1;
       p_ret_mens := 'La consulta se realizó de manera exitosa';
       

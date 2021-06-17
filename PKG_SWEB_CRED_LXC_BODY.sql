@@ -717,19 +717,7 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
                                         pc_ret_mens,
                                         pc_num_soli);
       end if;
-    /*
-      EXCEPTION
-      WHEN NO_DATA_FOUND THEN 
-       pc_ret_mens := 'NO EXISTE LA SOLICITUD';
-       pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
-                                        'SP_OBTENER_DATOS_OP',
-                                        pc_cod_usua_web,
-                                        'Error en la consulta',
-                                        pc_ret_mens,
-                                        NULL);
-     */
 
-    
     pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
                                         'SP_OBTENER_DATOS_OP',
                                         pc_cod_usua_web,
@@ -1166,100 +1154,8 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
                                         'Paso 13',
                                         pc_ret_mens,
                                         pc_num_soli);
-/*                                               
-       -- para Refinanciamiento 
-       if lc_modal_cred = kc_ref and pc_cod_oper is not null then
-         begin
-          select num_oper
-          into   ln_cod_oper
-          from   arccmc 
-          where  no_cia     = pc_no_cia
-          and    grupo      = lc_grupo
-          and    no_cliente = lc_no_cliente;
-            
-          select count(*) 
-            into sec_op
-            from arlcop 
-           where instr(cod_oper,ln_cod_oper)>0;
-           
-          lc_cod_oper := trim(to_char(ln_cod_oper,'99999999999'))||'-'||trim(to_char(sec_op,'999'));
-          ln_sec_oper := sec_op;
-          pc_ret_mens := 'se obtiene el nro. de op para refinanciamiento';
-          pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
-                                      'SP_OBTENER_DATOS_OP',
-                                      pc_cod_usua_web,
-                                      'Error en la consulta',
-                                      pc_ret_mens,
-                                      pc_num_soli);
-         end; 
-       elsif lc_modal_cred <> kc_ref and pc_cod_oper is null then-- CD, Mutuo/Leasing, PV
-         begin
-           
-           select num_corre_oper 
-             into ln_cod_oper 
-             from arlctp where no_cia = pc_no_cia;
-          
-           pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
-                                        'SP_OBTENER_DATOS_OP',
-                                        pc_cod_usua_web,
-                                        'Select ln_cod_oper = '||ln_cod_oper,
-                                        pc_ret_mens,
-                                        pc_num_soli);
-           lc_cod_oper := trim(to_char(ln_cod_oper,'99999999999'));
-         end;       
-         begin  
-           pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
-                                        'SP_OBTENER_DATOS_OP',
-                                        pc_cod_usua_web,
-                                        'Antes del update de arlctp (cod_oper)',
-                                        pc_ret_mens,
-                                        pc_num_soli);
-            update arlctp 
-              --set num_corre_oper = (to_number(ln_cod_oper) + 1)
-            set    num_corre_oper = ln_cod_oper + 1 
-            where  no_cia = pc_no_cia;
-            
-            pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
-                                        'SP_OBTENER_DATOS_OP',
-                                        pc_cod_usua_web,
-                                        'Despues del update de arlctp (cod_oper): '||to_Char(ln_cod_oper + 1,'999999999999'),
-                                        pc_ret_mens,
-                                        pc_num_soli);
-           EXCEPTION
-             WHEN NO_DATA_FOUND THEN
-               lc_cod_oper := NULL;
-               pc_ret_mens := 'Hubo un Problema en el momento de Actualizar Correlativos ..Consulte - II ';
-               pkg_sweb_mae_gene.sp_regi_rlog_erro( 'AUDI_ERR',
-                                                    'SP_OBTENER_DATOS_OP',
-                                                    pc_cod_usua_web,
-                                                    'Error en la consulta',
-                                                    pc_ret_mens,
-                                                    pc_num_soli);
-           end;
-           begin
-             select num_oper
-             into   ln_sec_oper
-             from   arccmc 
-             where  no_cia     = pc_no_cia
-             and    grupo      = lc_grupo
-             and    no_cliente = lc_no_cliente;
-                  
-            EXCEPTION
-              WHEN NO_DATA_FOUND THEN
-                lc_cod_oper := NULL;
-                pc_ret_mens := 'No se encontró numero de operación a asignar';
-                pkg_sweb_mae_gene.sp_regi_rlog_erro( 'AUDI_ERR',
-                                                     'SP_OBTENER_DATOS_OP',
-                                                     pc_cod_usua_web,
-                                                     'Error en la consulta',
-                                                     pc_ret_mens,
-                                                     pc_num_soli);
-          end;
-       ELSIF pc_cod_oper is not null then 
-          lc_cod_oper := pc_cod_oper;
-       end if;
- */
-       ----****  
+
+
        pc_ret_mens:= 'obteniendo la secuencia de operacion: '||ln_sec_oper;
        pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
                                         'SP_OBTENER_DATOS_OP',
@@ -1525,90 +1421,7 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
          p_rec_arlcop.num_prof_veh      := null;
        end if;
        
-       --p_rec_arlcop.ind_ajuste_fecha  := null;
-
- /*      
-       open cur_arlcop for
-       select 
-          lc_no_cia,
-          ln_cod_oper,
-          ln_ano,
-          ln_mes,
-          lc_grupo,
-          lc_no_cliente,
-          lc_modal_cred,
-          null, -- tipo bien
-          pd_fecha_cont,
-          ln_tea,
-          ln_tasa_igv,
-          ln_tasa_isc,
-          ln_valor_ori,
-          ln_monto_gastos,
-          ln_monto_fina,
-          ln_int_per_gra,
-          ln_tot_fina,
-          ln_int_oper,
-          ln_tot_igv,
-          ln_tot_isc,
-          lc_cod_mone,
-          ln_tipo_cambio,
-          ln_plazo,
-          ln_nro_cuotas,
-          ld_fec_vto_1ra_let,
-          ln_frec_pago_dias,
-          ln_dia_pago,
-          lc_ind_tipo_cuo,
-          lc_ind_per_gra,
-          lc_ind_per_gra_cap,
-          ln_tasa_gra,
-          ln_fre_gra,
-          null,
-          lc_mon_cuo_ene,
-          lc_mon_cuo_feb,
-          lc_mon_cuo_mar,
-          lc_mon_cuo_abr,
-          lc_mon_cuo_may,
-          lc_mon_cuo_jun,
-          lc_mon_cuo_jul,
-          lc_mon_cuo_ago,
-          lc_mon_cuo_sep,
-          lc_mon_cuo_oct,
-          lc_mon_cuo_nov,
-          lc_mon_cuo_dic,
-          lc_cta_int_dife,
-          lc_ingr_fina,
-          lc_estado,
-          pc_cod_usua_web, --lc_usuario,
-          lc_usuario_aprb,
-          null,
-          null,
-          ln_sec_oper,
-          pd_fecha_ini,
-          null,
-          null,
-          lc_judicial,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          lc_ind_nu,
-          null,
-          null,
-          null,
-          lc_cod_filial,
-          lc_tipodocgen,
-          ld_fec_aut_ope,
-          trunc(sysdate),
-          null,
-          null --lc_ind_ajuste_fecha
-       from dual;
-        
-       IF cur_arlcop IS NOT NULL THEN 
-         fetch cur_arlcop into p_r_arlcop;
-       END IF;
-*/
+ 
        pc_ret_mens := 'se inserta en arlcop';
        pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
                                           'SP_OBTENER_DATOS_OP',
@@ -1617,10 +1430,7 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
                                           ', p_rec_arlcop.cod_oper: '||p_rec_arlcop.cod_oper,
                                           pc_ret_mens,
                                           pc_num_soli);
-/*    ELSE 
-      open cur_arlcop for
-      select * from arlcop where cod_oper = ln_cod_oper and no_cia = pc_no_cia;
-*/    END IF;
+    END IF;
 
     pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
                                         'SP_OBTENER_DATOS_OP',
@@ -1842,30 +1652,7 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
                                       pc_ret_mens,
                                       pc_ret_mens); 
   
-/*    
-    for c in c_arlcop loop
-      lc_no_cia               := c.no_cia;
-      IF pn_cod_oper_ref IS NULL THEN 
-        lc_cod_oper           := c.cod_oper;
-      ELSE
-        lc_cod_oper           := pn_cod_oper_ref;
-      END IF;
-      
-      lc_grupo                := c.grupo;
-      lc_no_cliente           := c.no_cliente;
-      ld_f_generada           := c.fecha_ini;
-      lc_moneda               := c.moneda;
-      ln_tipo_cambio          := c.tipo_cambio;
-      lc_ind_nu               := c.ind_nu;
-      ln_no_cuotas            := c.no_cuotas;
-      lc_ind_per_gra          := c.ind_per_gra;
-      ln_tasa_igv             := c.mon_tasa_igv;
-      ln_ano                  := c.ano;
-      ln_mes                  := c.mes;
-      ld_fecha_ini            := c.fecha_ini;
-    end loop;
-*/
-    
+   
     lc_cod_plaza             := null;
     lc_no_letra_bco          := null;
     ld_f_aceptada            := null;
@@ -2203,10 +1990,7 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
                                   '2 sp_crear_arccmd p_ret_cur_fact cerrado',
                                   '2 sp_crear_arccmd p_ret_cur_fact cerrado');  
         END IF;
-            
-/*        FETCH p_ret_cur_fact INTO lr_fact; --lr_fact  PKG_SWEB_CRED_LXC.t_fact_x_op;
-        EXIT WHEN p_ret_cur_fact%NOTFOUND;
-*/         
+                   
           
 --      loop 
         FETCH p_ret_cur_fact INTO c_fact ;
@@ -2495,14 +2279,7 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
     lr_reclet             PKG_SWEB_CRED_LXC.t_table_reclet;
     lref_fact             SYS_REFCURSOR;
     valida                VARCHAR2(10);
-/*    
-  cursor c_arlcop is 
-  select modal_cred,moneda,no_cliente,grupo,tipo_cambio,mon_tasa_igv,cod_oper  
-  from   arlcop 
-  where  no_cia = pc_no_cia 
-  and   ((cod_oper = pc_cod_oper_ref and pc_cod_oper_ref is not null) or
-         (cod_oper = pc_cod_oper_ori and pc_cod_oper_ref is null));
-*/
+
   Begin
     
     pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
@@ -2526,29 +2303,7 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
                                     '1 p_ret_cur_fact is not null and lc_modal_cred:'||lc_modal_cred,
                                     'Entrando al if p_ret_cur_fact not null',
                                     'Entrando al if p_ret_cur_fact not null');  
-/*        for c_op in c_arlcop loop
-          pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
-                                    'sp_crear_arlcrd',
-                                    pc_cod_usua_web,
-                                    '2 p_ret_cur_fact is not null y for c_op',
-                                    'for c_op in c_arlcop',
-                                    'for c_op in c_arlcop');  
-                                    
-          lc_modal_cred := c.modal_cred;
-          lc_moneda     := c.moneda;
-          lc_no_cliente := c.no_cliente;
-          lc_grupo      := c.grupo;
-          ln_tipo_cambio:= c.tipo_cambio;
-          ln_mon_tasa_igv:= c.mon_tasa_igv;
-          
-          pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
-                                    'sp_crear_arlcrd',
-                                    pc_cod_usua_web,
-                                    '3 Seteando en for c_op '||c.cod_oper||', lc_no_cliente:'||lc_no_cliente ,
-                                    'despues de setear cursor c_op',
-                                    'for c_op in c_arlcop');
-        end loop;
-*/
+
         /*Cuando se trata de un Post-Venta o Mutuo, se inserta en arccmd*/
         IF lc_modal_cred IN ('P','M') THEN
           -- Se inserta en la tabla arccmd (relación entre compañia, cliente y documento)
@@ -2844,17 +2599,11 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
   kc_clase_cambio   arcgtc.clase_cambio%TYPE:= '02';
   BEGIN
     begin
-          /*select tipo_cambio 
-          into   ln_tipo_cambio 
-          from   arcgtc 
-          where  clase_cambio = kc_clase_cambio 
-          and    fecha = trunc(pd_fecha_ini);
-          */
+ 
           select tipo_cambio 
           into   ln_tipo_cambio 
           from   arcgtc 
           where  clase_cambio = kc_clase_cambio
-          --and    fecha = trunc(pd_fecha_ini);
           and    fecha IN (select MIN(X.fecha) 
                  from (select max(fecha) fecha from arcgtc where  clase_cambio = '02' 
                        union 
@@ -3012,91 +2761,7 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
       end;
     END IF;
   END ;
-/*
-  function sf_validar_documentos(
-    pc_no_cia         IN      vve_cred_soli.cod_empr%TYPE,
-    pc_no_cliente     IN      vve_cred_soli.cod_clie%TYPE,
-    pc_num_soli       IN      vve_cred_soli.cod_soli_cred%TYPE,
-    pn_cod_oper       IN      arlcop.cod_oper%TYPE,
-    pc_tipo_cred      IN      vve_cred_soli.tip_soli_cred%TYPE,
-    pc_cod_usua_web   IN      sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
-    p_ret_cur_fact    IN      SYS_REFCURSOR,
-    pn_ret_esta       OUT     NUMBER,
-    pc_ret_mens       OUT     VARCHAR2
-   ) RETURN BOOLEAN
-   AS
-   kc_periodicidad   vve_tabla_maes.cod_grupo%TYPE := 88;
-   kc_tc_directo     vve_cred_soli.tip_soli_cred%TYPE := 'TC01';
-   kc_tc_leas        vve_cred_soli.tip_soli_cred%TYPE := 'TC02';
-   kc_tc_mutuo       vve_cred_soli.tip_soli_cred%TYPE := 'TC03';
-   kc_tc_gbanc       vve_cred_soli.tip_soli_cred%TYPE := 'TC06';
-   kc_tc_pv          vve_cred_soli.tip_soli_cred%TYPE := 'TC05';
-   kc_tc_ref         vve_cred_soli.tip_soli_cred%TYPE := 'TC07';
-   kc_financ         arlcop.modal_cred%TYPE := 'F';
-   kc_mutuo          arlcop.modal_cred%TYPE := 'M';
-   kc_pv             arlcop.modal_cred%TYPE := 'P';
-   kc_ref            arlcop.modal_cred%TYPE := 'R';
-   kc_ind_inactivo   vve_cred_simu.ind_inactivo%TYPE := 'N';
-   lc_modal_cred     arlcop.modal_cred%TYPE;
-   lc_no_docu        arlcrd.no_docu%TYPE;
-   lr_fact           PKG_SWEB_CRED_LXC.t_fact_x_op;
-   err_existe        Exception;
-   lc_grupo        arccmd.grupo%TYPE;
-   lc_cod_ref      arccmd.cod_oper%TYPE;
-   
-   Begin
-    
-    begin
-      select Case pc_tipo_cred
-             When kc_tc_directo then kc_financ
-             When kc_tc_leas    then kc_mutuo 
-             When kc_tc_mutuo   then kc_mutuo 
-             When kc_tc_gbanc   then kc_mutuo 
-             When kc_tc_pv      then kc_pv
-             When kc_tc_ref     then kc_ref
-             end modal_cred
-      into   lc_modal_cred       
-      from   vve_cred_soli 
-      where  cod_empr = pc_no_cia 
-      and    cod_soli_cred = pc_num_soli
-      and    ind_inactivo  = kc_ind_inactivo;
-    Exception 
-        When no_data_found then 
-          lc_modal_cred := null;
-    end;
-    
-    if p_ret_cur_fact is not null then 
-    loop
-        fetch p_ret_cur_fact into lr_fact;
-        EXIT WHEN p_ret_cur_fact%NOTFOUND;
-       -- Validacion de documento. Modalidad: Postventa y Mutuos
-        IF lc_modal_cred in ('P','M') and lr_fact.tipo_docu in ('FR','BR','FS','BS','MU') THEN
-            if lr_fact.tipo_docu in ('FR','BR','FS','BS') THEN -- si es postventa ('P') 
-                lc_no_docu := substr(lr_fact.no_docu,1,3) || lpad(substr( lr_fact.no_docu, 4 ,8),8,'0' );
-            end if;  
-        else -- si es mutuo ('M')
-          begin
-                select   grupo,  cod_oper 
-                into   lc_grupo,  lc_cod_ref
-                from    arccmd 
-                where   no_cia       = pc_no_cia         
-                and     tipo_doc     = lr_fact.tipo_docu     
-                and     no_docu       = lr_fact.no_docu       
-                and     no_cliente   = pc_no_cliente    
-                and     estado     != 'P'                 
-                and     nvl(saldo,0) != 0 ;
-          Exception
-                When NO_DATA_FOUND then
-                    message('Documento no existe verifique !!!!!');
-                    raise form_trigger_failure;
-                When others then
-                    message('Error al validar documento.: '||sqlerrm);
-                    raise form_trigger_failure;
-          End;
-        End if;
-    
-   end sf_validar_documentos;
-*/   
+  
   function sf_verifica_existe_doc(
     pc_no_cia         IN      vve_cred_soli.cod_empr%TYPE,
     pc_cod_usua_web   IN      sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
@@ -3551,17 +3216,7 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
                                               pc_ret_mens,
                                               pc_ret_mens,
                                               pc_ret_mens);
-        --lb_existe_doc := sf_verifica_existe_doc(pc_no_cia,pc_cod_usua_web,p_rec_fact,pn_ret_esta,pc_ret_mens); 
-        /*if (lb_existe_doc <> true) then 
-          pc_ret_mens := 'lb_existe_doc = false';
-          pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERR',
-                                                'SF_VALIDA_TIPO_DOCU',
-                                                pc_cod_usua_web,
-                                                pc_ret_mens,
-                                                pc_ret_mens,
-                                                pc_ret_mens);
-        end if; 
-        */   
+  
         p_rec_fact.moneda := pc_moneda;
         p_rec_fact.no_cliente := pc_no_cliente;      
         lb_existe_doc := true;
@@ -3592,14 +3247,12 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
   pc_no_cia         IN      vve_cred_soli.cod_empr%TYPE,
   pc_modal_cred     IN      arlcop.modal_cred%TYPE,
   p_rec_fact        IN OUT  PKG_SWEB_CRED_LXC.t_fact_x_op,
-  --p_rec_fact        IN OUT  VVE_TYPE_DOCU_RELA_ITEM,
   pc_cod_usua_web   IN      sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
   pn_ret_esta       OUT     NUMBER,
   pc_ret_mens       OUT     VARCHAR2
   ) RETURN BOOLEAN IS
   
   lc_indicador      VARCHAR2(2);
-  --lc_tipo_docu      VARCHAR2(2);
   xletra            VARCHAR2(20); -- cambio para que acepte letra = LM
   xtb                 VARCHAR2(2);
   WC_EXISTE         VARCHAR2(1);
@@ -4248,17 +3901,6 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_LXC AS
      where  no_cia = pc_no_cia;
     end;
     
-    --t_doclet := PKG_SWEB_CRED_LXC.t_table_reclet();
-   -- t_doclet.extend(pn_nro_letras);
-    --t_doclet.extend(10);
-  	
-/*    go_block('NUEVE');
-    last_record;     
-    xnumero := to_number(:System.Cursor_Record);
-    IF Get_Record_Property(xnumero,'NUEVE',STATUS) != 'NEW' THEN
-      next_record;
-    End if; 
-*/    
 
     lr_fact.tipo_docu := null;
     lr_fact.no_docu   := null;

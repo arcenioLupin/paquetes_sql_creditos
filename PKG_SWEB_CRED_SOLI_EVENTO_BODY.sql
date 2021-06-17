@@ -424,23 +424,7 @@ EXCEPTION
                 v_correoori := 'apps@divemotor.com.pe';
         END;
 
-    -- Obtener datos de la ficha
-    /*
-    SELECT cod_clie,
-           pkg_gen_select.func_sel_gen_filial(cod_filial),
-           pkg_gen_select.func_sel_gen_area_vta(cod_area_vta),
-           pkg_log_select.func_sel_tapcia(cod_cia),
-           pkg_cxc_select.func_sel_arccve(vendedor),
-           to_date(fec_ficha_vta_veh, 'DD/MM/YY')
-      INTO v_cod_cli,
-           v_desc_filial,
-           v_desc_area_venta,
-           v_desc_cia,
-           v_desc_vendedor,
-           v_fec_ficha_vta_veh
-      FROM vve_ficha_vta_veh
-     WHERE num_ficha_vta_veh = p_num_ficha_vta_veh;
-    */
+
     -- Obtener datos de usuario quien realizo la accion
 
         SELECT
@@ -456,16 +440,6 @@ EXCEPTION
     --Asunto del mensaje Historial de ficha de venta Agregar comentario
 
         v_asunto := 'Asignación de solicitud.: ' || p_cod_soli_cred;
-
-    /*OPEN c_usuarios FOR v_query;
-    LOOP
-      FETCH c_usuarios
-        INTO v_cod_id_usuario,
-             v_txt_correo,
-             v_txt_usuario,
-             v_txt_nombres,
-             v_txt_apellidos;
-      EXIT WHEN c_usuarios%NOTFOUND;*/
         v_mensaje := '<!DOCTYPE html>
           <html lang="es" class="baseFontStyles" style="color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 16px; line-height: 1.35;">
               <head>
@@ -668,15 +642,6 @@ EXCEPTION
             v_instancia := 'Producción';
         END IF;
 
-    -- Actualizar Correos
-    /*
-    PKG_SWEB_FIVE_MANT_CORREOS.sp_actualizar_envio('',
-                        'FP',
-                        p_num_ficha_vta_veh,
-                        p_id_usuario,
-                        p_ret_esta,
-                        p_ret_mens);
-    */
     -- Obtenemos los correos a Notificar
        --cliente
        BEGIN
@@ -844,13 +809,7 @@ EXCEPTION
 
 
   --I Req. 87567 E2.1 ID 4 avilca 11/11/2020   
-    /*OPEN c_usuarios FOR v_query;
-    LOOP
-      FETCH c_usuarios
-        INTO v_cod_id_usuario,
-             v_txt_correo,
-             v_txt_nombres;
-      EXIT WHEN c_usuarios%NOTFOUND;*/
+
         v_mensaje := '<!DOCTYPE html>
           <html lang="es" class="baseFontStyles" style="color: #4A4A4A; font-family: helvetica, arial, sans-serif; font-size: 16px; line-height: 1.35;">
               <head>
@@ -1481,8 +1440,6 @@ EXCEPTION
                     RAISE ve_error;
             END; 
         --<I Req 87567 E2.2 LR 23.02.2021> p_estado = NULL (solicitud de aprobación)
-        --ELSE
-        --ELSIF (v_ind_nivel = 1 and p_estado IS NULL) THEN 
         ELSE
         --<F Req 87567 E2.2 LR 23.02.2021> 
             BEGIN
@@ -1965,20 +1922,6 @@ EXCEPTION
     BEGIN
         --<I - REQ.89338 - SOPORTE LEGADOS - 22/05/2020>
 
-      /*  BEGIN
-            SELECT
-                MAX(cod_correo_prof)
-            INTO v_cod_correo
-            FROM
-                vve_correo_prof;
-
-        EXCEPTION
-            WHEN OTHERS THEN
-                v_cod_correo := 0;
-        END;
-
-        v_cod_correo := v_cod_correo + 1;
-        */
         SELECT VVE_CORREO_PROF_SQ01.NEXTVAL INTO V_COD_CORREO FROM DUAL;
         --<F - REQ.89338 - SOPORTE LEGADOS - 22/05/2020>
         p_ret_correo := v_cod_correo;

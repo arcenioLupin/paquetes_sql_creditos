@@ -28,29 +28,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant_proforma AS
   p_txt_etiq_sap    varchar2(250);        --REQ 90917_L_Absorcion_Legados_Fase_2
   BEGIN
   
-    --<I-86268 obteniendo el año de fabricación>
-    /*
-     BEGIN  
-      SELECT
-           DISTINCT  vpv.ano_fabricacion_veh
-        INTO  v_ano_fabricacion   
-        FROM vve_pedido_veh a, v_pedido_veh vpv, vve_ficha_vta_pedido_veh z
-       WHERE a.num_pedido_veh = vpv.num_pedido_veh
-         AND a.cod_cia = vpv.cod_cia
-         AND a.cod_prov = vpv.cod_prov
-         AND a.num_pedido_veh = z.num_pedido_veh
-         AND a.cod_cia = z.cod_cia
-         AND a.cod_prov = z.cod_prov
-         AND nvl(z.ind_inactivo, 'N') = 'N'
-         AND z.num_ficha_vta_veh = p_num_ficha_vta_veh
-         AND (p_num_prof_veh IS NULL OR z.num_prof_veh = p_num_prof_veh);
-      EXCEPTION
-        WHEN NO_DATA_FOUND THEN
-          v_ano_fabricacion :=NULL;
-     END;  
-     */    
-     --<F-86268 obteniendo el año de fabricación>
-  
     OPEN p_ret_cursor FOR
       SELECT pv.num_ficha_vta_veh,
              pv.nur_ficha_vta_prof,
@@ -88,7 +65,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant_proforma AS
              pc.fec_crea_reg    AS fech_crea,
              pc.cod_moneda_prof AS tipo_mone,
              pd.val_dcto_veh    AS valo_desc
-             --, (PD.CAN_VEH*PD.VAL_PRE_VEH)/1.18 - PD.VAL_DCTO_VEH AS VALO_NETO
             ,
              pd.val_vtn_veh AS valo_neto
              --<F 84611>
@@ -940,13 +916,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant_proforma AS
                                   AND ind_inactivo = 'N'));
                                
       --< I Req. 87567 E2.1 ID:desasignar proforma avilca 05/03/2021>                        
-       -- Inactivamos las garantias  asociadas a la solicitud de crédito 
-          /*UPDATE vve_cred_soli_gara 
-           SET ind_inactivo = 'S',
-            cod_usua_modi_regi = p_co_usuario_inactiva,
-            fec_modi_regi = SYSDATE
-          WHERE cod_soli_cred = v_cod_soli_cred
-            AND ind_inactivo = 'N';*/
      -- Desvincula pedido de la garantía
 
         UPDATE vve_cred_maes_gara 
@@ -1549,31 +1518,24 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant_proforma AS
          SYSDATE,
          p_cod_usua_web);
     ELSE
-      /*IF p_ind_inactivo = 'S' THEN
-        UPDATE vve_five_prof_chek
-           SET ind_inactivo = p_ind_inactivo
-         WHERE cod_five_prof_chek = p_num_chek;
-      ELSE*/
         UPDATE vve_five_prof_chek
            SET cod_chek         = p_cod_chek,
                fec_modi_reg     = SYSDATE,
                cod_usuario_modi = p_cod_usua_web,
                ind_inactivo     = p_ind_inactivo
          WHERE cod_five_prof_chek = p_num_chek;
-      /*END IF;*/
-    
     END IF;
     p_ret_mens := 'Se actualizó correctamente';
     p_ret_esta := 1;
-    -- COMMIT;
+
   EXCEPTION
     WHEN ve_error THEN
       p_ret_esta := 0;
-      -- ROLLBACK;
+
     WHEN OTHERS THEN
       p_ret_esta := -1;
       p_ret_mens := SQLERRM;
-      -- ROLLBACK;
+
       pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
                                           'SP_ACTU_CHEK_PROF_FIVE',
                                           p_cod_usua_sid,
@@ -1622,7 +1584,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant_proforma AS
           ON descsunarp.cod_color_sunarp = descolr.cod_color_sunarp
        WHERE codcolr.num_ficha_vta_veh = p_num_ficha_vta_veh
          AND codcolr.num_prof_veh = p_num_prof_veh;
-         --AND nvl(codcolr.ind_inactivo, 'N') = 'N';
      ELSE
        OPEN p_ret_cursor FOR
        SELECT codcolr.cod_five_prof_colo,
@@ -1774,7 +1735,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant_proforma AS
        WHERE v.cod_equipo_local_veh = e.cod_equipo_local_veh
          AND v.val_equipo_local_veh > 0
          AND v.can_equipo_local_veh > 1
-            --AND E.COD_TIPO_EQUIPO_LOCAL_VEH    = '94'
          AND v.num_prof_veh = p_num_prof_veh;
   
     p_ret_esta := 1;
@@ -1827,7 +1787,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant_proforma AS
   
     SELECT seq_vve_five_bono.nextval INTO v_cod_five_bono FROM dual;
   
-    -- V_NUM_REG_NUR_FICHA_PROF := P_COD_FIVE_BONO + 1;
   
     INSERT INTO vve_five_bono
       (cod_five_bono,
@@ -2066,13 +2025,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant_proforma AS
     ) RETURN VARCHAR2 IS
         p_txt_etiq_sap   vve_vari_impr.txt_etiq%TYPE;
     BEGIN
-        /*SELECT
-            a.des_familia_veh
-        INTO v_des_familia_veh
-        FROM
-            vve_familia_veh a
-        WHERE
-            a.cod_familia_veh = p_cod_familia_veh;*/
          IF   p_tip_orig_crea = '3'  THEN    
              SELECT vi.txt_etiq 
                INTO p_txt_etiq_sap   
@@ -2080,7 +2032,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant_proforma AS
               WHERE vi.DES_VARI='PROFORMA_SAP';
                   
              p_txt_etiq_sap := p_txt_etiq_sap;
-             --p_num_prof_veh; --aplicar logica para generar la ruta de proforma sap
            END IF;
 
         return(p_txt_etiq_sap);

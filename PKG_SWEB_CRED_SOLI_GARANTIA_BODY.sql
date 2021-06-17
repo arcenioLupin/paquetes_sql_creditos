@@ -178,8 +178,6 @@ PROCEDURE sp_list_garantia
                     NULL AS nro_chasis,
                      'RG01'                  val_nro_rango,
                     NULL AS nro_placa,
-                    --(SELECT pvd.VAL_PRE_VEH FROM vve_proforma_veh_det pvd WHERE pvd.num_prof_veh = v_num_prof_veh )val_const_gar,
-                    --(SELECT (pvd.VAL_PRE_VEH*0.8) FROM vve_proforma_veh_det pvd WHERE pvd.num_prof_veh = c_lista.num_prof_veh )val_realiz_gar,
                     v_val_pre_veh*v_val_porc_depr val_const_gar,
                     v_val_pre_veh*v_val_porc_depr val_realiz_gar,               
                     
@@ -294,8 +292,7 @@ PROCEDURE sp_list_garantia
         mg.val_ano_fab AS ANHO_FABRICACION,
         mg.nro_motor AS MOTOR,
         mg.val_realiz_gar,
-        mg.val_const_gar,
-        -- (SELECT  PKG_SWEB_CRED_SOLI_GARANTIA.fn_obt_val_const_depr (p_cod_soli_cred,cod_garantia, mg.cod_tipo_veh,'A') FROM DUAL) val_const_gar,
+        mg.val_const_gar,        
         mg.val_mont_otor_hip,
         mg.nro_placa,
         mg.nro_chasis,
@@ -343,19 +340,13 @@ PROCEDURE sp_list_garantia
         )AS estado_civil,
         (SELECT nom_marca AS descripcion FROM gen_marca m WHERE m.cod_marca = mg.cod_marca) AS DES_MARCA,
         (SELECT t.descripcion FROM vve_tabla_maes t WHERE t.cod_grupo = '106' AND t.cod_tipo = mg.val_nro_rango) AS DES_RANGO,
-        (SELECT descripcion from vve_tabla_maes where cod_grupo = '111' and valor_adic_1 = mg.cod_tipo_actividad) AS DES_ACTIVIDAD,
-        --(SELECT ta.des_tipo_actividad AS descripcion FROM vve_credito_tipo_actividad ta WHERE ta.cod_tipo_actividad = mg.cod_tipo_actividad) AS DES_ACTIVIDAD,
+        (SELECT descripcion from vve_tabla_maes where cod_grupo = '111' and valor_adic_1 = mg.cod_tipo_actividad) AS DES_ACTIVIDAD,        
         (SELECT des_tipo_veh AS descripcion FROM vve_tipo_veh ve WHERE ve.cod_tipo_veh = mg.cod_tipo_veh) AS DES_TIPO_VEH,
         (CASE WHEN ind_otor='F' 
             THEN (SELECT txt_nomb_pers||' '||txt_apel_pate_pers||' '||txt_apel_mate_pers as nombre_completo 
             FROM vve_cred_mae_aval WHERE cod_per_aval = mg.cod_pers_prop)
         ELSE (SELECT nom_perso FROM gen_persona WHERE cod_perso = mg.cod_pers_prop) END) AS DES_PERS_PROP,
          ---- E1-1-87567-avilca-06/08/2020- Modficación Garantias -Ini
-                 /*
-                (SELECT des_nombre AS descripcion FROM gen_mae_departamento WHERE cod_id_departamento = mg.cod_departamento) AS departamento,
-                (SELECT des_nombre AS descripcion FROM gen_mae_provincia WHERE cod_id_provincia = mg.cod_provincia) AS provincia,
-                (SELECT des_nombre AS descripcion FROM gen_mae_distrito WHERE cod_id_distrito = mg.cod_distrito) AS distrito,
-                */
                 (SELECT nom_ubigeo as descripcion   
                  FROM gen_ubigeo WHERE cod_dpto = mg.cod_departamento and cod_provincia = mg.cod_provincia 
                     and cod_distrito = mg.cod_distrito)distrito,   
@@ -840,16 +831,7 @@ PROCEDURE sp_list_garantia
                         g.nro_placa,
                         g.cod_tipo_actividad,
                         g.val_const_gar  as val_const_gar,
-                        /*(SELECT  PKG_SWEB_CRED_SOLI_GARANTIA.fn_obt_val_const_depr (p_cod_soli_cred,
-                                                                                     g.cod_garantia, 
-                                                                                     g.cod_tipo_veh,
-                                                                                     g.val_const_gar
-                                                                                     ) FROM DUAL) as val_const_gar,*/
-                       g.val_const_gar as val_realiz_gar,                                                                                     
-                       /*(SELECT  PKG_SWEB_CRED_SOLI_GARANTIA.fn_obt_val_const_depr (p_cod_soli_cred,
-                                                                                    g.cod_garantia,
-                                                                                    g.cod_tipo_veh,
-                                                                                    g.val_const_gar) FROM DUAL)as val_realiz_gar, */
+                        g.val_const_gar as val_realiz_gar,                                                                                     
                         g.cod_of_registral,
                         g.val_anos_deprec,
                         g.cod_moneda,
@@ -878,17 +860,10 @@ PROCEDURE sp_list_garantia
                         (SELECT t.descripcion FROM vve_tabla_maes t WHERE t.cod_grupo = '106' AND t.cod_tipo = g.val_nro_rango) AS des_rango,
                         g.tipo_actividad as des_actividad,
                         (SELECT des_tipo_veh AS descripcion FROM vve_tipo_veh ve WHERE ve.cod_tipo_veh = g.cod_tipo_veh) des_tipo_veh,
-                        (SELECT nom_perso FROM gen_persona WHERE cod_perso = g.cod_pers_prop) des_pers_prop,
-                        
-                        --(SELECT des_nombre AS descripcion FROM gen_mae_distrito WHERE cod_id_distrito = g.cod_distrito) AS distrito,
-                        --(SELECT des_nombre AS descripcion FROM gen_mae_provincia WHERE cod_id_provincia = g.cod_provincia) AS provincia,
-                        --(SELECT des_nombre AS descripcion FROM gen_mae_departamento WHERE cod_id_departamento = g.cod_departamento) AS departamento,
-                        
+                        (SELECT nom_perso FROM gen_persona WHERE cod_perso = g.cod_pers_prop) des_pers_prop,                       
                         (SELECT nom_ubigeo as descripcion  FROM gen_ubigeo WHERE cod_dpto = g.cod_departamento and cod_provincia = g.cod_provincia and cod_distrito = g.cod_distrito) AS distrito,
                         (SELECT nom_ubigeo as descripcion FROM gen_ubigeo WHERE cod_dpto = g.cod_departamento and cod_provincia = g.cod_provincia and cod_distrito = '00') AS provincia,
-                        (SELECT nom_ubigeo as descripcion  FROM gen_ubigeo WHERE cod_dpto = g.cod_departamento and cod_provincia = '00' and cod_distrito = '00') AS departamento,
-                        
-                        
+                        (SELECT nom_ubigeo as descripcion  FROM gen_ubigeo WHERE cod_dpto = g.cod_departamento and cod_provincia = '00' and cod_distrito = '00') AS departamento,                                            
                         (SELECT descripcion FROM vve_tabla_maes WHERE cod_grupo = '102' AND valor_adic_1 = g.ind_tipo_bien) tipo_bien,
                         (SELECT descripcion FROM vve_tabla_maes WHERE cod_grupo = '103' AND valor_adic_1 = g.ind_otor) tipo_otorgante,    
                         (SELECT descripcion FROM vve_tabla_maes t INNER JOIN gen_persona g ON (g.cod_tipo_perso = t.valor_adic_1)
@@ -910,162 +885,6 @@ PROCEDURE sp_list_garantia
             and sg.cod_gara not in (select cod_gara from vve_cred_soli_gara where cod_soli_cred = p_cod_soli_cred and ind_inactivo = 'N');
    --<F Req. 87567 E2.1 ID 134-145 AVILCA 04/08/2020>    
      
-/*
-        SELECT  g.cod_garantia, 
-                g.ind_tipo_garantia,
-                g.ind_tipo_bien,
-                g.ind_otor,
-                g.cod_pers_prop,
-                g.cod_marca,
-                g.txt_modelo,
-                g.cod_tipo_veh,
-                g.nro_motor,
-                g.txt_carroceria,
-                g.fec_fab_const,
-                g.nro_chasis,
-                g.val_nro_rango,
-                g.nro_placa,
-                g.cod_tipo_actividad,
-                --g.val_const_gar,
-                (SELECT  PKG_SWEB_CRED_SOLI_GARANTIA.fn_obt_val_const_depr (p_cod_soli_cred,
-                                                                             g.cod_garantia, 
-                                                                             g.cod_tipo_veh,
-                                                                             g.val_const_gar
-                                                                             ) FROM DUAL) as val_const_gar,
-                --(g.val_realiz_gar - (TO_NUMBER(EXTRACT(YEAR FROM sysdate) - g.val_ano_fab) / 100) * g.val_realiz_gar) as val_realiz_gar,
-                (SELECT  PKG_SWEB_CRED_SOLI_GARANTIA.fn_obt_val_const_depr (p_cod_soli_cred,
-                                                                            g.cod_garantia,
-                                                                            g.cod_tipo_veh,
-                                                                            g.val_const_gar) FROM DUAL)as val_realiz_gar,
-                g.cod_of_registral,
-                g.val_anos_deprec,
-                g.cod_moneda,
-                g.des_descripcion,
-                g.ind_adicional,
-                g.num_titulo_rpv,
-                g.nro_tarj_prop_veh,
-                g.nro_partida,
-                g.ind_reg_mob_contratos,
-                g.ind_reg_jur_bien,
-                g.txt_info_mod_gar,
-                g.ind_ratifica_gar,
-                g.val_nvo_monto,
-                g.val_nvo_val,
-                g.val_mont_otor_hip,
-                g.txt_direccion,
-                g.cod_distrito,
-                g.cod_provincia,
-                g.cod_departamento,
-                g.cod_cliente,
-                g.txt_marca,
-                s.cod_oper_rel,
-                (CASE WHEN g.ind_tipo_garantia='M' THEN 'Mobiliaria' ELSE 'Hipotecaria' END)  tipo_garantia_desc,
-                g.val_ano_fab,
-                (SELECT nom_marca AS descripcion FROM gen_marca m WHERE m.cod_marca= g.cod_marca) AS des_marca,
-                (SELECT t.descripcion FROM vve_tabla_maes t WHERE t.cod_grupo = '106' AND t.cod_tipo = g.val_nro_rango) AS des_rango,
-                (SELECT ta.des_tipo_actividad AS descripcion FROM vve_credito_tipo_actividad ta
-                  WHERE ta.cod_tipo_actividad = g.cod_tipo_actividad) des_actividad,
-                (SELECT des_tipo_veh AS descripcion FROM vve_tipo_veh ve WHERE ve.cod_tipo_veh = g.cod_tipo_veh) des_tipo_veh,
-                (SELECT nom_perso FROM gen_persona WHERE cod_perso = g.cod_pers_prop) des_pers_prop,
-                (SELECT des_nombre AS descripcion FROM gen_mae_distrito WHERE cod_id_distrito = g.cod_distrito) AS distrito,
-                (SELECT des_nombre AS descripcion FROM gen_mae_provincia WHERE cod_id_provincia = g.cod_provincia) AS provincia,
-                (SELECT des_nombre AS descripcion FROM gen_mae_departamento WHERE cod_id_departamento = g.cod_departamento) AS departamento,
-                (SELECT descripcion FROM vve_tabla_maes WHERE cod_grupo = '102' AND valor_adic_1 = g.ind_tipo_bien) tipo_bien,
-                (SELECT descripcion FROM vve_tabla_maes WHERE cod_grupo = '103' AND valor_adic_1 = g.ind_tipo_bien) tipo_otorgante,    
-                (SELECT descripcion FROM vve_tabla_maes t INNER JOIN gen_persona g ON (g.cod_tipo_perso = t.valor_adic_1)
-                  WHERE t.cod_grupo = '105' AND g.cod_perso = g.cod_pers_prop) AS tipo_persona,
-                (SELECT descripcion FROM vve_tabla_maes t INNER JOIN gen_persona g ON (NVL(g.cod_estado_civil,'S') = t.valor_adic_1)
-                  WHERE t.cod_grupo = '104' AND g.cod_perso = g.cod_pers_prop) AS estado_civil,
-                 g.ind_pre_const,
-                 g.ind_seg_dive,
-                 g.val_nro_asie  
-        FROM vve_cred_maes_gara g, vve_cred_soli_gara sg, vve_cred_soli s 
-        WHERE sg.cod_soli_cred = s.cod_soli_cred
-        AND g.cod_pers_prop = p_cod_cliente 
-        AND g.cod_garantia = sg.cod_gara 
-        AND g.ind_adicional = 'S' 
-        AND g.ind_tipo_garantia = p_ind_tipo_garantia
-        AND 
-        NOT EXISTS (SELECT 1 FROM vve_cred_soli_gara sg2 WHERE sg2.cod_gara = g.cod_garantia AND sg2.cod_soli_cred = p_cod_soli_cred)
-        UNION
-        SELECT  g.cod_garantia, 
-                g.ind_tipo_garantia,
-                g.ind_tipo_bien,
-                g.ind_otor,
-                g.cod_pers_prop,
-                g.cod_marca,
-                g.txt_modelo,
-                g.cod_tipo_veh,
-                g.nro_motor,
-                g.txt_carroceria,
-                g.fec_fab_const,
-                g.nro_chasis,
-                g.val_nro_rango,
-                g.nro_placa,
-                g.cod_tipo_actividad,
-                --g.val_const_gar,
-                 (SELECT  PKG_SWEB_CRED_SOLI_GARANTIA.fn_obt_val_const_depr (p_cod_soli_cred,
-                                                                             g.cod_garantia, 
-                                                                             g.cod_tipo_veh,
-                                                                             g.val_const_gar
-                                                                             ) FROM DUAL) as val_const_gar,
-                --(g.val_realiz_gar - (TO_NUMBER(EXTRACT(YEAR FROM sysdate) - g.val_ano_fab) / 100) * g.val_realiz_gar) as val_realiz_gar,
-                (SELECT  PKG_SWEB_CRED_SOLI_GARANTIA.fn_obt_val_const_depr (p_cod_soli_cred,
-                                                                             g.cod_garantia, 
-                                                                             g.cod_tipo_veh,
-                                                                             g.val_const_gar
-                                                                             ) FROM DUAL)as val_realiz_gar,
-                g.cod_of_registral,
-                g.val_anos_deprec,
-                g.cod_moneda,
-                g.des_descripcion,
-                g.ind_adicional,
-                g.num_titulo_rpv,
-                g.nro_tarj_prop_veh,
-                g.nro_partida,
-                g.ind_reg_mob_contratos,
-                g.ind_reg_jur_bien,
-                g.txt_info_mod_gar,
-                g.ind_ratifica_gar,
-                g.val_nvo_monto,
-                g.val_nvo_val,
-                g.val_mont_otor_hip,
-                g.txt_direccion,
-                g.cod_distrito,
-                g.cod_provincia,
-                g.cod_departamento,
-                g.cod_cliente,
-                g.txt_marca,
-                s.cod_oper_rel,
-                (CASE WHEN g.ind_tipo_garantia='M' THEN 'Mobiliaria' ELSE 'Hipoticaria' END)  tipo_garantia_desc,
-                g.val_ano_fab,
-                (SELECT nom_marca AS descripcion FROM gen_marca m WHERE m.cod_marca= g.cod_marca) AS des_marca,
-                (SELECT t.descripcion FROM vve_tabla_maes t WHERE t.cod_grupo = '106' AND t.cod_tipo = g.val_nro_rango) AS des_rango,
-                (SELECT ta.des_tipo_actividad AS descripcion FROM vve_credito_tipo_actividad ta
-                  WHERE ta.cod_tipo_actividad = g.cod_tipo_actividad) des_actividad,
-                (SELECT des_tipo_veh AS descripcion FROM vve_tipo_veh ve WHERE ve.cod_tipo_veh = g.cod_tipo_veh) des_tipo_veh,
-                (SELECT nom_perso FROM gen_persona WHERE cod_perso = g.cod_pers_prop) des_pers_prop,
-                (SELECT des_nombre AS descripcion FROM gen_mae_distrito WHERE cod_id_distrito = g.cod_distrito) AS distrito,
-                (SELECT des_nombre AS descripcion FROM gen_mae_provincia WHERE cod_id_provincia = g.cod_provincia) AS provincia,
-                (SELECT des_nombre AS descripcion FROM gen_mae_departamento WHERE cod_id_departamento = g.cod_departamento) AS departamento,
-                (SELECT descripcion FROM vve_tabla_maes WHERE cod_grupo = '102' AND valor_adic_1 = g.ind_tipo_bien) tipo_bien,
-                (SELECT descripcion FROM vve_tabla_maes WHERE cod_grupo = '103' AND valor_adic_1 = g.ind_tipo_bien) tipo_otorgante,    
-                (SELECT descripcion FROM vve_tabla_maes t INNER JOIN gen_persona g ON (g.cod_tipo_perso = t.valor_adic_1)
-                  WHERE t.cod_grupo = '105' AND g.cod_perso = g.cod_pers_prop) AS tipo_persona,
-                (SELECT descripcion FROM vve_tabla_maes t INNER JOIN gen_persona g ON (NVL(g.cod_estado_civil,'S') = t.valor_adic_1)
-                  WHERE t.cod_grupo = '104' AND g.cod_perso = g.cod_pers_prop) AS estado_civil,
-                g.ind_pre_const,
-                g.ind_seg_dive,
-                g.val_nro_asie
-        FROM vve_cred_maes_gara g, vve_cred_soli_gara sg, vve_cred_soli s  
-        where sg.cod_soli_cred = s.cod_soli_cred 
-        and s.cod_clie = p_cod_cliente
-        and g.cod_garantia = sg.cod_gara 
-        and g.ind_adicional = 'N' 
-        and g.val_nro_rango IS NULL 
-        and g.ind_tipo_garantia = p_ind_tipo_garantia 
-        AND NOT EXISTS (SELECT 1 FROM vve_cred_soli_gara sg2 WHERE sg2.cod_gara = g.cod_garantia AND sg2.cod_soli_cred = p_cod_soli_cred);
-*/
   p_ret_esta := 1;
   p_ret_mens := 'La consulta se realizó de manera exitosa';
   END sp_list_garantia_histo;
@@ -1199,10 +1018,7 @@ PROCEDURE sp_list_garantia
   ) AS
   BEGIN
     OPEN p_ret_cursor FOR
-      --select * from generico.gen_mae_pais;
       SELECT pa.cod_id_pais AS cod_pais, pa.des_nombre AS nom_pais FROM gen_mae_pais pa, gen_mae_sociedad so WHERE pa.cod_id_pais = so.cod_id_pais AND so.cod_cia = p_cod_cia;
-      --select * from gen_mae_sociedad;
-      --SELECT '001' cod_pais,'PERU' nom_pais FROM DUAL;
      p_ret_esta := 1;
      p_ret_mens := 'La consulta se realizó de manera exitosa';
   EXCEPTION
@@ -1232,8 +1048,7 @@ PROCEDURE sp_list_garantia
     p_ret_mens          OUT VARCHAR2
   ) AS
   BEGIN
-    OPEN p_ret_cursor FOR
-      /*SELECT cod_id_departamento,des_nombre FROM gen_mae_departamento WHERE cod_id_pais = p_cod_pais ORDER BY cod_id_departamento ASC;*/
+    OPEN p_ret_cursor FOR      
        SELECT cod_dpto as cod_id_departamento , nom_ubigeo as des_nombre   
        FROM gen_ubigeo WHERE cod_dpto <> '00' and cod_provincia ='00' and cod_distrito = '00' ORDER BY cod_id_departamento ASC;
      p_ret_esta := 1;
@@ -1265,8 +1080,7 @@ PROCEDURE sp_list_garantia
     p_ret_mens          OUT VARCHAR2
   ) AS
   BEGIN
-    OPEN p_ret_cursor FOR
-      /*SELECT cod_id_provincia,des_nombre FROM gen_mae_provincia WHERE cod_id_departamento = p_cod_depa ORDER BY cod_id_provincia;*/
+    OPEN p_ret_cursor FOR      
        SELECT cod_provincia as cod_id_provincia , nom_ubigeo as des_nombre   
        FROM gen_ubigeo WHERE cod_dpto = p_cod_depa and cod_provincia <> '00' and cod_distrito = '00' ORDER BY cod_id_provincia ASC;
 
@@ -1301,8 +1115,7 @@ PROCEDURE sp_list_garantia
     p_ret_mens          OUT VARCHAR2
   ) AS
   BEGIN
-    OPEN p_ret_cursor FOR
-      /*SELECT cod_id_distrito,des_nombre FROM gen_mae_distrito WHERE cod_id_provincia = p_cod_prov ORDER BY cod_id_distrito ASC;*/
+    OPEN p_ret_cursor FOR     
       SELECT cod_distrito as cod_id_distrito , nom_ubigeo as des_nombre   
       FROM gen_ubigeo WHERE cod_dpto = p_cod_depa and cod_provincia = p_cod_prov and cod_distrito <> '00' ORDER BY cod_id_distrito ASC;
 
@@ -1329,25 +1142,6 @@ PROCEDURE sp_list_garantia
      v_cursor SYS_REFCURSOR;
      v_cod_garantia VARCHAR2(500);
   BEGIN
-    /*IF (p_list_gara_vig IS NULL OR p_list_gara_vig='') THEN
-        UPDATE vve_cred_soli_gara s
-           SET s.ind_inactivo = 'S'
-         WHERE s.cod_soli_cred = p_cod_soli_cred
-           AND EXISTS(SELECT 1
-                        FROM vve_cred_maes_gara m
-                       WHERE m.cod_garantia =s.cod_gara
-                         AND m.ind_tipo_garantia = p_ind_tipo_garantia);
-    ELSE
-        UPDATE vve_cred_soli_gara s
-           SET s.ind_inactivo = 'S'
-         WHERE s.cod_gara NOT IN (SELECT column_value 
-                                   FROM table(fn_varchar_to_table(p_list_gara_vig)))
-           AND s.cod_soli_cred = p_cod_soli_cred
-           AND EXISTS(SELECT 1
-                        FROM vve_cred_maes_gara m
-                       WHERE m.cod_garantia =s.cod_gara
-                         AND m.ind_tipo_garantia = p_ind_tipo_garantia);
-    END IF;*/
     UPDATE vve_cred_soli_gara sg SET 
           sg.ind_inactivo = 'S',  
           cod_usua_modi_regi = p_cod_usua_web, 
@@ -1375,19 +1169,7 @@ PROCEDURE sp_list_garantia
   AS
     v_cod_area_vta       VARCHAR2(10);
     v_cod_familia_veh    VARCHAR2(10);
-    /*v_val_can_anos1      NUMBER;
-    v_val_can_anos2      NUMBER;
-    v_val_can_anos3      NUMBER;*/
     v_val_ano_fab        NUMBER;
-    /*v_val_can_anos_aux1  NUMBER;
-    v_val_can_anos_aux2  NUMBER;
-    v_val_can_anos_aux3  NUMBER;
-    v_val_porc_depr1     NUMBER;
-    v_val_porc_depr2     NUMBER;
-    v_val_porc_depr3     NUMBER;
-    v_fec_modi_regi      DATE;
-    v_val_pre_veh        NUMBER;
-    v_val_const_gar      NUMBER;*/
     v_val_const_depr     NUMBER :=0;
     v_cod_cia            VARCHAR2(10);	
     v_num_prof           VARCHAR2(20):=NULL;	
@@ -1457,27 +1239,7 @@ PROCEDURE sp_list_cobergara_fc
         v_cant_periodo integer;
  -- <-- F JAHERNANDEZ REQ. 89930
     BEGIN
-/*  JAHERNANDEZ REQ--89930    comentado por Jorge Hernandez
-         BEGIN
-            SELECT SUM(mg.val_realiz_gar) INTO val_realiz_gar_total
-            FROM vve_cred_maes_gara mg, vve_cred_soli_gara sg
-            WHERE sg.cod_soli_cred = p_cod_soli_cred
-            and  mg.cod_garantia = sg.cod_gara
-            and sg.ind_inactivo = 'N';
-        END;
 
-        OPEN p_ret_cursor FOR
-            SELECT round(val_realiz_gar_total/x.monto_letra,2) ratio_cob,x.ano
-            from (
-                 select sum(sl.val_mon_conc) monto_letra, to_char(fec_venc,'yyyy') ano
-                 from vve_cred_simu_lede sl, vve_cred_simu s
-                 where s.cod_soli_cred = p_cod_soli_cred
-                 and s.ind_inactivo = 'N'
-                 and sl.cod_simu = s.cod_simu
-                 and sl.cod_conc_col = 3 -- 3= capital / 5=cuota
-                 group by to_char(fec_venc,'yyyy')
-                )x ORDER BY x.ano;  
-*/
 -- <-- I JAHERNANDEZ REQ. 89930  
             v_cod_area_vta :='';
             v_cod_familia_veh :='';

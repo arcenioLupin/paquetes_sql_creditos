@@ -52,37 +52,7 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_SOLI_LXC AS
             FROM arlcrd 
             WHERE (cod_oper = v_cod_oper AND v_cod_oper IS NOT NULL)
             order by tipo_doc, no_docu;
-             
-                /*SELECT tipo_doc, no_docu, moneda, saldo, 
-                    TO_CHAR(fecha_vence, 'DD/MM/YYYY') AS fecha_vence, 
-                    no_cliente, grupo, cod_oper 
-                    FROM arccmd a
-                    WHERE a.no_cia = p_no_cia
-                    AND a.grupo = '01'  -- codigo del grupo del cliente
-                    AND a.no_soli in 
-                    (select num_pedido_veh from vve_cred_soli_pedi_veh where cod_soli_cred = p_cod_soli_cred AND cod_cia = p_no_cia)
-                    AND a.no_cliente = p_no_cliente
-                    AND a.estado != 'P' AND (nvl(a.saldo,0) != 0 ) 
-                UNION ALL
-                SELECT TIPO_DOC, NO_FACTU AS NO_DOCU, MONEDA, VAL_PRE_DOCU AS SALDO, TO_CHAR(FECHA, 'DD/MM/YYYY') AS fecha_vence,
-                    NO_CLIENTE, GRUPO, NULL AS COD_OPER
-                    FROM ARFAFE WHERE NO_ORDEN_DESC 
-                    IN (SELECT NUM_PEDIDO_VEH FROM VVE_CRED_SOLI_PEDI_VEH WHERE cod_soli_cred = p_cod_soli_cred)
-                 order by tipo_doc, no_docu;
-                
-            SELECT NVL(SUM(saldo), 0) INTO v_sum_docu_arcc
-                FROM arccmd a
-                WHERE a.no_cia = p_no_cia
-                AND a.grupo = '01'  -- codigo del grupo del cliente
-                AND a.no_soli in 
-                (select num_pedido_veh from vve_cred_soli_pedi_veh where cod_soli_cred = p_cod_soli_cred AND cod_cia = p_no_cia)
-                AND a.no_cliente = p_no_cliente
-                AND a.estado != 'P' AND (nvl(a.saldo,0) != 0 ) order by a.tipo_doc, a.no_docu;
-                
-            SELECT NVL(SUM(VAL_PRE_DOCU), 0) INTO v_sum_arfa
-                    FROM ARFAFE WHERE NO_ORDEN_DESC 
-                    IN (SELECT NUM_PEDIDO_VEH FROM VVE_CRED_SOLI_PEDI_VEH WHERE cod_soli_cred = p_cod_soli_cred);
-            */        
+                   
             OPEN p_ret_cursor_total FOR
               --  SELECT (v_sum_docu_arcc + v_sum_arfa) AS TOTAL FROM DUAL;
             SELECT SUM(X.SALDO) as TOTAL FROM 
@@ -628,22 +598,7 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_SOLI_LXC AS
         dbms_output.put_line(v_cod_empr);
         dbms_output.put_line(v_cod_clie);
     
-        IF v_cop_oper IS NOT NULL THEN
-    
-            /*OPEN p_ret_cursor FOR
-                SELECT 
-                    monto_inicial AS saldo_inicial, 
-                    amortizacion, 
-                    intereses, 
-                    nvl(val_seguro_veh + igv_seguro, 0) AS seguro, 
-                    cuota, 
-                    nvl(monto_inicial - amortizacion, 0) AS saldo_final,
-                    f_vence AS fecha_venc
-                FROM 
-                    ARLCML 
-                WHERE 
-                    cod_oper = v_cop_oper;*/
-                    
+        IF v_cop_oper IS NOT NULL THEN                   
             OPEN p_ret_cursor FOR      
                 SELECT   
                     b.no_letra, b.nro_sec, b.ind_cuota_ext, 
@@ -666,26 +621,12 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_SOLI_LXC AS
                     a.cod_oper    = b.cod_oper(+)
                ORDER BY
                     b.nro_sec;
-                    
-                    
-            /*OPEN p_ret_totales FOR       
-                SELECT 
-                    COUNT(*) AS total_cuotas,
-                    SUM(monto_inicial) AS total_financiar, 
-                    SUM(amortizacion) AS total_amortizacion, 
-                    SUM(intereses) AS total_interes, 
-                    SUM(nvl(val_seguro_veh + igv_seguro, 0)) as total_seguro, 
-                    SUM(cuota) AS total_cuota
-                FROM 
-                    ARLCML 
-                WHERE 
-                    cod_oper = v_cop_oper;  */
+                                       
                     
             OPEN p_ret_totales FOR 
                 Select  
                     COUNT(*) AS total_cuotas,
                     --<I Req. 87567 E2.1 ID## avilca 25/02/2021>
-                    --SUM(CASE WHEN nvl(IND_PERIODO_GRACIA,'N') = 'N' THEN b.monto_inicial ELSE 0 END) AS total_financiar, 
                     SUM(CASE WHEN nvl(IND_PERIODO_GRACIA,'N') = 'N' THEN b.amortizacion ELSE 0 END) AS total_financiar, 
                     --<F Req. 87567 E2.1 ID## avilca 25/02/2021>
                     SUM(CASE WHEN nvl(IND_PERIODO_GRACIA,'N') = 'N' THEN b.amortizacion ELSE 0 END) total_amortizacion,

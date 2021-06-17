@@ -206,13 +206,6 @@ PROCEDURE sp_list_resumen
                     AND m.val_ano_eeff>=(EXTRACT(YEAR FROM sysdate)-4+1)
                ORDER BY val_ano_eeff;
                
-               /*
-                   FROM vve_cred_mae_eeff
-                  WHERE cod_cliente = p_cod_cliente
-                    AND val_ano_eeff<=(EXTRACT(YEAR FROM sysdate)) 
-                    AND val_ano_eeff>=(EXTRACT(YEAR FROM sysdate)-4+1)
-
-               */
            -- <F ID 280 LRodriguez 26.11.19>              
             EXCEPTION
                 WHEN NO_DATA_FOUND THEN

@@ -39,19 +39,7 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_SOLI_DOCUMENTO AS
       cantidad_registros NUMBER := 0;
       v_TOTAL NUMBER := 0;
   BEGIN
-  ---I--90201--Cambio de estadp // Se comenta porque está provocando fallas en diversas pestañas de la app/ avilca-25/09/2020
-      /*SELECT 
-        count(t.cod_estado) 
-        into v_TOTAL
-        FROM vve_cred_fina_docu f, VVE_CRED_SOLI t
-         WHERE  f.IND_OBLIG='S'
-         and t.cod_estado='ES03'
-         AND t.cod_soli_cred=f.cod_soli_cred
-         AND t.cod_soli_cred=p_cod_soli_cred
-         AND (f.txt_ruta_doc is null or trim(f.txt_ruta_doc)='');
-       IF  v_TOTAL>0 THEN
-        update   VVE_CRED_SOLI  set cod_estado='ES02' WHERE cod_soli_cred=p_cod_soli_cred;
-        END IF;*/
+
       ---F--90201--Cambio de estadp
      SELECT count(1)
           INTO cantidad_registros

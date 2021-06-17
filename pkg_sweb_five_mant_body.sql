@@ -378,24 +378,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant AS
     BEGIN
       IF p_cod_tipo_pago = 'P' THEN
         --P CREDITO
-        /* FOR i IN (SELECT *
-         FROM venta.vve_aut_ficha_vta
-        WHERE ind_aut_ficha_vta IN ('A', 'P')
-          AND (nvl(ind_aut_ped, 'N') = 'N' AND
-              (NOT EXISTS (SELECT 1
-                              FROM vve_aut_ficha_vta_exc a
-                             WHERE a.cod_aut_ficha_vta =
-                                   venta.vve_aut_ficha_vta.cod_aut_ficha_vta
-                               AND nvl(a.ind_inactivo, 'N') = 'N') OR
-               NOT EXISTS
-               (SELECT 1
-                   FROM vve_aut_ficha_vta_exc a
-                  WHERE a.cod_aut_ficha_vta =
-                        venta.vve_aut_ficha_vta.cod_aut_ficha_vta
-                    AND a.cod_area_vta = p_cod_area_vta
-                    AND nvl(a.ind_inactivo, 'N') = 'N')))
-          AND nvl(ind_inactivo, 'N') = 'N'
-        ORDER BY num_orden)*/
         FOR i IN (SELECT *
                     FROM venta.vve_aut_ficha_vta
                    WHERE ind_aut_ficha_vta IN ('A', 'P')
@@ -424,24 +406,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant AS
              'N');
         END LOOP;
       ELSE
-        /* FOR i IN (SELECT *
-         FROM venta.vve_aut_ficha_vta
-        WHERE ind_aut_ficha_vta IN ('A')
-          AND (nvl(ind_aut_ped, 'N') = 'N' AND
-              (NOT EXISTS (SELECT 1
-                              FROM vve_aut_ficha_vta_exc a
-                             WHERE a.cod_aut_ficha_vta =
-                                   venta.vve_aut_ficha_vta.cod_aut_ficha_vta
-                               AND nvl(a.ind_inactivo, 'N') = 'N') OR
-               NOT EXISTS
-               (SELECT 1
-                   FROM vve_aut_ficha_vta_exc a
-                  WHERE a.cod_aut_ficha_vta =
-                        venta.vve_aut_ficha_vta.cod_aut_ficha_vta
-                    AND a.cod_area_vta = p_cod_area_vta
-                    AND nvl(a.ind_inactivo, 'N') = 'N')))
-          AND nvl(ind_inactivo, 'N') = 'N'
-        ORDER BY num_orden)*/
         FOR i IN (SELECT *
                     FROM venta.vve_aut_ficha_vta
                    WHERE ind_aut_ficha_vta IN ('A')
@@ -630,53 +594,8 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant AS
            cod_cia                   = nvl(p_cod_cia, cod_cia),
            cod_moneda_ficha_vta_veh  = nvl(p_cod_moneda_ficha_vta_veh,
                                            cod_moneda_ficha_vta_veh)
-    --      COD_AVTA_FAM_USO          = P_COD_AVTA_FAM_USO, --V2.0
-    --     COD_COLOR_VEH             = P_COD_COLOR_VEH --V2.0
      WHERE num_ficha_vta_veh = p_num_ficha_vta_veh;
 
-    /*IF P_COD_TIPO_PAGO = 'P' THEN
-      SELECT MAX(NUR_AUT_FICHA_VTA_VEH) + 1
-      INTO V_CORRELATIVO
-      FROM  VENTA.VVE_FICHA_VTA_VEH_AUT
-      WHERE NUM_FICHA_VTA_VEH = P_NUM_FICHA_VTA_VEH;
-
-      FOR I IN (SELECT *
-                FROM VENTA.VVE_AUT_FICHA_VTA A
-                WHERE A.COD_AUT_FICHA_VTA IN ('05','08')
-                  AND A.COD_AUT_FICHA_VTA NOT IN (
-                    SELECT B.COD_AUT_FICHA_VTA
-                    FROM VENTA.VVE_FICHA_VTA_VEH_AUT B
-                    WHERE B.NUM_FICHA_VTA_VEH = P_NUM_FICHA_VTA_VEH)
-               )
-      LOOP
-        INSERT
-        INTO VENTA.VVE_FICHA_VTA_VEH_AUT(
-          NUM_FICHA_VTA_VEH,
-          NUR_AUT_FICHA_VTA_VEH,
-          COD_AUT_FICHA_VTA,
-          NUM_ORDEN,
-          COD_APROB_FICHA_VTA_AUT,
-          CO_USUARIO_CREA_REG,
-          FEC_CREA_REG,
-          IND_INACTIVO)
-        VALUES(
-          P_NUM_FICHA_VTA_VEH,
-          V_CORRELATIVO,
-          I.COD_AUT_FICHA_VTA,
-          I.NUM_ORDEN,
-          NULL,
-          P_COD_USUA_SID,
-          SYSDATE,
-          'N'
-        );
-        V_CORRELATIVO := V_CORRELATIVO + 1;
-      END LOOP;
-    ELSE
-      DELETE FROM VENTA.VVE_FICHA_VTA_VEH_AUT
-      WHERE NUM_FICHA_VTA_VEH = P_NUM_FICHA_VTA_VEH
-        AND COD_AUT_FICHA_VTA IN ('05', '08');
-    END IF;
-    */
     COMMIT;
 
     p_ret_esta := 1;
@@ -850,13 +769,7 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant AS
                   v_cont_prof_fv := v_cont_prof_fv + 1;
             END LOOP;
            CLOSE c_proformas_fv;
-           
-          /* SELECT num_prof_veh
-           INTO   l_proformas_fv
-           FROM vve_ficha_vta_proforma_veh 
-           WHERE num_ficha_vta_veh = p_num_ficha_vta_veh
-           AND ind_inactivo = 'N';*/
-            
+                    
    -- Obteniendo las solicitudes de las proformas
      
         v_cont_cod_solcre := 1;
@@ -879,16 +792,7 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant AS
                   END IF;
                   v_cont_cod_solcre := v_cont_cod_solcre + 1;
             END LOOP;
-            CLOSE c_cod_solcre;  
-   /*
-      SELECT cod_soli_cred 
-      INTO l_cod_solcre_fv
-      FROM vve_cred_soli_prof WHERE num_prof_veh IN 
-                                      (
-                                       SELECT num_prof_veh FROM vve_ficha_vta_proforma_veh WHERE num_ficha_vta_veh = p_num_ficha_vta_veh
-                                        AND ind_inactivo = 'N'
-                                   );*/
-   
+            CLOSE c_cod_solcre;   
       --Obtenemos el correo origen
     BEGIN
       SELECT txt_correo, a.cod_id_usuario
@@ -1685,11 +1589,7 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant AS
          AND c.ind_inactivo = 'N'
        WHERE c.cod_id_procesos = 66
          AND txt_correo IS NOT NULL;
-    /*
-    SELECT di_correo, initcap(nombre1 || ' ' || paterno) des_usuario
-      FROM usuarios_rol_usuario a, usuarios b
-     WHERE cod_rol_usuario = '015'
-       AND b.co_usuario = a.co_usuario;*/
+
   BEGIN
     pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_LOG',
                                         'SP_ENV_LAFIT',
@@ -1760,19 +1660,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant AS
                                         'Antes de fin' || v_destinatarios,
                                         p_ret_mens,
                                         p_num_ficha_vta_veh);
-
-    /*sp_inse_correo_ficha_venta(p_num_ficha_vta_veh,
-    substr(v_destinatarios,
-           1,
-           length(v_destinatarios) - 1),
-    NULL,
-    v_asunto,
-    v_mensaje,
-    v_mail,
-    p_cod_usua_sid,
-    p_cod_usua_web,
-    p_ret_esta,
-    p_ret_mens);*/
 
     p_ret_esta := 1;
     p_ret_mens := 'La solicitud se realizo con exito';
@@ -2228,20 +2115,10 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant AS
                  ''', ''DD/MM/YYYY'' )) AND TRUNC(VVE.FEC_ESTADO_FICHA_VTA) <= TRUNC( TO_DATE(''' ||
                  p_fech_cierre_fin || ''', ''DD/MM/YYYY'' )) ) AND ';
     END IF;
-    /* <I 87227>
-    v_where := v_where ||
-               '  (B.COD_AREA_VTA,C.COD_FAMILIA_VEH, C.COD_MARCA) IN
-          (SELECT UM.cod_area_vta, UM.cod_familia_veh,UM.cod_marca FROM sis_view_usua_marca UM WHERE UM.txt_usuario=''' ||
-               p_cod_usua_sid || ''') ';
-    */
+ 
     v_where := v_where ||
                ' EXISTS (SELECT 1 FROM sis_view_usua_marca UM WHERE UM.cod_area_vta = B.COD_AREA_VTA AND UM.cod_familia_veh = C.COD_FAMILIA_VEH AND UM.cod_marca = C.COD_MARCA AND UM.txt_usuario=''' ||p_cod_usua_sid || ''') ';
-    /*        
-    v_where := v_where || '
-          and fvf.cod_filial in (select uf.cod_filial from sis_view_usua_filial uf where uf.txt_usuario=''' ||
-               p_cod_usua_sid || ''')
-          ';
-    */
+
     v_where := v_where || '
           and  EXISTS(select 1 from sis_view_usua_filial uf where uf.cod_filial = fvf1.cod_filial AND uf.txt_usuario=''' || p_cod_usua_sid || ''') ';
     --<F 87227>
@@ -2271,15 +2148,7 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant AS
                       )    ) ';
 
     END IF;
-    /*
-      v_where := v_where || ' EXISTS(SELECT 1
-                           FROM SISTEMAS.SIS_VIEW_USUA_PORG U,
-                                SISTEMAS.SIS_VIEW_PORG_AREA A
-                           WHERE U.COD_ID_PERFIL_ORG = A.COD_ID_PERFIL_ORG
-                            AND A.COD_AREA_VTA = FVF.COD_AREA_VTA
-                            AND U.TXT_USUARIO = ''' ||
-                 p_cod_usua_sid || ''')';
-    */
+
     --<I-RF86338>
     v_query := v_query || v_subwhere || v_group || v_where;
     --<F-RF86338>
@@ -2791,15 +2660,7 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant AS
                       )    ) ';
 
     END IF;
-    /*
-      v_where := v_where || ' EXISTS(SELECT 1
-                           FROM SISTEMAS.SIS_VIEW_USUA_PORG U,
-                                SISTEMAS.SIS_VIEW_PORG_AREA A
-                           WHERE U.COD_ID_PERFIL_ORG = A.COD_ID_PERFIL_ORG
-                            AND A.COD_AREA_VTA = FVF.COD_AREA_VTA
-                            AND U.TXT_USUARIO = ''' ||
-                 p_cod_usua_sid || ''')';
-    */
+
     v_query := v_query || v_where;
 
     v_order := ' ORDER BY FVF.FEC_CREA_REG DESC ';
@@ -3031,11 +2892,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant AS
     v_cod_correo vve_correo_prof.cod_correo_prof%TYPE;
   BEGIN
     --<I - REQ.89338 - SOPORTE LEGADOS - 22/05/2020>
-    /*
-    SELECT MAX(a.cod_correo_prof) INTO v_cod_correo FROM vve_correo_prof a;
-
-    v_cod_correo := v_cod_correo + 1;
-    */
     SELECT VVE_CORREO_PROF_SQ01.NEXTVAL INTO V_COD_CORREO FROM DUAL;
     --<F - REQ.89338 - SOPORTE LEGADOS - 22/05/2020>
 
@@ -3280,12 +3136,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant AS
         END;
       END IF;
 
-      /*SELECT COUNT(cod_aut_area_vta)
-       INTO vc_aut_area_vta
-       FROM gen_area_vta_aut a
-      WHERE cod_aut_area_vta = '05' -- RESERVAS STOCK FIFO
-        AND nvl(ind_inactivo, 'N') = 'N'
-        AND cod_area_vta = p_cod_area_vta;*/ --85385
       --<I-85385> 
       BEGIN
         SELECT p.cod_familia_veh
@@ -3443,19 +3293,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant AS
 
     IF p_num_pedido_veh IS NULL THEN
       --<Inicio 86487 Problema con varias marcas  >
-      /*
-      SELECT DISTINCT b.cod_area_vta,
-                      c.cod_familia_veh,
-                      c.cod_marca,
-                      b.cod_filial
-        INTO l_cod_area_vta, l_cod_familia_veh, l_cod_marca, l_cod_filial
-        FROM vve_ficha_vta_proforma_veh a
-       INNER JOIN vve_ficha_vta_veh b
-          ON a.num_ficha_vta_veh = b.num_ficha_vta_veh
-       INNER JOIN vve_proforma_veh_det c
-          ON a.num_prof_veh = c.num_prof_veh
-       WHERE a.num_ficha_vta_veh = p_num_ficha_vta_veh;
-      */
 
       OPEN v_cursor FOR
         SELECT DISTINCT b.cod_area_vta,
@@ -3476,7 +3313,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant AS
                         b.cod_familia_veh,
                         b.cod_marca,
                         c.cod_filial
-        -- INTO l_cod_area_vta, l_cod_familia_veh, l_cod_marca, l_cod_filial  --<FIN 86487 Problema con varias marcas  >
           FROM vve_ficha_vta_pedido_veh a
          INNER JOIN vve_pedido_veh b
             ON a.cod_cia = b.cod_cia
@@ -3511,11 +3347,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant AS
          AND c.cod_filial = l_cod_filial
          AND a.cod_id_usuario = nvl(p_cod_usua_web, l_cod_usua_web);
       --<Inicio REQ 86405  Mejora AUTORIZACIONES FICHA DE VENTA >
-      /* AND (l_importer = 'N' OR
-           l_importer =
-           pkg_sweb_five_mant_veh_aut.fu_usu_importer(a.cod_id_usuario) OR
-           pkg_sweb_five_mant_veh_aut.fu_usu_importer(a.cod_id_usuario) = 'I');
-      */
       --<FIN REQ Mejora validación ficha venta>    
       IF l_cantidad = 0 THEN
         l_existe := 'N';
@@ -4415,16 +4246,7 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant AS
                                         'Error al listar los pedidos');
     
     --<I - REQ.89338 - SOPORTE LEGADOS - 22/05/2020>
-    /*
-    BEGIN
-      SELECT MAX(cod_correo_prof) INTO v_cod_correo FROM vve_correo_prof;
-    EXCEPTION
-      WHEN OTHERS THEN
-        v_cod_correo := 0;
-    END;
 
-    v_cod_correo := v_cod_correo + 1;
-    */
     SELECT VVE_CORREO_PROF_SQ01.NEXTVAL INTO V_COD_CORREO FROM DUAL;
     --<F - REQ.89338 - SOPORTE LEGADOS - 22/05/2020>
 
@@ -4649,23 +4471,7 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant AS
     UPDATE vve_ficha_vta_veh a
        SET a.cod_clie = p_cod_clie
      WHERE a.num_ficha_vta_veh = p_num_ficha_vta_veh;
-    /*
-        pkg_sweb_five_mant_evento.sp_inse_even_fich(p_num_ficha_vta_veh,
-                                             0       'Actualización de cliente',
-                                                    'Se actualizó el cliente',
-                                                    p_ind_tipo_evento,
-                                                    p_ind_envia_correo,
-                                                    p_co_usuario_envia,
-                                                    p_nur_evento_ficha_vta_padre,
-                                                    p_cod_id_usuario,
-                                                    p_tip_regi_rela,
-                                                    p_num_regi_rela,
-                                                    p_cod_tip_act,
-                                                    p_nur_evento_ficha_vta,
-                                                    p_ret_esta,
-                                                    p_ret_mens);
 
-    */
     p_ret_esta := 1;
     p_ret_mens := 'Consulta exitosa';
   EXCEPTION
@@ -4859,19 +4665,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant AS
     ---------------------------------------------------------------------------
 
     -----------Notificar lafit-------------------------------------------------
-    /*sistemas.pkg_sweb_sis_usuario.sp_veri_proc_usu(p_cod_usua_web,
-                                                   77,
-                                                   l_ind_notificar_lafit,
-                                                   p_ret_esta,
-                                                   p_ret_mens);
-    IF (nvl(l_ind_notificar_lafit, 'N') = 'N') AND
-      l_cod_estado_ficha_vta_veh IN ('V') THEN
-      l_ind_notificar_lafit := 'V';
-    ELSE
-      l_ind_notificar_lafit := 'O';
-      l_men_notificar_lafit := 'Usted no cuenta con permisos para notificar Lafit ';
-    END IF;
-    */
     l_ind_notificar_lafit := 'V';
     ---------------------------------------------------------------------------
 
@@ -4898,38 +4691,10 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant AS
     ---------------------------------------------------------------------------
 
     --------Agregar Comentario-------------------------------------------------
-    /*
-    sistemas.pkg_sweb_sis_usuario.sp_veri_proc_usu(p_cod_usua_web,
-                                                   91,
-                                                   l_ind_agregar_comentario,
-                                                   p_ret_esta,
-                                                   p_ret_mens);
-
-
-
-    IF (l_ind_agregar_comentario = 'N') THEN
-      l_ind_agregar_comentario := 'B';
-      l_men_agregar_comentario := 'Usted no cuenta con permisos para agregar comentarios ';
-    ELSE
-      l_ind_agregar_comentario := 'V';
-    END IF;
-    */
     l_ind_agregar_comentario := 'V';
     ---------------------------------------------------------------------------
 
     --------Agregar Adjuntos---------------------------------------------------
-    /*
-    sistemas.pkg_sweb_sis_usuario.sp_veri_proc_usu(p_cod_usua_web,
-                                                   71,
-                                                   l_ind_adjuntar_archivos,
-                                                   p_ret_esta,
-                                                   p_ret_mens);
-    IF (l_ind_adjuntar_archivos = 'N') THEN
-      l_ind_adjuntar_archivos := 'B';
-      l_men_adjuntar_archivos := 'Usted no cuenta con permisos para adjuntar archivos ';
-    ELSE
-      l_ind_adjuntar_archivos := 'V';
-    END IF;    */
     l_ind_adjuntar_archivos := 'V';
     ---------------------------------------------------------------------------
 
@@ -5575,24 +5340,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_five_mant AS
            AND cod_usuario = p_cod_usua_sid;
 
     END IF;
-
-    /*   -------------FIN - Permisos Pedidos----------------------------------------  
-      --Inicio Logger
-      pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR',
-                                          'sp_perm_usua_ficha',
-                                          p_cod_usua_sid,
-                                          'Permisos de Ficha',
-                                          l_sql_ped_desasignar ||
-                                          l_sql_ped_asignar ||
-                                          l_sql_ped_uso_color ||
-                                          l_sql_ped_soli_fact ||
-                                          l_sql_ped_edit_datos ||
-                                          l_sql_ped_egragar_equipos ||
-                                          l_sql_ped_egragar_bonos ||
-                                          l_sql_ped_fec_compromiso,
-                                          NULL);
-      --Fin Logger
-    */
 
     DELETE FROM vve_permiso_pedidos
      WHERE num_ficha_vta_veh = p_num_ficha_vta_veh

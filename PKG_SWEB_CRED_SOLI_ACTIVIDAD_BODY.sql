@@ -1,14 +1,11 @@
 create or replace PACKAGE BODY VENTA.pkg_sweb_cred_soli_actividad AS
 
     PROCEDURE sp_list_acti (
-    --p_cod_soli_cred     IN vve_cred_fina_docu.cod_soli_cred%TYPE,  --<CC E2.1 ID225 LR 11.11.19>
         p_cod_soli_cred   IN vve_cred_soli.cod_soli_cred%TYPE,         --<CC E2.1 ID225 LR 11.11.19>
         p_cod_usua_sid    IN sistemas.usuarios.co_usuario%TYPE,
         p_cod_usua_web    IN sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
         p_act_actual      OUT vve_cred_maes_activ.des_acti_cred%TYPE,  --<CC E2.1 ID225 LR 11.11.19>
         p_act_siguiente   OUT vve_cred_maes_activ.des_acti_cred%TYPE,  --<CC E2.1 ID225 LR 11.11.19>
-   -- p_act_actual        OUT vve_cred_maes_acti.des_acti_cred%TYPE, --<CC E2.1 ID225 LR 11.11.19>
-   -- p_act_siguiente     OUT vve_cred_maes_acti.des_acti_cred%TYPE, --<CC E2.1 ID225 LR 11.11.19>
         p_ret_cursor      OUT SYS_REFCURSOR,
         p_ret_cantidad    OUT NUMBER,
         p_ret_esta        OUT NUMBER,
@@ -57,7 +54,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_cred_soli_actividad AS
             INTO p_act_actual
             FROM
                 vve_cred_soli_acti vc2
-    -- INNER JOIN vve_cred_maes_acti ma <CC E2.1 ID221 LR 11.11.19>
                 INNER JOIN vve_cred_maes_activ ma --<CC E2.1 ID221 LR 11.11.19>
                  ON ( vc2.cod_acti_cred = ma.cod_acti_cred )
             WHERE
@@ -84,7 +80,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_cred_soli_actividad AS
             INTO p_act_siguiente
             FROM
                 vve_cred_soli_acti vc2
-  --  INNER JOIN vve_cred_maes_acti ma  --<CC E2.1 ID225 LR 11.11.19>
                 INNER JOIN vve_cred_maes_activ ma   --<CC E2.1 ID225 LR 11.11.19>
                  ON ( vc2.cod_acti_cred = ma.cod_acti_cred )
             WHERE
@@ -115,7 +110,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_cred_soli_actividad AS
                         vc1.fec_usua_ejec
                     FROM
                         vve_cred_soli_acti vc1 
-             --   INNER JOIN vve_cred_maes_acti cma   --<CC E2.1 ID225 LR 11.11.19>
                         INNER JOIN vve_cred_maes_activ cma    --<CC E2.1 ID225 LR 11.11.19>
                          ON vc1.cod_acti_cred = cma.cod_acti_cred
                     WHERE
@@ -134,7 +128,7 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_cred_soli_actividad AS
         OPEN p_ret_cursor FOR 
       --<I CC E2.1 ID225 LR 11.11.19>     
 
-         SELECT --distinct vm.num_orden, --vc.cod_acti_cred,
+         SELECT
                                  vc.cod_soli_cred,
                                  vc.cod_cred_soli_acti,
                                  vc.cod_acti_cred,
@@ -189,7 +183,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_cred_soli_actividad AS
                                          cm.cod_acti_cred = vc.cod_acti_cred
                                  ) AS des_acti_cred,
                                  v_pendiente        AS cod_cred_soli_acti_pend,
-        --NVL(vm.cod_etap_cred,vm.cod_acti_cred) AS cod_etap_cred_orden,
                                  nvl(to_number(substr(vm.cod_etap_cred,2,length(vm.cod_etap_cred) ) ),to_number(substr(vm.cod_acti_cred
                                 ,2,length(vm.cod_acti_cred) ) ) ) AS cod_etap_cred_orden,
                                  vm.cod_etap_cred   AS cod_etap_cred,
@@ -218,7 +211,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_cred_soli_actividad AS
                              WHERE
                                  atc.cod_tipo_cred = v_tipo_cred
                                  AND atc.ind_inactivo = 'N'
-                                 --AND atc.ind_oblig = 'S' --<Req. 87567 E2.1 ID 150 Usuario 11/08/2020>
                                  AND atc.cod_acti_cred = vm.cod_acti_cred
                                  AND vm.ind_inactivo = 'N'
                                  AND vc.cod_soli_cred = p_cod_soli_cred
@@ -228,45 +220,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_cred_soli_actividad AS
                              ORDER BY
                                  vm.num_orden; 
       --<F CC E2.1 ID225 LR 11.11.19>      
-/* <I CC E2.1 ID225 LR 11.11.19> 
-    SELECT vc.cod_soli_cred,
-           vc.cod_cred_soli_acti,
-           vc.cod_acti_cred,
-           vc.cod_usua_ejec,
-           (CASE WHEN vm.cod_etap_cred IS NOT NULL THEN vc.fec_usua_ejec
-            ELSE (CASE WHEN (SELECT COUNT(1)
-                             --  FROM vve_cred_maes_acti ma --<CC LR 11.11.19>
-                               FROM vve_cred_maes_activ ma --<CC LR 11.11.19>
-                         INNER JOIN vve_cred_soli_acti sa
-                                 ON sa.cod_acti_cred=ma.cod_acti_cred
-                              WHERE ma.cod_etap_cred = vc.cod_acti_cred
-                                AND sa.cod_soli_cred = p_cod_soli_cred
-                                AND fec_usua_ejec IS NULL)=0 THEN SYSDATE ELSE NULL END) END) fec_usua_ejec,
-           /*vc.fec_usua_ejec,--/
-           vc.cod_usua_crea_reg,
-           vc.fec_crea_reg,
-           vc.cod_usua_modi_reg,
-           vc.fec_modi_reg,
-           (SELECT cm.des_acti_cred FROM vve_cred_maes_acti cm WHERE cm.cod_acti_cred=vc.cod_acti_cred) AS des_acti_cred,
-           v_pendiente AS cod_cred_soli_acti_pend,
-           --NVL(vm.cod_etap_cred,vm.cod_acti_cred) AS cod_etap_cred_orden,
-           NVL(TO_NUMBER(SUBSTR(vm.cod_etap_cred,2,LENGTH(vm.cod_etap_cred))),TO_NUMBER(SUBSTR(vm.cod_acti_cred,2,LENGTH(vm.cod_acti_cred)))) AS cod_etap_cred_orden,
-           vm.cod_etap_cred,
-           v_pendiente_gen AS pend_gen,
-           (SELECT COUNT(1) 
-              FROM vve_cred_rol_activ vcr 
-             WHERE vcr.cod_acti_cred=vc.cod_acti_cred
-               AND vcr.cod_rol_usuario IN (SELECT r.cod_rol_usuario 
-              FROM sistemas.sis_mae_usuario u
-             INNER JOIN sistemas.usuarios_rol_usuario r ON (u.txt_usuario=r.co_usuario)
-             WHERE txt_usuario=p_cod_usua_sid)) AS CANT_ROLES
-      FROM vve_cred_soli_acti vc, vve_cred_maes_acti vm
-     WHERE vc.cod_soli_cred=p_cod_soli_cred
-       AND vm.cod_acti_cred=vc.cod_acti_cred
-       and vc.ind_inactivo = 'N'
-  ORDER BY vm.num_orden;--cod_etap_cred_orden,cod_etap_cred desc, cod_cred_soli_acti asc;
-<F CC E2.1 ID225 LR 11.11.19> */
-
         p_ret_esta := 1;
         p_ret_mens := 'La consulta se realizó de manera exitosa';
     EXCEPTION
@@ -340,18 +293,7 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_cred_soli_actividad AS
                                            ) 
                       AND fec_usua_ejec IS NOT NULL'
                         ;
-        /*
-        v_query1:= 'SELECT * FROM vve_cred_maes_acti WHERE cod_etap_cred ='''||p_etapa||'''
-                      AND IND_'||v_tip_soli_cred||' IN (''S'',''X'')';
-
-        v_query2:= 'SELECT * FROM vve_cred_soli_acti WHERE cod_soli_cred = '''||p_cod_soli_cred||'''
-                     AND cod_acti_cred in (
-                                           SELECT cod_acti_cred FROM vve_cred_maes_acti 
-                                           WHERE cod_etap_cred ='''||p_etapa||'''
-                                           AND IND_'||v_tip_soli_cred||' 
-                                           IN (''S'',''X'') ) AND fec_usua_ejec IS NOT NULL
-                                           ' ;
-        */
+ 
         --<F CC E2.1 ID225 LR 11.11.19>
 
             EXECUTE IMMEDIATE 'SELECT COUNT(*) FROM ('
@@ -376,13 +318,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_cred_soli_actividad AS
 
             END IF;
             
-            /*IF p_acti <> 'A1' THEN
-            UPDATE vve_cred_soli
-            SET cod_usua_modi = p_cod_usua_sid,
-                fec_modi_regi =  to_date(SYSDATE,'DD/MM/YYYY')
-            WHERE
-                cod_soli_cred = p_cod_soli_cred;  
-            END IF;  */
 
             pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_INFO','sp_actu_acti',p_cod_usua_sid,v_query1
                                                                                             || ' '
@@ -452,64 +387,7 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_cred_soli_actividad AS
             BEGIN
                 OPEN p_ret_cursor FOR 
                 -- SELECT PARA LISTAR ACTIVIDADES MBARDALES REQ. MANT ACT Y ETAPAS
-                SELECT cod_acti_cred, des_acti_cred FROM vve_cred_maes_activ WHERE cod_acti_cred like 'A%' AND ind_inactivo = 'N' ORDER BY des_acti_cred;
-                
-                
-                /*SELECT
-                                          vtm.cod_tipo,
-                                          vtm.descripcion,
-                                          DECODE(atc.ind_oblig,'S','N','S') AS opcional,
-                                          atc.ind_oblig   AS oblig,
-                                          'S' asignar,
-                                          cma.cod_acti_cred,
-                                          cma.cod_etap_cred,
-                                          cma.des_acti_cred,
-                                          cma.num_orden,
-                                          cma.cod_estado_soli,
-                                          (select descripcion from vve_tabla_maes where cod_tipo = cma.cod_estado_soli) as desc_estado
-                                      FROM
-                                          vve_tabla_maes vtm
-                                          INNER JOIN vve_cred_acti_tipo_cred atc ON atc.cod_tipo_cred = vtm.cod_tipo
-                                          INNER JOIN vve_cred_maes_activ cma ON cma.cod_acti_cred = atc.cod_acti_cred
-                                      WHERE
-                                          cma.cod_acti_cred = p_cod_acti_cred
-                                          AND cma.cod_etap_cred = p_cod_etap_cred
-                                          AND cma.ind_inactivo = 'N'
-                                      UNION
-                                      SELECT
-                                          vtm.cod_tipo,
-                                          vtm.descripcion,
-                                          'N' opcional,
-                                          'N' oblig,
-                                          'N' asignar,
-                                          '' cod_acti_cred,
-                                          '' cod_etap_cred,
-                                          '' des_acti_cred,
-                                          0 num_orden,
-                                          '' cod_estado_soli,
-                                          (select descripcion from vve_tabla_maes where cod_tipo = vtm.cod_tipo and vtm.cod_tipo_rec ='ES' and vtm.cod_grupo =92) 
-                                          as desc_estado
-                                      FROM
-                                          vve_tabla_maes vtm
-                                      WHERE
-                                          vtm.cod_tipo NOT IN (
-                                              SELECT
-                                                  vtm.cod_tipo
-                                              FROM
-                                                  vve_tabla_maes vtm
-                                                  INNER JOIN vve_cred_acti_tipo_cred atc ON vtm.cod_tipo = atc.cod_tipo_cred
-                                                  INNER JOIN vve_cred_maes_activ cma ON cma.cod_acti_cred = atc.cod_acti_cred
-                                              WHERE
-                                                  cma.cod_acti_cred = p_cod_acti_cred
-                                                  AND cma.cod_etap_cred = p_cod_etap_cred
-                                                  AND cma.ind_inactivo = 'N'
-                                                  OR vtm.cod_tipo NOT IN (
-                                                      atc.cod_tipo_cred
-                                                  )
-                                          )
-                                          AND cod_grupo = '86'
-                                          AND cod_tipo_rec = 'TC';*/
-
+                SELECT cod_acti_cred, des_acti_cred FROM vve_cred_maes_activ WHERE cod_acti_cred like 'A%' AND ind_inactivo = 'N' ORDER BY des_acti_cred;                             
                 p_ret_esta := 1;
                 p_ret_mens := v_cod_acti_cred ||'++'||p_cod_acti_cred;-- 'La consulta se realizó de manera exitosa opcion I';
              COMMIT;
@@ -522,58 +400,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_cred_soli_actividad AS
         -- SELECT PARA LISTAR ACTIVIDADES MBARDALES REQ. MANT ACT Y ETAPAS
         SELECT cod_acti_cred, des_acti_cred FROM vve_cred_maes_activ WHERE cod_acti_cred like 'E%' AND ind_inactivo = 'N' ORDER BY des_acti_cred;
         
-        /*SELECT
-                                          vtm.cod_tipo,
-                                          vtm.descripcion,
-                                          DECODE(atc.ind_oblig,'S','N','S') AS opcional,
-                                          atc.ind_oblig   AS oblig,
-                                          'S' asignar,
-                                          cma.cod_acti_cred,
-                                          cma.cod_etap_cred,
-                                          cma.des_acti_cred,
-                                          cma.num_orden,
-                                          cma.cod_estado_soli,
-                                          (select descripcion from vve_tabla_maes where cod_tipo = cma.cod_estado_soli) as desc_estado
-                                      FROM
-                                          vve_tabla_maes vtm
-                                          INNER JOIN vve_cred_acti_tipo_cred atc ON atc.cod_tipo_cred = vtm.cod_tipo
-                                          INNER JOIN vve_cred_maes_activ cma ON cma.cod_acti_cred = atc.cod_acti_cred
-                                      WHERE cma.cod_acti_cred = p_cod_acti_cred
-                                          --AND cma.cod_etap_cred = p_cod_etap_cred
-                                          AND cma.ind_inactivo = 'N'
-                                      UNION
-                                      SELECT
-                                          vtm.cod_tipo,
-                                          vtm.descripcion,
-                                          'N' opcional,
-                                          'N' oblig,
-                                          'N' asignar,
-                                          '' cod_acti_cred,
-                                          '' cod_etap_cred,
-                                          '' des_acti_cred,
-                                          0 num_orden,
-                                          '' cod_estado_soli,
-                                          (select descripcion from vve_tabla_maes where cod_tipo = vtm.cod_tipo and vtm.cod_tipo_rec ='ES' and vtm.cod_grupo =92) 
-                                          as desc_estado
-                                      FROM
-                                          vve_tabla_maes vtm
-                                      WHERE
-                                          vtm.cod_tipo NOT IN (
-                                              SELECT
-                                                  vtm.cod_tipo
-                                              FROM
-                                                  vve_tabla_maes vtm
-                                                  INNER JOIN vve_cred_acti_tipo_cred atc ON vtm.cod_tipo = atc.cod_tipo_cred
-                                                  INNER JOIN vve_cred_maes_activ cma ON cma.cod_acti_cred = atc.cod_acti_cred
-                                              WHERE cma.cod_acti_cred = p_cod_acti_cred
-                                                  --AND cma.cod_etap_cred = p_cod_etap_cred
-                                                  AND cma.ind_inactivo = 'N'
-                                                  OR vtm.cod_tipo NOT IN (
-                                                      atc.cod_tipo_cred
-                                                  )
-                                          )
-                                          AND cod_grupo = '86'
-                                          AND cod_tipo_rec = 'TC';*/
         p_ret_esta := 1;
         p_ret_mens := 'La consulta se realizó de manera exitosa opcion II';
         COMMIT;
@@ -619,61 +445,7 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_cred_soli_actividad AS
           AND ma.ind_inactivo = 'N' 
           AND ma.cod_acti_cred = p_cod_acti_cred
           AND v_cod_etap_cred IS NULL OR ma.cod_etap_cred = v_cod_etap_cred;
-        /*SELECT
-                                          vtm.cod_tipo,
-                                          vtm.descripcion,
-                                          'N' opcional,
-                                          'N' oblig,
-                                          'N' asignar,
-                                          '' cod_acti_cred,
-                                          '' cod_etap_cred,
-                                          '' des_acti_cred,
-                                          0 num_orden,
-                                          '' cod_estado_soli,
-                                          (select descripcion from vve_tabla_maes where cod_tipo = vtm.cod_tipo and vtm.cod_tipo_rec ='ES' and vtm.cod_grupo =92) 
-                                          as desc_estado
-                                      FROM
-                                          vve_tabla_maes vtm
-                                      WHERE
-                                          vtm.cod_tipo NOT IN (
-                                              SELECT
-                                                  vtm.cod_tipo
-                                              FROM
-                                                  vve_tabla_maes vtm
-                                                  INNER JOIN vve_cred_acti_tipo_cred atc ON vtm.cod_tipo = atc.cod_tipo_cred
-                                                  INNER JOIN vve_cred_maes_activ cma ON cma.cod_acti_cred = atc.cod_acti_cred
-                                              WHERE
-                                                  cma.cod_acti_cred = p_cod_acti_cred
-                                                  AND cma.cod_etap_cred = p_cod_etap_cred
-                                                  AND cma.ind_inactivo = 'N'
-                                                  OR vtm.cod_tipo NOT IN (
-                                                      atc.cod_tipo_cred
-                                                  )
-                                          )
-                                          AND cod_grupo = '86'
-                                          AND cod_tipo_rec = 'TC'
-                                         UNION
-                                            SELECT
-                                          vtm.cod_tipo,
-                                          vtm.descripcion,
-                                          DECODE(atc.ind_oblig,'S','N','S') AS opcional,
-                                          atc.ind_oblig   AS oblig,
-                                          'S' asignar,
-                                          cma.cod_acti_cred,
-                                          cma.cod_etap_cred,
-                                          cma.des_acti_cred,
-                                          cma.num_orden,
-                                          cma.cod_estado_soli,
-                                          (select descripcion from vve_tabla_maes where cod_tipo = cma.cod_estado_soli) as desc_estado
-                                      FROM
-                                          vve_tabla_maes vtm
-                                          INNER JOIN vve_cred_acti_tipo_cred atc ON atc.cod_tipo_cred = vtm.cod_tipo
-                                          INNER JOIN vve_cred_maes_activ cma ON cma.cod_acti_cred = atc.cod_acti_cred
-                                      WHERE --cma.cod_acti_cred = p_cod_acti_cred
-                                         -- AND cma.cod_etap_cred = p_cod_etap_cred
-                                           cma.ind_inactivo = 'N';*/
-                                      
-                                      
+                                                                           
         p_ret_esta := 1;
         p_ret_mens := 'La consulta se realizó de manera exitosa opcion III';                                  
         COMMIT;
@@ -776,31 +548,7 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_cred_soli_actividad AS
           FROM 
           (SELECT to_number(substr(a1.cod_acti_cred,2,length(a1.cod_acti_cred))) sec_acti FROM vve_cred_maes_activ a1 WHERE substr(a1.cod_acti_cred,1,1) = 'E' AND a1.ind_inactivo = 'N') x;
         END IF;
-        
-        /*select TO_CHAR(replace(max(cod_acti_cred), p_cod_acti_cred, '')) INTO v_cod_max_acti_cred from vve_cred_maes_activ where cod_acti_cred like p_cod_acti_cred || '%';
-        dbms_output.put_line('v_cod_max_acti_cred' || v_cod_max_acti_cred);
-        
-        select length(v_cod_max_acti_cred) INTO v_can_dig_acti_cred from dual;
-        dbms_output.put_line('v_can_dig_acti_cred' || v_can_dig_acti_cred);
-        
-        IF v_can_dig_acti_cred = 2 THEN
-            dbms_output.put_line('2 digitos');
-            SELECT substr(v_cod_max_acti_cred, 1, 1), substr(v_cod_max_acti_cred, 2, 1) INTO v_pri_dig_acti_cred, v_seg_dig_acti_cred FROM dual;
-            dbms_output.put_line('v_pri_dig_acti_cred' || v_pri_dig_acti_cred);
-            dbms_output.put_line('v_seg_dig_acti_cred' || v_seg_dig_acti_cred);
-            
-            IF (v_seg_dig_acti_cred < 9) THEN
-                dbms_output.put_line('Es menor a 9');
-                v_cod_acti_cred := p_cod_acti_cred || v_pri_dig_acti_cred || (v_seg_dig_acti_cred + 1);
-            ELSE 
-                dbms_output.put_line('Es mayor a 9');
-                v_cod_acti_cred := p_cod_acti_cred || (v_pri_dig_acti_cred + 1);
-            END IF;
-        ELSE 
-            dbms_output.put_line('Solo 1 digito');
-            v_cod_acti_cred := p_cod_acti_cred || v_cod_max_acti_cred || '0';
-        END IF;*/
-        
+              
         dbms_output.put_line(v_cod_acti_cred);
 
         INSERT INTO VVE_CRED_MAES_ACTIV (
@@ -825,29 +573,7 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_cred_soli_actividad AS
           p_cod_usua_crea_regi,
           NULL,
           NULL);
-          
-        
-        /*IF p_cod_acti_cred = 'A' THEN 
-        
-          INSERT INTO vve_cred_acti_tipo_cred (COD_ACTI_CRED, COD_TIPO_CRED, IND_INACTIVO, IND_OBLIG, FEC_CREA_REGI, COD_USUA_CREA_REGI)
-          VALUES (v_cod_acti_cred, 'TC01', 'N', 'N', SYSDATE, p_cod_usua_crea_regi);
-          
-          INSERT INTO vve_cred_acti_tipo_cred (COD_ACTI_CRED, COD_TIPO_CRED, IND_INACTIVO, IND_OBLIG, FEC_CREA_REGI, COD_USUA_CREA_REGI)
-          VALUES (v_cod_acti_cred, 'TC02', 'N', 'N', SYSDATE, p_cod_usua_crea_regi);
-          
-          INSERT INTO vve_cred_acti_tipo_cred (COD_ACTI_CRED, COD_TIPO_CRED, IND_INACTIVO, IND_OBLIG, FEC_CREA_REGI, COD_USUA_CREA_REGI)
-          VALUES (v_cod_acti_cred, 'TC03', 'N', 'N', SYSDATE, p_cod_usua_crea_regi);
-          
-          INSERT INTO vve_cred_acti_tipo_cred (COD_ACTI_CRED, COD_TIPO_CRED, IND_INACTIVO, IND_OBLIG, FEC_CREA_REGI, COD_USUA_CREA_REGI)
-          VALUES (v_cod_acti_cred, 'TC04', 'N', 'N', SYSDATE, p_cod_usua_crea_regi);
-          
-          INSERT INTO vve_cred_acti_tipo_cred (COD_ACTI_CRED, COD_TIPO_CRED, IND_INACTIVO, IND_OBLIG, FEC_CREA_REGI, COD_USUA_CREA_REGI)
-          VALUES (v_cod_acti_cred, 'TC05', 'N', 'N', SYSDATE, p_cod_usua_crea_regi);
-          
-          INSERT INTO vve_cred_acti_tipo_cred (COD_ACTI_CRED, COD_TIPO_CRED, IND_INACTIVO, IND_OBLIG, FEC_CREA_REGI, COD_USUA_CREA_REGI)
-          VALUES (v_cod_acti_cred, 'TC06', 'N', 'N', SYSDATE, p_cod_usua_crea_regi);
-          
-        END IF;*/
+                 
          -- ACtualizando fecha de ejecución de registro y verificando cierre de etapa
         --PKG_SWEB_CRED_SOLI_ACTIVIDAD.sp_actu_acti(p_cod_soli_cred,'E2','A8',p_cod_usua_sid,p_ret_esta,p_ret_mens);
 
@@ -893,7 +619,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_cred_soli_actividad AS
 
           IF substr(p_cod_acti_cred, 1,1) = 'A' THEN
             UPDATE VVE_CRED_MAES_ACTIV SET 
-            -- COD_ACTI_CRED  = p_cod_acti_cred,
             COD_ETAP_CRED  = p_cod_etap_cred,
             DES_ACTI_CRED  = p_des_acti_cred,
             IND_INACTIVO  = p_ind_inactivo,
@@ -905,8 +630,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_cred_soli_actividad AS
             COMMIT;
           ELSE 
             UPDATE VVE_CRED_MAES_ACTIV SET 
-            -- COD_ACTI_CRED  = p_cod_acti_cred,
-            -- COD_ETAP_CRED  = p_cod_etap_cred,
             DES_ACTI_CRED  = p_des_acti_cred,
             IND_INACTIVO  = p_ind_inactivo,
             COD_ESTADO_SOLI  = p_cod_estado_soli,
@@ -915,19 +638,7 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_cred_soli_actividad AS
             COD_USUA_MODI_REGI  = p_cod_usua_modi_regi
             WHERE cod_acti_cred = p_cod_acti_cred;
           END IF;
-
-          /*UPDATE VVE_CRED_MAES_ACTIV SET 
-          COD_ACTI_CRED  = p_cod_acti_cred,
-          COD_ETAP_CRED  = p_cod_etap_cred,
-          DES_ACTI_CRED  = p_des_acti_cred,
-          IND_INACTIVO  = p_ind_inactivo,
-          COD_ESTADO_SOLI  = p_cod_estado_soli,
-          NUM_ORDEN  = p_num_orden,
-          FEC_MODI_REGI  = SYSDATE,
-          COD_USUA_MODI_REGI  = p_cod_usua_modi_regi
-          WHERE cod_acti_cred = p_cod_acti_cred;
-          COMMIT;*/
-       
+      
        ELSE 
           UPDATE vve_cred_acti_tipo_cred SET ind_inactivo = p_ind_inactivo WHERE cod_acti_cred = p_cod_acti_cred;
           COMMIT;
@@ -1089,22 +800,6 @@ create or replace PACKAGE BODY VENTA.pkg_sweb_cred_soli_actividad AS
               order by 1;
               
           
-              /*SELECT distinct a.cod_acti_cred, 
-              (SELECT a1.des_acti_cred FROM vve_cred_maes_activ a1 WHERE a1.cod_acti_cred = a.cod_acti_cred AND cod_acti_cred LIKE 'A%') actividad,
-              a.cod_etap_cred, 
-              (SELECT a2.des_acti_cred FROM vve_cred_maes_activ a2 WHERE a2.cod_acti_cred = a.cod_etap_cred AND cod_acti_cred LIKE 'E%') etapa,
-              t.cod_tipo_cred, a.cod_estado_soli, 
-              (select descripcion from vve_tabla_maes where cod_tipo = 
-              a.cod_estado_soli and cod_grupo =92 and cod_tipo_rec ='ES') as des_estado_soli,
-              a.num_orden
-              FROM vve_cred_maes_activ a LEFT JOIN vve_cred_acti_tipo_cred t ON t.cod_acti_cred = a.cod_acti_cred
-              WHERE a.ind_inactivo = 'N'
-              AND t.ind_inactivo = 'N'
-              AND cod_etap_cred IS NOT NULL
-              AND (v_cod_acti_cred IS NULL OR a.cod_acti_cred = v_cod_acti_cred)
-              AND (v_cod_etap_cred IS NULL OR a.cod_etap_cred = v_cod_etap_cred)
-              AND (v_cod_tipo_cred IS NULL OR t.cod_tipo_cred = v_cod_tipo_cred)
-              ORDER BY t.cod_tipo_cred, a.num_orden;*/
               
         END IF;
     

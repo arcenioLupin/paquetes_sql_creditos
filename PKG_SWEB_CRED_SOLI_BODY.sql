@@ -158,7 +158,6 @@ create or replace PACKAGE BODY         VENTA.pkg_sweb_cred_soli AS
             val_mont_sol_gest_banc,
             val_porc_ci,
             cod_mone_cart_banc,
-            --email,Req. 87567 E2.1 ID:11 AVILCA 14/05/2020 Se comenta por duplicidad de datos
             cod_zona,
             cod_filial,
             vendedor,
@@ -199,7 +198,6 @@ create or replace PACKAGE BODY         VENTA.pkg_sweb_cred_soli AS
             WHEN (p_tip_soli_cred = 'TC04' OR p_tip_soli_cred = 'TC05' OR p_tip_soli_cred = 'TC06')  THEN 0 ELSE 100
             END,
             NULL,
-           -- p_dir_correo,--<p_dir_correo Req. 87567 ES01 ID## EBARBOZA 23/03/2020> Req. 87567 E2.1 ID:11 AVILCA 14/05/2020 Se comenta por duplicidad de datos
            --<F Req. 87567 E2.1 ID:19 AVILCA 14/05/2020>
             p_cod_zona,--<p_cod_zona Req. 87567 ES01 ID## EBARBOZA 23/03/2020>
             p_cod_filial,--<p_cod_filial Req. 87567 ES01 ID## EBARBOZA 23/03/2020>
@@ -228,14 +226,7 @@ create or replace PACKAGE BODY         VENTA.pkg_sweb_cred_soli AS
             WHERE  p.num_prof_veh = p_num_prof_veh
             AND    p.num_prof_veh = d.num_prof_veh
             AND    p.cod_cia = v_cod_empr; --p_cod_empr;
-      /*
-            SELECT NVL(d.can_veh,0), p.val_vta_pedido_veh
-            INTO   v_val_can_veh, v_val_venta_pedido
-            FROM   vve_pedido_veh p, vve_proforma_veh_det d
-            WHERE  p.num_prof_veh = p_num_prof_veh
-            AND    p.num_prof_veh = d.num_prof_veh
-            AND    p.cod_cia = p_cod_empr;
-    */
+
         EXCEPTION
             WHEN NO_DATA_FOUND THEN
               v_val_can_veh := 0;
@@ -639,11 +630,6 @@ create or replace PACKAGE BODY         VENTA.pkg_sweb_cred_soli AS
             SET
                 -- ACTUALIZA MONTO
                 val_mon_fin = p_val_vta_tot_fin,
-                -- cod_area_vta = p_cod_area_vta, --Req. 87567 E2.2 MBARDALES 12/03/2021
-                -- cod_zona = p_cod_zona, --Req. 87567 E2.2 MBARDALES 12/03/2021
-                -- cod_filial = p_cod_filial, --Req. 87567 E2.2 MBARDALES 12/03/2021
-                -- vendedor = p_vendedor, --Req. 87567 E2.2 MBARDALES 12/03/2021
-                -- cod_sucursal = p_cod_sucursal, --Req. 87567 E2.2 MBARDALES 12/03/2021
                 can_dias_fact_cred = p_ven_factura,
                 txt_obse_crea = p_obse_crea,
                 tip_soli_cred = p_tip_soli_cred,
@@ -2652,11 +2638,6 @@ END sp_list_cred_soli;
 
              dbms_output.put_line('No tiene solicitud');
              OPEN p_ret_cursor FOR
-                 /*SELECT
-                    '' as valo_gara_tot,
-                    no_cuotas as can_tota_letr,
-                    tea as val_porc_tea_sigv,
-                    '' as val_porc_ci, */
                 Select
                     decode(v_cod_soli_cred,'S','',(SELECT  SUM(val_realiz_gar) FROM vve_cred_maes_gara
                                       WHERE cod_garantia IN (SELECT cod_gara FROM vve_cred_soli_gara
@@ -2694,29 +2675,6 @@ END sp_list_cred_soli;
                     cod_oper = p_cod_oper AND
                     no_cia = p_no_cia;
 
-        /*ELSE
-
-            SELECT
-                SUM(val_realiz_gar) INTO v_sum_valo_gara
-            FROM
-                vve_cred_maes_gara
-            WHERE
-                cod_garantia IN (SELECT cod_gara FROM vve_cred_soli_gara WHERE cod_soli_cred = v_cod_soli_cred);
-
-            OPEN p_ret_cursor FOR
-                SELECT
-                    v_sum_valo_gara as valo_gara_tot,
-                    can_tota_letr,
-                    val_porc_tea_sigv,
-                    val_porc_ci,
-                    val_mon_fin,
-                    descripcion,
-                    TO_CHAR((select f_generada from arlcml where cod_oper = p_cod_oper and rownum = 1), 'DD/MM/YYYY') as fec_emi
-                FROM
-                    vve_cred_soli s inner join vve_tabla_maes m on (s.tip_soli_cred = m.cod_tipo)
-                WHERE cod_soli_cred = v_cod_soli_cred;
-
-        END IF; */
             p_ret_esta := 1;
             p_ret_mens := 'La consulta se realizó de manera exitosa';
 
@@ -2958,19 +2916,6 @@ END sp_list_cred_soli;
               UPDATE vve_cred_soli SET cod_estado = 'ES04' where cod_soli_cred = p_cod_soli_cred;
             END IF;
 
-            /*--recorre todos los niveles
-            FOR soli_aprob IN (SELECT est_apro,ind_nivel
-                    FROM vve_cred_soli_apro where cod_soli_cred = p_cod_soli_cred)
-            LOOP
-                if soli_aprob.est_apro = 'EEA04' then
-                    v_valida_EEA01 := '0';
-                end if;
-            END LOOP;
-
-            if v_valida_EEA01 = '1' then --se aprobo todos los niveles y cuenta con fecha de aprobacion de cliente
-                UPDATE vve_cred_soli SET cod_estado = 'ES04' where cod_soli_cred = p_cod_soli_cred;
-            end if;
-            */
 
             BEGIN
               SELECT COUNT(*)
@@ -3060,19 +3005,6 @@ END sp_list_cred_soli;
             IF v_cont_apro = v_ind_niveles AND v_ind_niveles > 0 THEN
               UPDATE vve_cred_soli SET cod_estado = 'ES04' where cod_soli_cred = p_cod_soli_cred;
             END IF;
-            /*--recorre todos los niveles
-            FOR soli_aprob IN (SELECT est_apro,ind_nivel
-                    FROM vve_cred_soli_apro where cod_soli_cred = p_cod_soli_cred)
-            LOOP
-                if soli_aprob.est_apro = 'EEA04' then
-                    v_valida_EEA01 := '0';
-                end if;
-            END LOOP;
-
-            if v_valida_EEA01 = '1' then --se aprobo todos los niveles y cuenta con fecha de aprobacion de cliente
-                UPDATE vve_cred_soli SET cod_estado = 'ES04' where cod_soli_cred = p_cod_soli_cred;
-            end if;
-            */
 
             BEGIN
               SELECT COUNT(*)
@@ -3291,16 +3223,10 @@ END sp_list_cred_soli;
                 INNER JOIN vve_proforma_veh pv on (p.num_prof_veh = pv.num_prof_veh)
                 INNER JOIN vve_proforma_veh_det pd on (pv.num_prof_veh = pd.num_prof_veh)
                 INNER JOIN gen_marca gm on (pd.cod_marca = gm.cod_marca)
-                LEFT JOIN vve_tabla_maes tc ON (s.tip_soli_cred = tc.cod_tipo AND tc.cod_grupo_rec = '86' AND tc.cod_tipo_rec = 'TC')
-                --INNER JOIN vve_cred_simu si ON (s.cod_soli_cred = si.cod_soli_cred AND si.ind_inactivo = 'N')
+                LEFT JOIN vve_tabla_maes tc ON (s.tip_soli_cred = tc.cod_tipo AND tc.cod_grupo_rec = '86' AND tc.cod_tipo_rec = 'TC')                
                 INNER JOIN gen_mae_sociedad ms ON (s.cod_empr = ms.cod_cia)
                 INNER JOIN gen_area_vta gav ON gav.cod_area_vta = s.cod_area_vta
                 where s.cod_soli_cred = p_cod_soli_cred;
-
-                -- Actualizando fecha de ejecución de registro de la actividad
-                --PKG_SWEB_CRED_SOLI_ACTIVIDAD.sp_actu_acti(p_cod_soli_cred,'E4','A24',p_cod_usua_sid,p_ret_esta,p_ret_mens);
-                --PKG_SWEB_CRED_SOLI_ACTIVIDAD.sp_actu_acti(p_cod_soli_cred,'E4','A25',p_cod_usua_sid,p_ret_esta,p_ret_mens);
-
 
             ELSE
             /** F Req. 87567 E2.1 ID: 309 - avilca 24/03/2020 **/
@@ -3345,10 +3271,6 @@ END sp_list_cred_soli;
                 s.val_gasto_admi as val_gast_admi
                 from vve_cred_soli s
                 INNER JOIN gen_persona g on (g.cod_perso = s.cod_clie)
-                --INNER JOIN vve_cred_soli_prof p on (s.cod_soli_cred = p.cod_soli_cred)
-                --INNER JOIN vve_proforma_veh pv on (p.num_prof_veh = pv.num_prof_veh)
-                --INNER JOIN vve_proforma_veh_det pd on (pv.num_prof_veh = pd.num_prof_veh)
-                --INNER JOIN gen_marca gm on (pd.cod_marca = gm.cod_marca)
                 LEFT JOIN vve_tabla_maes tc ON (s.tip_soli_cred = tc.cod_tipo AND tc.cod_grupo_rec = '86' AND tc.cod_tipo_rec = 'TC')
                 INNER JOIN vve_cred_simu si ON (s.cod_soli_cred = si.cod_soli_cred AND si.ind_inactivo = 'N')
                 INNER JOIN gen_mae_sociedad ms ON (s.cod_empr = ms.cod_cia)
@@ -3413,9 +3335,6 @@ END sp_list_cred_soli;
                 INNER JOIN gen_area_vta gav ON gav.cod_area_vta = s.cod_area_vta
                 where s.cod_soli_cred = p_cod_soli_cred;
 
-                -- Actualizando fecha de ejecución de registro de la actividad
-                --PKG_SWEB_CRED_SOLI_ACTIVIDAD.sp_actu_acti(p_cod_soli_cred,'E4','A24',p_cod_usua_sid,p_ret_esta,p_ret_mens);
-                --PKG_SWEB_CRED_SOLI_ACTIVIDAD.sp_actu_acti(p_cod_soli_cred,'E4','A25',p_cod_usua_sid,p_ret_esta,p_ret_mens);
                END IF;
 
             END IF;
@@ -3547,49 +3466,7 @@ PROCEDURE sp_inse_cred_soli_aprob
                 update vve_cred_soli_acti set ind_inactivo = 'N' where cod_acti_cred = 'A29' AND cod_soli_cred = p_cod_soli_cred;
 
         /** F Req. 87567 E2.1 ID: 309 - avilca 25/03/2020 **/
-          ELSE
-/*            FOR rs IN (SELECT cod_crit_apro,cod_tip_ries_dive, cod_perfil_usuario, ind_nivel, ind_usado, tip_soli_cred FROM vve_cred_crit_aprob
-                        where cod_tip_ries_dive in (select cod_ries_dive_clie from vve_cred_soli_isbs where cod_soli_cred = p_cod_soli_cred)
-                        and ind_nivel <= (
-                                            SELECT min(ind_nivel) FROM vve_cred_crit_aprob
-                                                            WHERE
-                                                            (SELECT s.val_mon_fin monto_financiado
-                                                            FROM vve_cred_soli s
-                                                            WHERE s.cod_soli_cred = p_cod_soli_cred) <= val_lim_may_aprob
-                                                            AND ind_usado in (select (case rownum
-                                                                                      when 1 then ind_u_n
-                                                                                      when 2 then 'U'
-                                                                                      end) tipo_n_u
-                                                                              from (SELECT distinct decode(cod_area_vta,'014','U','N') ind_u_n
-                                                                              FROM   vve_proforma_veh
-                                                                              WHERE  num_prof_veh in (select num_prof_veh from vve_cred_soli_prof where cod_soli_cred = p_cod_soli_cred)
-                                                                              order by 1 desc))
-                                                            --and ind_nivel > 1
-                                                            and (ind_usado = 'U' and val_porc_min_ci <= (select val_porc_ci from vve_cred_soli where cod_soli_cred = p_cod_soli_cred)
-                                                             or
-                                                             ind_usado = 'N' and val_porc_min_ci is null)
-                                                            and cod_tip_ries_dive in (select cod_ries_dive_clie from vve_cred_soli_isbs where cod_soli_cred = p_cod_soli_cred)
-                                                            and val_rat_min_cob_gar <= (select nvl(x.suma_garantias/(s.val_mon_fin),0) ratiocob
-                                                                                        from (
-                                                                                        select sum(g.val_realiz_gar) suma_garantias,sg.cod_soli_cred
-                                                                                        from vve_cred_maes_gara g, vve_cred_soli_gara sg
-                                                                                        where sg.cod_soli_cred = p_cod_soli_cred
-                                                                                        and g.cod_garantia = sg.cod_gara
-                                                                                        and sg.ind_inactivo = 'N'
-                                                                                        group by sg.cod_soli_cred) x, vve_cred_soli s
-                                                                                        where s.cod_soli_cred = x.cod_soli_cred
-                                                                                        )
-                                                            )
-                        AND ind_usado in (select (case rownum
-                                                  when 1 then ind_u_n
-                                                  when 2 then 'U'
-                                                  end) tipo_n_u
-                                          from (SELECT distinct decode(cod_area_vta,'014','U','N') ind_u_n
-                                          FROM   vve_proforma_veh
-                                          WHERE  num_prof_veh in (select num_prof_veh from vve_cred_soli_prof where cod_soli_cred = p_cod_soli_cred)
-                                          order by 1 desc))
-                        ) LOOP
-*/
+      ELSE
        FOR rs IN (SELECT xc.cod_crit_apro,xc.cod_tip_ries_dive, xc.cod_perfil_usuario, xc.ind_nivel, xc.ind_usado, xc.tip_soli_cred
                   FROM vve_cred_crit_aprob xc
                   WHERE
@@ -5555,9 +5432,6 @@ PROCEDURE sp_inse_cred_soli_aprob
         SELECT val_para_num INTO v_rol_res_cred FROM vve_cred_soli_para WHERE cod_cred_soli_para = 'ROLRESCRED';
         SELECT val_para_car INTO v_rol_jef_fina FROM vve_cred_soli_para WHERE cod_cred_soli_para = 'ROLJEFFINCRE';
 
-        /*SELECT COUNT(*) INTO v_cant_perf FROM sis_mae_perfil_usuario WHERE cod_id_perfil = v_rol_jef_fina
-        AND cod_id_usuario = p_cod_usua_web AND ind_inactivo = 'N';
-        */
         SELECT COUNT(*) INTO v_cant_perf FROM sis_mae_perfil_usuario WHERE 0<(select instr(val_para_car,cod_id_perfil)
                                                                               from   vve_cred_soli_para
                                                                               where cod_cred_soli_para = 'ROLJEFFINCRE')
@@ -5584,19 +5458,6 @@ PROCEDURE sp_inse_cred_soli_aprob
 
 
             OPEN p_ret_cursor FOR
-                    --I Req. 87567 E2.1 ID 4 avilca 09/03/2021
-                     -- Se comenta para que sólo liste usuarios con rol gestor de crédito
-
-                /*select txt_usuario as idUsuario, UPPER(TXT_APELLIDOS) as apellidos, UPPER(TXT_NOMBRES) as nombre from sis_mae_usuario
-                where cod_id_usuario in (select cod_id_usuario from
-                sis_mae_perfil_usuario where ind_inactivo = 'N' and cod_id_perfil in (select distinct cod_rol_usuario
-                                                                from   vve_cred_org_cred_vtas
-                                                                where  co_usuario = p_cod_usua_sid
-                                                                and    0< (select instr(val_para_car,cod_rol_usuario)
-                                                                from vve_cred_soli_para
-                                                                where cod_cred_soli_para = 'ROLJEFFINCRE')))
-                union*/
-                    --I Req. 87567 E2.1 ID 4 avilca 09/03/2021
                 select distinct co_usuario as idUsuario, UPPER(u.TXT_APELLIDOS) as apellidos, UPPER(u.TXT_NOMBRES) as nombre
                 from VVE_CRED_ORG_CRED_VTAS v inner join sis_mae_usuario u
                 on (v.co_usuario = u.txt_usuario)
@@ -5622,13 +5483,6 @@ PROCEDURE sp_inse_cred_soli_aprob
             v_cod_area_vta := p_cod_area_vta;
             v_cod_filial := p_cod_filial;
             v_cod_zona := p_cod_zona;
-
-            /*
-            select gv.cod_area_vta, f.cod_filial, z.cod_zona INTO v_cod_area_vta, v_cod_filial, v_cod_zona
-            from gen_perso_vendedor gv inner join arccve v on (gv.vendedor = v.vendedor)
-            inner join vve_mae_zona_filial f on (v.cod_filial = f.cod_filial) inner join vve_mae_zona z on (f.cod_zona = z.cod_zona)
-            where gv.cod_perso = p_cod_clie AND gv.IND_INACTIVO = 'N' and ROWNUM = 1;
-            */
 
         END IF;
 
@@ -5720,12 +5574,6 @@ PROCEDURE sp_inse_cred_soli_aprob
     END;
 
     IF (p_ret_cod_hist IS NOT NULL) THEN
-        -- <I Req. 87567 E2.1 ID## AVILCA 10/02/2021>
-        -- Se comenta este bloque porque no permite actualizar la información guardada anteriormente
-           /* p_ret_esta := 1;
-            p_ret_mens := 'La solicitud, ya tiene información registrada.';
-            p_ret_cod := TO_CHAR(p_ret_cod_hist);
-            RETURN;*/
          UPDATE vve_cred_soli_hist
          SET
                 VAL_LC_ACTUAL = p_val_lc_actu,
@@ -5850,16 +5698,6 @@ PROCEDURE sp_inse_cred_soli_aprob
     v_cant_reg_det NUMBER;
 
   BEGIN
-    /*
-    BEGIN
-        SELECT DISTINCT COD_CRED_SOLI_HIST INTO p_ret_cod_ope
-        FROM vve_cred_hist_ope WHERE cod_cred_soli_hist = p_cod_cred_soli_hist
-        AND cod_soli_cred = p_cod_soli_cred;
-    EXCEPTION
-            WHEN OTHERS THEN
-            p_ret_cod_ope := NULL;
-    END;
-    */
 
     select count(*) into v_cant_reg_det
     from  vve_cred_hist_ope
@@ -5870,12 +5708,8 @@ PROCEDURE sp_inse_cred_soli_aprob
     IF v_cant_reg_det > 0 THEN
         --EXISTE UN REGISTRO
         UPDATE vve_cred_hist_ope SET
-        --COD_CRED_SOLI_HIST,
-        --COD_HIST_OPE,
-        --COD_SOLI_CRED,
         COD_CIA = p_cod_cia,
         COD_TIP_CRED = p_cod_tip_cred,
-        --COD_OPER,
         COD_MONEDA = p_cod_moneda,
         VAL_MONTO_CRED = p_val_monto_cred,
         CAN_LETRAS = p_can_letras,
@@ -5949,50 +5783,6 @@ PROCEDURE sp_inse_cred_soli_aprob
     END IF;
     p_ret_esta := 1;
     p_ret_mens := 'Se registró correctamente.';
-    --p_ret_cod := TO_CHAR(p_ret_cod_ope);
-
-    /*
-    IF p_ret_cod_ope IS NOT NULL THEN
-
-        p_ret_esta := 1;
-        p_ret_mens := 'La solicitud, ya tiene informacion registrada en detalle de Operaciones.';
-        p_ret_cod := TO_CHAR(p_ret_cod_ope);
-        RETURN;
-    ELSE
-
-        BEGIN
-            SELECT
-                lpad(nvl(MAX(cod_hist_ope), 0) + 1, 10, '0')
-            INTO p_ret_cod_ope
-            FROM
-                vve_cred_hist_ope;
-            EXCEPTION
-                WHEN OTHERS THEN
-                p_ret_cod_ope := NULL;
-        END;
-
-        IF p_ret_cod_ope IS NOT NULL THEN
-
-
-
-            p_ret_esta := 1;
-            p_ret_mens := 'Se registró correctamente.';
-            p_ret_cod := TO_CHAR(p_ret_cod_ope);
-
-        ELSE
-
-            p_ret_esta := 1;
-            p_ret_mens := 'Error al registrar.';
-            p_ret_cod := TO_CHAR(p_ret_cod_ope);
-
-        END IF;
-
-    END IF;
-    */
-    --<I Req. 87567 E2.1 ID## AVILCA 04/12/2020>
-        -- ACtualizando fecha de ejecución de registro y verificando cierre de etapa
-        -- PKG_SWEB_CRED_SOLI_ACTIVIDAD.sp_actu_acti(p_cod_soli_cred,'E2','A9',p_cod_usua_sid,p_ret_esta,p_ret_mens);
-    --<F Req. 87567 E2.1 ID## AVILCA 04/12/2020>
 
   EXCEPTION
     WHEN ve_error THEN
@@ -6081,385 +5871,7 @@ PROCEDURE sp_inse_cred_soli_aprob
             , NULL);
     END sp_list_param_solcre;
   --<F Req. 87567 E2.1 ID:9 AVILCA 12/05/2020>
- -- I JAHERNANDEZ -- 21-01-2021
-  /*PROCEDURE SP_ACTU_INSERT_CRED_SOLI_APROB
-    (
-        p_cod_soli_cred       IN                vve_cred_soli.cod_soli_cred%TYPE,
-        p_num_prof_veh        IN                vve_cred_soli_prof.num_prof_veh%TYPE,
-        p_cod_usua_sid        IN                sistemas.usuarios.co_usuario%TYPE,
-        p_ret_esta            OUT               NUMBER,
-        p_ret_mens            OUT               VARCHAR2
-    ) AS
-        ve_error            EXCEPTION;
-        v_cod_simu          NUMBER;
-        v_cod_area_vta      vve_proforma_veh.cod_area_vta%TYPE;
-        v_cod_filial        vve_proforma_veh.cod_filial%TYPE;
-        v_cod_zona          vve_mae_zona_filial.cod_zona%TYPE;
-        v_cod_id_usuario    NUMBER;
-        v_contador          NUMBER;
-        v_flag_valida       NUMBER;
-        v_tip_soli_cred VARCHAR2(5);
-
-    BEGIN
-        v_flag_valida := 0;
-
-        BEGIN
-                      pkg_sweb_mae_gene.sp_regi_rlog_erro
-      ('AUDI_ERROR', 'SP_ACTU_INSERT_CRED_SOLI_APROB Inicio ', p_cod_soli_cred, 'v_contador 001', null, NULL);
-
-
-        INSERT INTO vve_cred_soli_apro_log
-        SELECT * FROM vve_cred_soli_apro WHERE cod_soli_cred = p_cod_soli_cred AND IND_INACTIVO='N' ;
-
-         DELETE FROM vve_cred_soli_apro WHERE cod_soli_cred = p_cod_soli_cred AND IND_INACTIVO='N' ;
-
-                   -- JEFE DE FINANZAS
-                      update vve_cred_soli_acti set ind_inactivo = 'N',cod_usua_ejec =null , fec_usua_ejec=null
-                       where cod_acti_cred = 'A26' AND cod_soli_cred = p_cod_soli_cred and ind_inactivo = 'N' ;
-                   -- JEFE DE CREDITOS
-                      update vve_cred_soli_acti set ind_inactivo = 'S' ,cod_usua_ejec =null , fec_usua_ejec=null
-                       where cod_acti_cred = 'A27' AND cod_soli_cred = p_cod_soli_cred and ind_inactivo = 'N' ;
-                   -- GAF
-                      update vve_cred_soli_acti set ind_inactivo = 'S' ,cod_usua_ejec =null , fec_usua_ejec=null
-                      where cod_acti_cred = 'A29' AND cod_soli_cred = p_cod_soli_cred and ind_inactivo = 'N' ;
-                   -- GERENTE GRAL
-                      update vve_cred_soli_acti set ind_inactivo = 'S' ,cod_usua_ejec =null , fec_usua_ejec=null
-                      where cod_acti_cred = 'A30' AND cod_soli_cred = p_cod_soli_cred and ind_inactivo = 'N' ;
-                   -- DIRECTOR CORPORATIVO
-                       update vve_cred_soli_acti set ind_inactivo = 'S',cod_usua_ejec =null , fec_usua_ejec=null
-                        where cod_acti_cred = 'A31' AND cod_soli_cred = p_cod_soli_cred and ind_inactivo = 'N' ;
-                   -- PRESIDENTE
-                       update vve_cred_soli_acti set ind_inactivo = 'S' ,cod_usua_ejec =null , fec_usua_ejec=null
-                       where cod_acti_cred = 'A32' AND cod_soli_cred = p_cod_soli_cred and ind_inactivo = 'N' ;
-        EXCEPTION
-            WHEN OTHERS THEN
-            v_contador := 0;
-        END;
-
-
-      BEGIN
-            SELECT count(*) INTO v_contador
-            FROM vve_cred_soli_apro WHERE cod_soli_cred = p_cod_soli_cred AND IND_INACTIVO='N' ;
-        EXCEPTION
-            WHEN OTHERS THEN
-            v_contador := 0;
-        END;
-
-            pkg_sweb_mae_gene.sp_regi_rlog_erro
-      ('AUDI_ERROR', 'SP_ACTU_INSERT_CRED_SOLI_APROB 00001.1 : ' ||v_contador, p_cod_soli_cred, 'v_contador 001', null, NULL);
-
-
-            BEGIN
-                SELECT s.tip_soli_cred INTO v_tip_soli_cred
-                 FROM vve_cred_soli s
-                WHERE s.cod_soli_cred = p_cod_soli_cred;
-              EXCEPTION
-                    WHEN OTHERS THEN
-                     v_tip_soli_cred := 0;
-            END;
-
-        IF v_contador > 0 THEN
-                       pkg_sweb_mae_gene.sp_regi_rlog_erro
-      ('AUDI_ERROR', 'SP_ACTU_INSERT_CRED_SOLI_APROB Else  : ' ||v_contador, p_cod_soli_cred, 'v_contador 001', null, NULL);
-
-            p_ret_esta := 1;
-            p_ret_mens := 'La solicitud ya cuenta con Registro de Solicitud de Aprobación';
-
-        ELSE
-          IF v_tip_soli_cred = 'TC04' THEN
-
-                        SELECT cod_area_vta, cod_filial
-                        INTO   v_cod_area_vta, v_cod_filial
-                        FROM   vve_proforma_veh p, vve_cred_soli_prof sp
-                        WHERE  sp.cod_soli_cred = p_cod_soli_cred
-                        AND    p.num_prof_veh = sp.num_prof_veh
-                        AND    rownum = 1;
-
-                        SELECT cod_zona INTO v_cod_zona FROM vve_mae_zona_filial z where cod_filial = v_cod_filial;
-
-                        SELECT cod_id_usuario INTO v_cod_id_usuario
-                        FROM  sis_mae_usuario
-                        WHERE txt_usuario IN (SELECT co_usuario FROM VVE_CRED_ORG_CRED_VTAS
-                                              WHERE  cod_zona = v_cod_zona
-                                              AND    cod_filial = v_cod_filial
-                                              AND    cod_area_vta = v_cod_area_vta
-                                              AND    cod_rol_usuario ='1674691');
-
-           INSERT INTO VVE_CRED_SOLI_APRO
-                    (
-                        COD_CRIT_APRO,
-                        COD_SOLI_CRED,
-                        COD_ID_USUA,
-                        EST_APRO,
-                        COD_SIMU_APRO,
-                        COD_PERFIL_USUA,
-                        IND_NIVEL,
-                        COD_USUA_CREA_REGI,
-                        FEC_CREA_REGI,
-                        IND_INACTIVO
-                    )
-                    VALUES
-                    (
-                        '1',
-                        p_cod_soli_cred,
-                        v_cod_id_usuario,
-                        'EEA04',
-                        NULL,
-                        '1674691',
-                        1,
-                        p_cod_usua_sid,
-                        SYSDATE,
-                        'N'
-                    );
-
-                update vve_cred_soli_acti set ind_inactivo = 'N' where cod_acti_cred = 'A29' AND cod_soli_cred = p_cod_soli_cred;
-
-          ELSE
-
-                              pkg_sweb_mae_gene.sp_regi_rlog_erro
-      ('AUDI_ERROR', 'SP_ACTU_INSERT_CRED_SOLI_APROB-123.1-v_tip_soli_cred : ' ||v_tip_soli_cred, p_cod_soli_cred, 'v_tip_soli_cred Ultimo', null, NULL);
-
-
-
-       FOR rs IN (SELECT xc.cod_crit_apro,xc.cod_tip_ries_dive, xc.cod_perfil_usuario, xc.ind_nivel, xc.ind_usado, xc.tip_soli_cred
-                  FROM vve_cred_crit_aprob xc
-                  WHERE
-                   xc.COD_TIP_RIES_DIVE IN (select cod_ries_dive_clie from vve_cred_soli_isbs where cod_soli_cred = p_cod_soli_cred)
-                  AND xc.ind_nivel <= (
-                  select min(c.ind_nivel)
-                  FROM vve_cred_crit_aprob c, vve_cred_soli s
-                  WHERE s.cod_soli_cred = p_cod_soli_cred
-                  AND   c.COD_TIP_RIES_DIVE IN (select cod_ries_dive_clie from vve_cred_soli_isbs where cod_soli_cred = p_cod_soli_cred)
-                  AND   0<(SELECT INSTR(c.txt_tip_area_vta,s.cod_area_vta) from dual)
-                  AND   s.val_mon_fin <= c.val_lim_may_aprob
-                  AND   c.val_rat_min_cob_gar <= nvl((select nvl(x.suma_garantias/(s.val_mon_fin),0) ratiocob--<Req. 87567 E2.1 ID## avilca 20/11/2020>
-                                                  from (
-                                                  select sum(g.val_realiz_gar) suma_garantias,sg.cod_soli_cred
-                                                  from vve_cred_maes_gara g, vve_cred_soli_gara sg
-                                                  where sg.cod_soli_cred = p_cod_soli_cred --s.cod_soli_cred --'00000000000000000023'
-                                                  and g.cod_garantia = sg.cod_gara
-                                                  and sg.ind_inactivo = 'N'
-                                                  group by sg.cod_soli_cred) x, vve_cred_soli s
-                                                  where s.cod_soli_cred = x.cod_soli_cred),0)--<Req. 87567 E2.1 ID## avilca 20/11/2020>
-                  and decode(s.cod_area_vta,'014','U','N') = c.ind_usado
-                  and nvl(c.val_porc_min_ci,0) <= (select val_porc_ci/100 from vve_cred_soli where cod_soli_cred = p_cod_soli_cred )
-                  )
-                  AND xc.ind_usado in (select decode(cod_area_vta,'014','U','N') from vve_cred_soli where cod_soli_cred = p_cod_soli_cred)
-             )LOOP
-               -- dbms_output.put_line('Paso 1');
-            pkg_sweb_mae_gene.sp_regi_rlog_erro
-               ('AUDI_ERROR', 'SP_ACTU_INSERT_CRED_SOLI_APROB 00001.78 : ' ||v_contador, p_cod_soli_cred, 'v_contador 001', null, NULL);
-
-
-                IF rs.ind_usado = 'U' THEN
-
-                    IF rs.tip_soli_cred IS NULL OR rs.tip_soli_cred = 'TC01' THEN
-
-                        SELECT cod_simu INTO v_cod_simu FROM vve_cred_simu WHERE cod_soli_cred = p_cod_soli_cred AND ind_inactivo = 'N';
-
-                        SELECT cod_area_vta, cod_filial
-                        INTO   v_cod_area_vta, v_cod_filial
-                        FROM   vve_proforma_veh p, vve_cred_soli_prof sp
-                        WHERE  sp.cod_soli_cred = p_cod_soli_cred
-                        AND    p.num_prof_veh = sp.num_prof_veh
-                        AND    rownum = 1;
-
-                        SELECT cod_zona INTO v_cod_zona FROM vve_mae_zona_filial z where cod_filial = v_cod_filial;
-
-                        SELECT cod_id_usuario INTO v_cod_id_usuario
-                        FROM  sis_mae_usuario
-                        WHERE txt_usuario IN (SELECT co_usuario FROM VVE_CRED_ORG_CRED_VTAS
-                                              WHERE  cod_zona = v_cod_zona
-                                              AND    cod_filial = v_cod_filial
-                                              AND    cod_area_vta = v_cod_area_vta
-                                              AND    cod_rol_usuario = rs.cod_perfil_usuario);
-
-                        --SELECT cod_id_usuario INTO v_cod_id_usuario FROM sis_mae_perfil_usuario WHERE cod_id_perfil = rs.cod_perfil_usuario AND ROWNUM <= 1;
-
-                        INSERT INTO VVE_CRED_SOLI_APRO
-                        (
-                            COD_CRIT_APRO,
-                            COD_SOLI_CRED,
-                            COD_ID_USUA,
-                            EST_APRO,
-                            COD_SIMU_APRO,
-                            COD_PERFIL_USUA,
-                            IND_NIVEL,
-                            COD_USUA_CREA_REGI,
-                            FEC_CREA_REGI,
-                            IND_INACTIVO
-                        )
-                        VALUES
-                        (
-                            rs.cod_crit_apro,
-                            p_cod_soli_cred,
-                            v_cod_id_usuario,
-                            --'EEA01',
-                            'EEA04', -- Nacen como pendientes de aprobacion
-                            v_cod_simu,
-                            rs.cod_perfil_usuario,
-                            rs.ind_nivel,
-                            p_cod_usua_sid,
-                            SYSDATE,
-                            'N'
-                        );
-
-                    END IF;
-
-                    -- seteando las actividades como obligatorios de los niveles generados para aprobación
-                    if rs.ind_nivel = 1 then -- JEFE DE FINANZAS
-                      update vve_cred_soli_acti set ind_inactivo = 'N' where cod_acti_cred = 'A26' AND cod_soli_cred = p_cod_soli_cred;
-                    elsif  rs.ind_nivel = 2 then -- JEFE DE CREDITOS
-                      update vve_cred_soli_acti set ind_inactivo = 'N' where cod_acti_cred = 'A27' AND cod_soli_cred = p_cod_soli_cred;
-                    elsif  rs.ind_nivel =  3 then -- GAF
-                      update vve_cred_soli_acti set ind_inactivo = 'N' where cod_acti_cred = 'A29' AND cod_soli_cred = p_cod_soli_cred;
-                    elsif  rs.ind_nivel =  4 then -- GERENTE GRAL
-                      update vve_cred_soli_acti set ind_inactivo = 'N' where cod_acti_cred = 'A30' AND cod_soli_cred = p_cod_soli_cred;
-                    elsif  rs.ind_nivel =  5 then -- DIRECTOR CORPORATIVO
-                       update vve_cred_soli_acti set ind_inactivo = 'N' where cod_acti_cred = 'A31' AND cod_soli_cred = p_cod_soli_cred;
-                    elsif  rs.ind_nivel =  6 then -- PRESIDENTE
-                       update vve_cred_soli_acti set ind_inactivo = 'N' where cod_acti_cred = 'A32' AND cod_soli_cred = p_cod_soli_cred;
-                    end if;
-
-                ELSE
-
-                    SELECT cod_simu INTO v_cod_simu FROM vve_cred_simu WHERE cod_soli_cred = p_cod_soli_cred AND ind_inactivo = 'N';
-
-                        IF v_tip_soli_cred = 'TC05' OR v_tip_soli_cred = 'TC07' THEN
-                            SELECT cod_area_vta,cod_filial
-                            INTO   v_cod_area_vta, v_cod_filial
-                            FROM vve_cred_soli
-                            WHERE cod_soli_cred = p_cod_soli_cred;
-                        ELSE
-                            SELECT cod_area_vta, cod_filial
-                            INTO   v_cod_area_vta, v_cod_filial
-                            FROM   vve_proforma_veh p, vve_cred_soli_prof sp
-                            WHERE  sp.cod_soli_cred = p_cod_soli_cred
-                            AND    p.num_prof_veh = sp.num_prof_veh
-                            AND    rownum = 1;
-                        END IF;
-
-                        SELECT cod_zona INTO v_cod_zona FROM vve_mae_zona_filial z where cod_filial = v_cod_filial;
-
-                        SELECT cod_id_usuario INTO v_cod_id_usuario
-                        FROM  sis_mae_usuario
-                        WHERE txt_usuario IN (SELECT co_usuario FROM VVE_CRED_ORG_CRED_VTAS
-                                              WHERE  cod_zona = v_cod_zona
-                                              AND    cod_filial = v_cod_filial
-                                              AND    cod_area_vta = v_cod_area_vta
-                                              AND    cod_rol_usuario = rs.cod_perfil_usuario);
-
-                        --SELECT cod_id_usuario INTO v_cod_id_usuario FROM sis_mae_perfil_usuario WHERE cod_id_perfil = rs.cod_perfil_usuario AND ROWNUM <= 1;
-                              pkg_sweb_mae_gene.sp_regi_rlog_erro
-      ('AUDI_ERROR', 'SP_ACTU_INSERT_CRED_SOLI_APROB- JAHERNANDEZ 001: ' ||v_tip_soli_cred, p_cod_soli_cred, 'v_tip_soli_cred Ultimo', null, NULL);
-
-
-                    INSERT INTO VVE_CRED_SOLI_APRO
-                    (
-                        COD_CRIT_APRO,
-                        COD_SOLI_CRED,
-                        COD_ID_USUA,
-                        EST_APRO,
-                        COD_SIMU_APRO,
-                        COD_PERFIL_USUA,
-                        IND_NIVEL,
-                        COD_USUA_CREA_REGI,
-                        FEC_CREA_REGI,
-                        IND_INACTIVO
-                    )
-                    VALUES
-                    (
-                        rs.cod_crit_apro,
-                        p_cod_soli_cred,
-                        v_cod_id_usuario,
-                        'EEA04',
-                        v_cod_simu,
-                        rs.cod_perfil_usuario,
-                        rs.ind_nivel,
-                        p_cod_usua_sid,
-                        SYSDATE,
-                        'N'
-                    );
-
-                                   pkg_sweb_mae_gene.sp_regi_rlog_erro
-      ('AUDI_ERROR', 'SP_ACTU_INSERT_CRED_SOLI_APROB- JAHERNANDEZ 002: ' ||v_tip_soli_cred, p_cod_soli_cred, 'v_tip_soli_cred Ultimo', null, NULL);
-
-                    -- seteando las actividades como obligatorios de los niveles generados para aprobación
-                    if rs.ind_nivel = 1 then -- JEFE DE FINANZAS
-                      update vve_cred_soli_acti set ind_inactivo = 'N' where cod_acti_cred = 'A26' AND cod_soli_cred = p_cod_soli_cred;
-                    elsif  rs.ind_nivel = 2 then -- JEFE DE CREDITOS
-                      update vve_cred_soli_acti set ind_inactivo = 'N' where cod_acti_cred = 'A27' AND cod_soli_cred = p_cod_soli_cred;
-                    elsif  rs.ind_nivel =  3 then -- GAF
-                      update vve_cred_soli_acti set ind_inactivo = 'N' where cod_acti_cred = 'A29' AND cod_soli_cred = p_cod_soli_cred;
-                    elsif  rs.ind_nivel =  4 then -- GERENTE GRAL
-                      update vve_cred_soli_acti set ind_inactivo = 'N' where cod_acti_cred = 'A30' AND cod_soli_cred = p_cod_soli_cred;
-                    elsif  rs.ind_nivel =  5 then -- DIRECTOR CORPORATIVO
-                       update vve_cred_soli_acti set ind_inactivo = 'N' where cod_acti_cred = 'A31' AND cod_soli_cred = p_cod_soli_cred;
-                    elsif  rs.ind_nivel =  6 then -- PRESIDENTE
-                       update vve_cred_soli_acti set ind_inactivo = 'N' where cod_acti_cred = 'A32' AND cod_soli_cred = p_cod_soli_cred;
-                    end if;
-
-                END IF;
-
-            END LOOP;
-         END IF;
-            PKG_SWEB_CRED_SOLI_ACTIVIDAD.sp_actu_acti(p_cod_soli_cred,'E4','A24',p_cod_usua_sid,p_ret_esta,p_ret_mens);
-            PKG_SWEB_CRED_SOLI_ACTIVIDAD.sp_actu_acti(p_cod_soli_cred,'E4','A25',p_cod_usua_sid,p_ret_esta,p_ret_mens);
-
-            p_ret_esta := 1;
-            p_ret_mens := 'Se registró correctamente la Solicitud de Aprobación perron 0000000000002222222';
-
-        END IF;
-
-    EXCEPTION
-        WHEN ve_error THEN
-            p_ret_esta := 0;
-            pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR', 'SP_INSE_CRED_SOLI_APROB', p_cod_usua_sid, 'Error en la inserción', p_ret_mens
-            , NULL);
-        WHEN OTHERS THEN
-            p_ret_esta := -1;
-            p_ret_mens := 'SP_INSE_CRED_SOLI_APROB:' || sqlerrm;
-            pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR', 'SP_INSE_CRED_SOLI_APROB', p_cod_usua_sid, 'Error en la inserción', p_ret_mens
-            , NULL);
-    END SP_ACTU_INSERT_CRED_SOLI_APROB;
-*/
-
-/*
-    PROCEDURE sp_list_cred_soli_aprob_his
-    (
-        p_cod_soli_cred       IN                vve_cred_soli.cod_soli_cred%TYPE,
-        p_cod_usua_sid        IN                sistemas.usuarios.co_usuario%TYPE,
-        p_list_aprob_his      OUT               SYS_REFCURSOR,
-        p_ret_esta            OUT               NUMBER,
-        p_ret_mens            OUT               VARCHAR2
-    ) AS
-        ve_error            EXCEPTION;
-
-    BEGIN
-
-        OPEN p_list_aprob_his FOR
-            SELECT x.cod_soli_cred, x.ind_nivel, s.txt_usuario,  x.txt_come_apro as DESCRIPCION, x.fec_esta_apro
-            FROM vve_cred_soli_apro x
-            INNER JOIN sis_mae_usuario s ON s.cod_id_usuario = x.cod_id_usua
-            INNER JOIN (
-                select * from vve_tabla_maes sce where  sce.cod_grupo_rec = '95' AND sce.cod_tipo_rec = 'EEA'
-            ) a ON x.est_apro = a.cod_tipo
-            WHERE x.cod_soli_cred = p_cod_soli_cred
-            ORDER BY x.ind_nivel;
-
-        p_ret_esta := 1;
-        p_ret_mens := 'Se realizó correctamente la consulta.';
-
-    EXCEPTION
-        WHEN ve_error THEN
-            p_ret_esta := 0;
-            pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR', 'SP_LIST_CRED_SOLI_APROB_HIS', p_cod_usua_sid, 'Error en la consulta', p_ret_mens, NULL);
-        WHEN OTHERS THEN
-            p_ret_esta := -1;
-            p_ret_mens := 'SP_LIST_CRED_SOLI_APROB_HIS:' || sqlerrm;
-            pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_ERROR', 'SP_LIST_CRED_SOLI_APROB_HIS', p_cod_usua_sid, 'Error en la consulta', p_ret_mens, NULL);
-    END sp_list_cred_soli_aprob_his;
- */
+ 
  --<I Req. 87567 E2.1 ID:9 AVILCA 10/02/2021>
    PROCEDURE sp_list_clie_creditos
   (

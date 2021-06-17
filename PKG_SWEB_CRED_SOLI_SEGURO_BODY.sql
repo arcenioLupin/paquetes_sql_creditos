@@ -36,25 +36,6 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_SEGURO AS
    -- Obteniendo cantidad de letras del simulador
    --<I Req. 87567 E2.1 ID## AVILCA 30/12/2020>
 
-   /*IF lv_ind_tip_seg = 'TS01' THEN
-    SELECT (count(*)/9)
-     INTO ln_cant_letr_fin
-        FROM vve_cred_simu_lede c             
-        INNER JOIN vve_cred_maes_conc_letr p
-            ON p.cod_conc_col = c.cod_conc_col 
-        WHERE c.cod_simu = ln_cod_simu
-        ORDER BY p.num_orden;   
-   END IF;
-
-  IF lv_ind_tip_seg = 'TS02' THEN
-    SELECT (count(*)/8)
-     INTO ln_cant_letr_fin
-        FROM vve_cred_simu_lede c             
-        INNER JOIN vve_cred_maes_conc_letr p
-            ON p.cod_conc_col = c.cod_conc_col 
-        WHERE c.cod_simu = ln_cod_simu
-        ORDER BY p.num_orden;   
-   END IF;*/
    SELECT (cs.can_tota_letr + cs.can_letr_peri_grac) 
     INTO ln_cant_letr_fin
    FROM vve_cred_soli cs 
@@ -102,7 +83,6 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_SEGURO AS
   BEGIN
     open p_ret_cursor for
         select (select descripcion from vve_tabla_maes where cod_grupo = '97' and cod_tipo=s.cod_tip_uso_veh) as descripcion, 
-        --(select des_tipo_actividad from vve_credito_tipo_actividad where cod_tipo_actividad=g.cod_tipo_actividad) as des_tipo_actividad, 
         g.tipo_actividad as des_tipo_actividad,
         g.nro_placa num_placa_veh, p.num_motor_veh, p.num_chasis, g.can_nro_asie, p.num_pedido_veh,g.cod_garantia
         from vve_pedido_veh p,vve_cred_soli_pedi_veh sp,vve_cred_soli s, vve_cred_maes_gara g
@@ -157,7 +137,7 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_SEGURO AS
     p_ret_esta OUT NUMBER,
     p_ret_mens OUT VARCHAR2
   ) AS
-  --lv_fec_contrato  DATE;
+
   lv_fec_contrato_adic  DATE;
   lv_fec_actual  DATE;
   lv_ind_tipo_segu VARCHAR2(5);
@@ -179,10 +159,6 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_SEGURO AS
 
  -- Comparando fecha actual con fecha contrato + 15 dias
 
-        --lv_fec_contrato_adic := lv_fec_contrato +15;
-        /*SELECT SYSDATE
-        INTO lv_fec_actual
-        FROM DUAL;*/
        lv_fec_actual:= TO_DATE(P_FEC_ACT_POLI,'dd/mm/yyyy');  --I Req. 87567 E2.1 ID## avilca 05/01/2021
 
             pkg_sweb_mae_gene.sp_regi_rlog_erro('AUDI_INFO',
@@ -397,12 +373,6 @@ create or replace PACKAGE BODY  VENTA.PKG_SWEB_CRED_SOLI_SEGURO AS
 
     v_correos := '';
     v_contador := 1;
-
-   /*  OPEN c_documentos FOR v_query_docu;
-        LOOP
-            FETCH c_documentos
-                INTO v_documento;
-            EXIT WHEN c_documentos%NOTFOUND;*/
 
     OPEN c_usuarios FOR v_query;
     LOOP

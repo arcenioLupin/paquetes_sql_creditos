@@ -48,21 +48,21 @@ PROCEDURE sp_list_aval
                 (SELECT descripcion FROM vve_tabla_maes WHERE COD_GRUPO='104' AND valor_adic_1=m.ind_esta_civil) des_estado_civil,
                 (SELECT descripcion FROM vve_tabla_maes WHERE COD_GRUPO='110' AND valor_adic_1=m.ind_esta_civil) des_tipo_rela_aval,
                 (SELECT mo.des_moneda AS descripcion FROM gen_moneda mo WHERE mo.cod_moneda=m.cod_moneda) des_moneda,
-                --(SELECT des_nombre AS descripcion FROM gen_mae_distrito WHERE cod_id_distrito=cod_distrito) des_distrito,
+                
                 ---- E1-1-87567-avilca-07/07/2020- Modficación Avales -Ini
                 (SELECT nom_ubigeo as descripcion   
                  FROM gen_ubigeo WHERE cod_dpto = m.cod_departamento and cod_provincia = m.cod_provincia 
                     and cod_distrito = m.cod_distrito)des_distrito,
-                --(SELECT des_nombre AS descripcion FROM gen_mae_provincia WHERE cod_id_provincia=cod_provincia) des_provincia,
+                
                  (SELECT nom_ubigeo as descripcion   
                   FROM gen_ubigeo WHERE cod_dpto = m.cod_departamento and cod_provincia = m.cod_provincia 
                     and cod_distrito = '00')des_provincia,
-                --(SELECT des_nombre AS descripcion FROM gen_mae_departamento WHERE cod_id_departamento=cod_departamento) des_departamento,
+               
                 (SELECT nom_ubigeo as descripcion   
                   FROM gen_ubigeo WHERE cod_dpto = m.cod_departamento and cod_provincia = '00'
                     and cod_distrito = '00')des_departamento,
                 '' des_empr, 
-                --(SELECT nom_pais AS descripcion FROM gen_pais pa WHERE pa.cod_pais = m.cod_pais) des_pais,
+                
                 (SELECT nom_ubigeo as descripcion   
                   FROM gen_ubigeo WHERE cod_dpto = '00' and cod_provincia = '00'
                     and cod_distrito = '00')des_pais,
@@ -94,7 +94,6 @@ PROCEDURE sp_list_aval
               ON m.cod_per_aval = s.cod_per_aval
             WHERE s.cod_soli_cred = p_cod_soli_cred
               AND (s.ind_inactivo IS NULL OR s.ind_inactivo <> 'S')
-              --AND  m.cod_per_rel_aval IS NULL --//Req. 87567 E2.1 ID58 avilca 01/10/2020>
               ORDER BY m.cod_per_aval DESC; -- E2-1-87567-avilca-03/09/2020- Modficación Avales       
   p_ret_esta := 1;
   p_ret_mens := 'La consulta se realizó de manera exitosa';
@@ -149,21 +148,21 @@ PROCEDURE sp_list_aval
                 (SELECT descripcion FROM vve_tabla_maes WHERE COD_GRUPO='110' AND valor_adic_1= a.ind_esta_civil) des_tipo_rela_aval,
                 (SELECT mo.des_moneda AS descripcion FROM gen_moneda mo WHERE mo.cod_moneda= a.cod_moneda) des_moneda,
                  ---- E1-1-87567-avilca-07/07/2020- Modficación Avales -Ini
-               -- (SELECT des_nombre AS descripcion FROM gen_mae_distrito WHERE cod_id_distrito = a.cod_distrito) des_distrito,
+              
                 (SELECT nom_ubigeo as descripcion   
                  FROM gen_ubigeo WHERE cod_dpto = a.cod_departamento and cod_provincia = a.cod_provincia 
                     and cod_distrito = a.cod_distrito)des_distrito,               
-                --(SELECT des_nombre AS descripcion FROM gen_mae_provincia WHERE cod_id_provincia = a.cod_provincia) des_provincia,
+               
                 (SELECT nom_ubigeo as descripcion   
                   FROM gen_ubigeo WHERE cod_dpto = a.cod_departamento and cod_provincia = a.cod_provincia 
                     and cod_distrito = '00')des_provincia,               
-                --(SELECT des_nombre AS descripcion FROM gen_mae_departamento WHERE cod_id_departamento = a.cod_departamento) des_departamento,
+                
                 (SELECT nom_ubigeo as descripcion   
                   FROM gen_ubigeo WHERE cod_dpto = a.cod_departamento and cod_provincia = '00'
                     and cod_distrito = '00')des_departamento,     
                  ---- E1-1-87567-avilca-07/07/2020- Modficación Avales -Fin    
                 '' des_empr, 
-                --(SELECT nom_pais AS descripcion FROM gen_pais pa WHERE pa.cod_pais = a.cod_pais) des_pais,
+                
                 (SELECT pa.des_nombre FROM gen_mae_pais pa, gen_mae_sociedad so WHERE pa.cod_id_pais = so.cod_id_pais 
                     AND so.cod_cia IN (SELECT cod_cia FROM gen_mae_sociedad WHERE cod_id_pais = '001')
                     AND ROWNUM = 1) AS DES_PAIS,
@@ -519,10 +518,7 @@ PROCEDURE sp_list_aval
   ) AS
   BEGIN
     OPEN p_ret_cursor FOR
-      --select * from generico.gen_mae_pais;
       SELECT pa.cod_id_pais AS cod_pais, pa.des_nombre AS nom_pais FROM gen_mae_pais pa, gen_mae_sociedad so WHERE pa.cod_id_pais = so.cod_id_pais AND so.cod_cia = p_cod_cia;
-      --select * from gen_mae_sociedad;
-      --SELECT '001' cod_pais,'PERU' nom_pais FROM DUAL;
      p_ret_esta := 1;
      p_ret_mens := 'La consulta se realizó de manera exitosa';
   EXCEPTION

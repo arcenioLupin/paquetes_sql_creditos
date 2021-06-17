@@ -15,7 +15,6 @@ create or replace PACKAGE BODY VENTA.PKG_SWEB_CRED_SOLI_CART_BANC AS
         --I Req. 87567 E2.1 ID## avilca 30/03/2020
               SELECT cod_soli_cred,cod_banco,
                      txt_ofic_banc, num_fax, 
-                     --TO_CHAR(fec_aprob_cart_ban, 'DD/MM/YYYY') AS fec_aprob_cart_ban,
                      fec_aprob_cart_ban,
                      cod_mone_cart_banc, val_mone_aprob_banc, txt_nomb_ejec_banc,
                      txt_ruta_cart_banc, num_tele_fijo_ejec, num_celu_ejec,

@@ -196,25 +196,7 @@ create or replace PACKAGE VENTA.PKG_SWEB_CRED_LXC AS
   pn_ret_esta       OUT     NUMBER,
   pc_ret_mens       OUT     VARCHAR2
   );
-
-/*  Procedure sp_nueva_op(
-  pc_no_cia         IN      vve_cred_soli.cod_empr%TYPE,
-  pc_no_cliente     IN      vve_cred_soli.cod_clie%TYPE,
-  pc_num_soli       IN      vve_cred_soli.cod_soli_cred%TYPE,
-  pc_tipo_cred      IN      vve_cred_soli.tip_soli_cred%TYPE,
-  pc_tipo_doc_op    IN      arlcop.tipo_factu%TYPE,
-  pd_fecha_cont     IN      arlcop.fecha%TYPE,
-  pd_fecha_ini      IN      arlcop.fecha_ini%TYPE,
-  pc_tipo_cuota     IN      arlcop.tipo_cuota%TYPE,
-  pd_fecha_aut      IN      arlcop.fecha_aut_ope%TYPE,
-  pc_usuario_aprb   IN      arlcop.usuario_aprb%TYPE,
-  pc_cod_usua_web   IN      sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
-  p_ret_cur_fact    IN OUT  SYS_REFCURSOR,
-  p_ret_cur_arlcop  OUT     SYS_REFCURSOR,
-  pn_ret_esta       OUT     NUMBER,
-  pc_ret_mens       OUT     VARCHAR2
-  );
-*/  
+ 
 
   /* Obtiene los datos para registrar la operación */
   Procedure sp_obtener_datos_op(
@@ -235,21 +217,7 @@ create or replace PACKAGE VENTA.PKG_SWEB_CRED_LXC AS
   pn_ret_esta       OUT     NUMBER,
   pc_ret_mens       OUT     VARCHAR2
   );
-  /*
-  pc_no_cia         IN      vve_cred_soli.cod_empr%TYPE,
-  pc_no_cliente     IN      vve_cred_soli.cod_clie%TYPE,
-  pc_num_soli       IN      vve_cred_soli.cod_soli_cred%TYPE,
-  pc_tipo_cred      IN      vve_cred_soli.tip_soli_cred%TYPE,
-  pd_fecha_ini      IN      vve_cred_soli.fec_venc_1ra_let%TYPE,
-  pd_fecha_aut      IN      arlcop.fecha_aut_ope%TYPE,
-  pc_usuario_aprb   IN      arlcop.usuario_aprb%TYPE,
-  pc_cod_usua_web   IN      sistemas.sis_mae_usuario.cod_id_usuario%TYPE,
-  p_ret_cur_fact    IN      SYS_REFCURSOR,
-  p_r_arlcop        OUT     arlcop%rowtype,
-  pn_ret_esta       OUT     NUMBER,
-  pc_ret_mens       OUT     VARCHAR2
-  );
-*/
+
   /* Obtiene el nro de op y actualiza en la tabla de correlativos por empresa */
   Function sf_obtener_nro_op(
   pc_no_cia         IN      arlcop.no_cia%TYPE,
