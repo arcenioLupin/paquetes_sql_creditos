@@ -5623,7 +5623,7 @@ PROCEDURE sp_inse_cred_soli_aprob
                 p_ret_cod_hist,
                 p_cod_soli_cred,
                 p_val_lc_actu,
-                TO_DATE(p_fec_plaz, 'YYYY/MM/DD'),
+                TO_DATE(p_fec_plaz, 'DD/MM/YYYY'),
                 p_val_lc_util,
                 p_val_dven_dc,
                 p_val_dven_di,
